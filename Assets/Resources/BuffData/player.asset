@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b99356cf1a70e934e8f061d2fa08ddff, type: 3}
+  m_Name: player
+  m_EditorClassIdentifier: 
+  Id: 1
+  BuffName: 1
+  Description: 11
+  Icon: {fileID: 0}
+  MaxLevel: 2
+  Priority: 1
+  Tags: []
+  IsForever: 1
+  Duration: 2
+  TickMaxTime: 3
+  OnCreate: {fileID: 11400000, guid: 09df31bbfd9e79743bb3f6b063ca5f24, type: 2}
+  OnRemove: {fileID: 0}
+  OnDestroy: {fileID: 0}
+  OnTick: {fileID: 11400000, guid: 09df31bbfd9e79743bb3f6b063ca5f24, type: 2}
+  OnHit: {fileID: 0}
+  OnBeHit: {fileID: 0}
+  OnBekill: {fileID: 0}
+  OnKill: {fileID: 0}
+  AddandSubType: 0
