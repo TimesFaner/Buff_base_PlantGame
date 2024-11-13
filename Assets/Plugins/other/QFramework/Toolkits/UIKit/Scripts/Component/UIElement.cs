@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2017 ~ 2018.8 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,36 +23,28 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using UnityEngine;
+
 namespace QFramework
 {
-    using UnityEngine;
-
     /// <summary>
-    /// belone to a panel 
+    ///     belone to a panel
     /// </summary>
-    public abstract class UIElement : QMonoBehaviour,IBindOld
+    public abstract class UIElement : QMonoBehaviour, IBindOld
     {
+        public abstract string ComponentName { get; }
+
+        public override IManager Manager => UIManager.Instance;
+
         public virtual BindType GetBindType()
         {
             return BindType.Element;
         }
-        
+
         public virtual string TypeName => ComponentName;
-        public abstract string ComponentName { get; }
 
-        public string Comment
-        {
-            get { return string.Empty; }
-        }
+        public string Comment => string.Empty;
 
-        public Transform Transform
-        {
-            get { return transform; }
-        }
-
-        public override IManager Manager
-        {
-            get { return UIManager.Instance; }
-        }
+        public Transform Transform => transform;
     }
 }

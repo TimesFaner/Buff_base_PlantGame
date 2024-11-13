@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -16,27 +16,15 @@ namespace QFramework
 
     public class Repeat : IRepeat
     {
-        private Sequence mSequence = null;
+        private static readonly SimpleObjectPool<Repeat> mSimpleObjectPool = new(() => new Repeat(), null, 5);
+
+        private int mCurrentRepeatCount;
 
         private int mRepeatCount = -1;
-        private int mCurrentRepeatCount = 0;
-
-        private static SimpleObjectPool<Repeat> mSimpleObjectPool =
-            new SimpleObjectPool<Repeat>(() => new Repeat(), null, 5);
+        private Sequence mSequence;
 
         private Repeat()
         {
-        }
-
-        public static Repeat Allocate(int repeatCount = -1)
-        {
-            var repeat = mSimpleObjectPool.Allocate();
-            repeat.ActionID = ActionKit.ID_GENERATOR++;
-            repeat.mSequence = Sequence.Allocate();
-            repeat.Deinited = false;
-            repeat.Reset();
-            repeat.mRepeatCount = repeatCount;
-            return repeat;
         }
 
         public bool Paused { get; set; }
@@ -53,10 +41,7 @@ namespace QFramework
         {
             if (mRepeatCount == -1 || mRepeatCount == 0)
             {
-                if (mSequence.Execute(dt))
-                {
-                    mSequence.Reset();
-                }
+                if (mSequence.Execute(dt)) mSequence.Reset();
             }
             else if (mCurrentRepeatCount < mRepeatCount)
             {
@@ -65,13 +50,9 @@ namespace QFramework
                     mCurrentRepeatCount++;
 
                     if (mCurrentRepeatCount >= mRepeatCount)
-                    {
                         this.Finish();
-                    }
                     else
-                    {
                         mSequence.Reset();
-                    }
                 }
             }
         }
@@ -91,10 +72,10 @@ namespace QFramework
             if (!Deinited)
             {
                 Deinited = true;
-                
+
                 mSequence.Deinit();
-                
-                ActionQueue.AddCallback(new ActionQueueRecycleCallback<Repeat>(mSimpleObjectPool,this));
+
+                ActionQueue.AddCallback(new ActionQueueRecycleCallback<Repeat>(mSimpleObjectPool, this));
             }
         }
 
@@ -105,18 +86,29 @@ namespace QFramework
             Paused = false;
             mSequence.Reset();
         }
+
+        public static Repeat Allocate(int repeatCount = -1)
+        {
+            var repeat = mSimpleObjectPool.Allocate();
+            repeat.ActionID = ActionKit.ID_GENERATOR++;
+            repeat.mSequence = Sequence.Allocate();
+            repeat.Deinited = false;
+            repeat.Reset();
+            repeat.mRepeatCount = repeatCount;
+            return repeat;
+        }
     }
-    
+
     public static class RepeatExtension
     {
-        public static ISequence Repeat(this ISequence self,Action<IRepeat> repeatSetting)
+        public static ISequence Repeat(this ISequence self, Action<IRepeat> repeatSetting)
         {
             var repeat = QFramework.Repeat.Allocate();
             repeatSetting(repeat);
             return self.Append(repeat);
         }
-        
-        public static ISequence Repeat(this ISequence self,int repeatCount, Action<IRepeat> repeatSetting)
+
+        public static ISequence Repeat(this ISequence self, int repeatCount, Action<IRepeat> repeatSetting)
         {
             var repeat = QFramework.Repeat.Allocate(repeatCount);
             repeatSetting(repeat);

@@ -8,82 +8,51 @@ namespace Mirror.Examples.TanksCoop
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerController : NetworkBehaviour
     {
-        public enum GroundState : byte { Jumping, Falling, Grounded }
+        public enum GroundState : byte
+        {
+            Jumping,
+            Falling,
+            Grounded
+        }
 
-        [Header("Avatar Components")]
-        public CharacterController characterController;
+        [Header("Avatar Components")] public CharacterController characterController;
 
-        [Header("Movement")]
-        [Range(1, 20)]
-        public float moveSpeedMultiplier = 8f;
+        [Header("Movement")] [Range(1, 20)] public float moveSpeedMultiplier = 8f;
 
-        [Header("Turning")]
-        [Range(1f, 200f)]
-        public float maxTurnSpeed = 100f;
-        [Range(.5f, 5f)]
-        public float turnDelta = 3f;
+        [Header("Turning")] [Range(1f, 200f)] public float maxTurnSpeed = 100f;
 
-        [Header("Jumping")]
-        [Range(0.1f, 1f)]
-        public float initialJumpSpeed = 0.2f;
-        [Range(1f, 10f)]
-        public float maxJumpSpeed = 5f;
-        [Range(0.1f, 1f)]
-        public float jumpDelta = 0.2f;
+        [Range(.5f, 5f)] public float turnDelta = 3f;
+
+        [Header("Jumping")] [Range(0.1f, 1f)] public float initialJumpSpeed = 0.2f;
+
+        [Range(1f, 10f)] public float maxJumpSpeed = 5f;
+
+        [Range(0.1f, 1f)] public float jumpDelta = 0.2f;
 
         [Header("Diagnostics - Do Not Modify")]
         public GroundState groundState = GroundState.Grounded;
 
-        [Range(-1f, 1f)]
-        public float horizontal;
-        [Range(-1f, 1f)]
-        public float vertical;
+        [Range(-1f, 1f)] public float horizontal;
 
-        [Range(-200f, 200f)]
-        public float turnSpeed;
+        [Range(-1f, 1f)] public float vertical;
 
-        [Range(-10f, 10f)]
-        public float jumpSpeed;
+        [Range(-200f, 200f)] public float turnSpeed;
 
-        [Range(-1.5f, 1.5f)]
-        public float animVelocity;
+        [Range(-10f, 10f)] public float jumpSpeed;
 
-        [Range(-1.5f, 1.5f)]
-        public float animRotation;
+        [Range(-1.5f, 1.5f)] public float animVelocity;
+
+        [Range(-1.5f, 1.5f)] public float animRotation;
 
         public Vector3Int velocity;
         public Vector3 direction;
 
-        protected override void OnValidate()
-        {
-            base.OnValidate();
+        public TankController tankController;
 
-            if (characterController == null)
-                characterController = GetComponent<CharacterController>();
+        // we dont want this object to move once you have control of tank
+        public bool canControlPlayer = true;
 
-            // Override CharacterController default values
-            characterController.enabled = false;
-            characterController.skinWidth = 0.02f;
-            characterController.minMoveDistance = 0f;
-
-            GetComponent<Rigidbody>().isKinematic = true;
-
-            this.enabled = false;
-        }
-
-        public override void OnStartAuthority()
-        {
-            characterController.enabled = true;
-            this.enabled = true;
-        }
-
-        public override void OnStopAuthority()
-        {
-            this.enabled = false;
-            characterController.enabled = false;
-        }
-
-        void Update()
+        private void Update()
         {
             if (!characterController.enabled)
                 return;
@@ -108,8 +77,59 @@ namespace Mirror.Examples.TanksCoop
             velocity = Vector3Int.FloorToInt(characterController.velocity);
         }
 
+        private void OnTriggerEnter(Collider other)
+        {
+            if (!isOwned) return;
+            //Debug.Log(name + "- OnTriggerEnter - " + other.name);
+
+            if (other.name == "TankTrigger")
+                // dont update tank variable if we're in one
+                if (canControlPlayer)
+                    tankController = other.transform.root.GetComponent<TankController>();
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (!isOwned) return;
+            //Debug.Log(name + "- OnTriggerExit - " + other.name);
+
+            if (other.name == "TankTrigger")
+                if (tankController)
+                    if (tankController.objectOwner != netIdentity)
+                        tankController = null;
+        }
+
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+
+            if (characterController == null)
+                characterController = GetComponent<CharacterController>();
+
+            // Override CharacterController default values
+            characterController.enabled = false;
+            characterController.skinWidth = 0.02f;
+            characterController.minMoveDistance = 0f;
+
+            GetComponent<Rigidbody>().isKinematic = true;
+
+            enabled = false;
+        }
+
+        public override void OnStartAuthority()
+        {
+            characterController.enabled = true;
+            enabled = true;
+        }
+
+        public override void OnStopAuthority()
+        {
+            enabled = false;
+            characterController.enabled = false;
+        }
+
         // TODO: Turning works while airborne...feature?
-        void HandleTurning()
+        private void HandleTurning()
         {
             // Q and E cancel each other out, reducing the turn to zero.
             if (Input.GetKey(KeyCode.Q))
@@ -128,7 +148,7 @@ namespace Mirror.Examples.TanksCoop
             transform.Rotate(0f, turnSpeed * Time.deltaTime, 0f);
         }
 
-        void HandleJumping()
+        private void HandleJumping()
         {
             // Handle variable force jumping.
             // Jump starts with initial power on takeoff, and jumps higher / longer
@@ -145,7 +165,9 @@ namespace Mirror.Examples.TanksCoop
                 }
                 else
                     // Jumping has already started...increase power toward maxJumpSpeed over time.
+                {
                     jumpSpeed = Mathf.MoveTowards(jumpSpeed, maxJumpSpeed, jumpDelta);
+                }
 
                 // If power has reached maxJumpSpeed, change to falling until grounded.
                 // This prevents over-applying jump power while already in the air.
@@ -160,11 +182,13 @@ namespace Mirror.Examples.TanksCoop
                 jumpSpeed += Physics.gravity.y * Time.deltaTime;
             }
             else
+            {
                 jumpSpeed = Physics.gravity.y * Time.deltaTime;
+            }
         }
 
         // TODO: Directional input works while airborne...feature?
-        void HandleMove()
+        private void HandleMove()
         {
             // Capture inputs
             horizontal = Input.GetAxis("Horizontal");
@@ -189,87 +213,43 @@ namespace Mirror.Examples.TanksCoop
             characterController.Move(direction * Time.deltaTime);
         }
 
-        public TankController tankController;
-        // we dont want this object to move once you have control of tank
-        public bool canControlPlayer = true;
-
-        void HandleInput()
+        private void HandleInput()
         {
             if (tankController)
             {
                 // if no one owns trigger object
                 if (canControlPlayer && tankController.objectOwner == null)
                 {
-                    if (Input.GetKeyDown(KeyCode.E))
-                    {
-                        CmdAssignAuthority(tankController.netIdentity);
-                    }
+                    if (Input.GetKeyDown(KeyCode.E)) CmdAssignAuthority(tankController.netIdentity);
                 }
                 else
                 {
                     // if we do own
-                    if (Input.GetKeyDown(KeyCode.Q))
-                    {
-                        CmdRemoveAuthority(tankController.netIdentity);
-                    }
+                    if (Input.GetKeyDown(KeyCode.Q)) CmdRemoveAuthority(tankController.netIdentity);
                 }
 
                 // alternatively we could tell everyone to locally do this and disable NetworkTransform
                 // it would be more optimal but requires a lil more code
                 if (tankController.objectOwner == netIdentity)
-                {
-                    this.transform.position = tankController.seatPosition.position;
-                }
-            }
-        }
-
-        void OnTriggerEnter(Collider other)
-        {
-            if (!isOwned) return;
-            //Debug.Log(name + "- OnTriggerEnter - " + other.name);
-
-            if (other.name == "TankTrigger")
-            {
-                // dont update tank variable if we're in one
-                if (canControlPlayer)
-                {
-                    tankController = other.transform.root.GetComponent<TankController>();
-                }
-            }
-        }
-
-        void OnTriggerExit(Collider other)
-        {
-            if (!isOwned) return;
-            //Debug.Log(name + "- OnTriggerExit - " + other.name);
-
-            if (other.name == "TankTrigger")
-            {
-                if (tankController)
-                {
-                    if (tankController.objectOwner != netIdentity)
-                    {
-                        tankController = null;
-                    }
-                }
+                    transform.position = tankController.seatPosition.position;
             }
         }
 
         [Command]
         public void CmdAssignAuthority(NetworkIdentity _networkIdentity)
         {
-           // Debug.Log("Mirror Object owner set to: " + this.netIdentity);
+            // Debug.Log("Mirror Object owner set to: " + this.netIdentity);
 
             tankController = _networkIdentity.GetComponent<TankController>();
 
             // so we dont assign it to same person again
-            if (tankController.objectOwner != this.netIdentity)
+            if (tankController.objectOwner != netIdentity)
             {
                 // commands are a good place to do additional validation/cheat checks, but these are left out for simplicity here
                 _networkIdentity.RemoveClientAuthority();
                 _networkIdentity.AssignClientAuthority(connectionToClient);
 
-                tankController.objectOwner = this.netIdentity;
+                tankController.objectOwner = netIdentity;
             }
         }
 
@@ -281,7 +261,7 @@ namespace Mirror.Examples.TanksCoop
             tankController = _networkIdentity.GetComponent<TankController>();
 
             // double check command is sent to remove auth, from owner of object 
-            if (tankController.objectOwner != null && tankController.objectOwner == this.netIdentity)
+            if (tankController.objectOwner != null && tankController.objectOwner == netIdentity)
             {
                 _networkIdentity.RemoveClientAuthority();
 

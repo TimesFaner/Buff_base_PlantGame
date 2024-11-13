@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,7 +12,7 @@ using System;
 namespace QFramework
 {
     /// <summary>
-    /// 存储一些Mark相关的信息
+    ///     存储一些Mark相关的信息
     /// </summary>
     [Serializable]
     public class BindInfo
@@ -21,15 +21,14 @@ namespace QFramework
 
         public string PathToRoot;
 
-        public IBindOld BindScript;
-        
         public string MemberName;
+
+        public IBindOld BindScript;
     }
 
     [Serializable]
     public class BindInfoGroup
     {
-        
     }
 }
 #endif

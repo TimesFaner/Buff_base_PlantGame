@@ -10,48 +10,51 @@
 
 #if UNITY_EDITOR
 using Markdig;
-using UnityEditor;
-using UnityEngine;
 using Markdig.Extensions.JiraLinks;
 using Markdig.Extensions.Tables;
+using UnityEditor;
+using UnityEngine;
 
 namespace QFramework
 {
     public class MDViewer
     {
-        public static readonly Vector2 Margin = new Vector2( 6.0f, 4.0f );
+        public static readonly Vector2 Margin = new(6.0f, 4.0f);
 
-        private GUISkin         mSkin            = null;
-        private string          mText            = string.Empty;
-        private string          mCurrentPath     = string.Empty;
-        private MDHandlerImages   mHandlerImages   = new MDHandlerImages();
-        private MDHandlerNavigate mHandlerNavigate = new MDHandlerNavigate();
+        private static readonly MDHistory mMDHistory = new();
+        private readonly string mCurrentPath = string.Empty;
+        private readonly MDHandlerImages mHandlerImages = new();
+        private readonly MDHandlerNavigate mHandlerNavigate = new();
 
-        private MDLayout          mLayout          = null;
-        private bool            mRaw             = false;
+        private readonly GUISkin mSkin;
 
-        private static MDHistory  mMDHistory         = new MDHistory();
+        private MDLayout mLayout;
+        private bool mRaw;
 
-        
-        public string MarkdownFilePath { get; set; }
 
-        public MDViewer( GUISkin skin, string path, string content )
+        private Vector2 mScrollPos;
+        private string mText = string.Empty;
+
+        public MDViewer(GUISkin skin, string path, string content)
         {
-            mSkin        = skin;
+            mSkin = skin;
             mCurrentPath = path;
-            mText        = content;
+            mText = content;
 
-            mMDHistory.OnOpen( mCurrentPath );
+            mMDHistory.OnOpen(mCurrentPath);
             mLayout = ParseDocument();
 
-            mHandlerImages.CurrentPath   = mCurrentPath;
+            mHandlerImages.CurrentPath = mCurrentPath;
 
             mHandlerNavigate.CurrentPath = mCurrentPath;
-            mHandlerNavigate.MDHistory     = mMDHistory;
-            mHandlerNavigate.FindBlock   = ( id ) => mLayout.Find( id );
-            mHandlerNavigate.ScrollTo    = ( pos ) => {}; // TODO: mScrollPos.y = pos;
+            mHandlerNavigate.MDHistory = mMDHistory;
+            mHandlerNavigate.FindBlock = id => mLayout.Find(id);
+            mHandlerNavigate.ScrollTo = pos => { }; // TODO: mScrollPos.y = pos;
         }
-        
+
+
+        public string MarkdownFilePath { get; set; }
+
         //------------------------------------------------------------------------------
 
         public bool Update()
@@ -62,35 +65,31 @@ namespace QFramework
 
         //------------------------------------------------------------------------------
 
-        MDLayout ParseDocument()
+        private MDLayout ParseDocument()
         {
-            var context  = new MDContext( mSkin, mHandlerImages, mHandlerNavigate );
-            var builder  = new IMDLayoutBuilder( context );
-            var renderer = new MDRendererMarkdown( builder );
+            var context = new MDContext(mSkin, mHandlerImages, mHandlerNavigate);
+            var builder = new IMDLayoutBuilder(context);
+            var renderer = new MDRendererMarkdown(builder);
 
             var pipelineBuilder = new MarkdownPipelineBuilder()
                 .UseAutoLinks();
 
-            if( !string.IsNullOrEmpty( MDPreferences.JIRA ) )
-            {
-                pipelineBuilder.UseJiraLinks( new JiraLinkOptions( MDPreferences.JIRA ) );
-            }
+            if (!string.IsNullOrEmpty(MDPreferences.JIRA))
+                pipelineBuilder.UseJiraLinks(new JiraLinkOptions(MDPreferences.JIRA));
 
 
             if (MDPreferences.PipedTables)
-            {
                 pipelineBuilder.UsePipeTables(new PipeTableOptions
                 {
                     RequireHeaderSeparator = MDPreferences.PipedTablesRequireRequireHeaderSeparator
-                });    
-            }
-            
+                });
+
 
             var pipeline = pipelineBuilder.Build();
-            pipeline.Setup( renderer );
+            pipeline.Setup(renderer);
 
-            var doc = Markdig.Markdown.Parse( mText, pipeline );
-            renderer.Render( doc );
+            var doc = Markdown.Parse(mText, pipeline);
+            renderer.Render(doc);
 
             return builder.GetLayout();
         }
@@ -98,19 +97,16 @@ namespace QFramework
 
         //------------------------------------------------------------------------------
 
-        private void ClearBackground( float height )
+        private void ClearBackground(float height)
         {
-            var rectFullScreen = new Rect( 0.0f, 0.0f, Screen.width, Mathf.Max( height, Screen.height ) );
-            GUI.DrawTexture( rectFullScreen, mSkin.window.normal.background, ScaleMode.StretchToFill, false );
+            var rectFullScreen = new Rect(0.0f, 0.0f, Screen.width, Mathf.Max(height, Screen.height));
+            GUI.DrawTexture(rectFullScreen, mSkin.window.normal.background, ScaleMode.StretchToFill, false);
         }
-
-
-        private Vector2 mScrollPos;
         //------------------------------------------------------------------------------
 
         public void Draw()
         {
-            GUI.skin    = mSkin;
+            GUI.skin = mSkin;
             GUI.enabled = true;
 
             // useable width of inspector windows
@@ -120,25 +116,25 @@ namespace QFramework
 
             // draw content
 
-            if( mRaw )
+            if (mRaw)
             {
-                var style  = mSkin.GetStyle( "raw" );
-                var width  = contentWidth - mSkin.button.fixedHeight;
-                var height = style.CalcHeight( new GUIContent( mText ), width );
+                var style = mSkin.GetStyle("raw");
+                var width = contentWidth - mSkin.button.fixedHeight;
+                var height = style.CalcHeight(new GUIContent(mText), width);
 
-                ClearBackground( height );
-                EditorGUILayout.SelectableLabel( mText, style, new GUILayoutOption[] { GUILayout.Width( width ), GUILayout.Height( height ) } );
+                ClearBackground(height);
+                EditorGUILayout.SelectableLabel(mText, style, GUILayout.Width(width), GUILayout.Height(height));
             }
             else
             {
-                ClearBackground( mLayout.Height );
-                DrawMarkdown( contentWidth );
+                ClearBackground(mLayout.Height);
+                DrawMarkdown(contentWidth);
             }
 
-            DrawToolbar( contentWidth );
+            DrawToolbar(contentWidth);
         }
-        
-        void DrawRaw(Rect rect)
+
+        private void DrawRaw(Rect rect)
         {
             EditorGUI.SelectableLabel(rect, mText, GUI.skin.GetStyle("raw"));
         }
@@ -146,68 +142,60 @@ namespace QFramework
 
         //------------------------------------------------------------------------------
 
-        void DrawToolbar( float contentWidth )
+        private void DrawToolbar(float contentWidth)
         {
-            var style  = GUI.skin.button;
-            var size   = style.fixedHeight;
-            var btn    = new Rect( Margin.x + contentWidth - size, Margin.y, size, size );
+            var style = GUI.skin.button;
+            var size = style.fixedHeight;
+            var btn = new Rect(Margin.x + contentWidth - size, Margin.y, size, size);
 
-            if( GUI.Button( btn, string.Empty, GUI.skin.GetStyle( mRaw ? "btnRaw" : "btnFile" ) ) )
-            {
-                mRaw = !mRaw;
-            }
+            if (GUI.Button(btn, string.Empty, GUI.skin.GetStyle(mRaw ? "btnRaw" : "btnFile"))) mRaw = !mRaw;
 
-            if( mRaw == false )
+            if (mRaw == false)
             {
-                if( mMDHistory.CanForward )
+                if (mMDHistory.CanForward)
                 {
                     btn.x -= size;
 
-                    if( GUI.Button( btn, string.Empty, GUI.skin.GetStyle( "btnForward" ) ) )
-                    {
-                        Selection.activeObject = AssetDatabase.LoadAssetAtPath<TextAsset>( mMDHistory.Forward() );
-                    }
+                    if (GUI.Button(btn, string.Empty, GUI.skin.GetStyle("btnForward")))
+                        Selection.activeObject = AssetDatabase.LoadAssetAtPath<TextAsset>(mMDHistory.Forward());
                 }
 
-                if( mMDHistory.CanBack )
+                if (mMDHistory.CanBack)
                 {
                     btn.x -= size;
 
-                    if( GUI.Button( btn, string.Empty, GUI.skin.GetStyle( "btnBack" ) ) )
-                    {
-                        Selection.activeObject = AssetDatabase.LoadAssetAtPath<TextAsset>( mMDHistory.Back() );
-                    }
+                    if (GUI.Button(btn, string.Empty, GUI.skin.GetStyle("btnBack")))
+                        Selection.activeObject = AssetDatabase.LoadAssetAtPath<TextAsset>(mMDHistory.Back());
                 }
             }
         }
 
         //------------------------------------------------------------------------------
 
-        void DrawMarkdown( float width )
+        private void DrawMarkdown(float width)
         {
-            switch( Event.current.type )
+            switch (Event.current.type)
             {
                 case EventType.Ignore:
                     break;
 
                 case EventType.ContextClick:
                     var menu = new GenericMenu();
-                    menu.AddItem( new GUIContent( "View Source" ), false, () => mRaw = !mRaw );
+                    menu.AddItem(new GUIContent("View Source"), false, () => mRaw = !mRaw);
 
                     if (MarkdownFilePath.IsNotNullAndEmpty())
-                    {
-                        menu.AddItem( new GUIContent( "Select File" ), false, () =>
-                        {
-                            Selection.activeObject = AssetDatabase.LoadAssetAtPath<TextAsset>(MarkdownFilePath);
-                        });    
-                    }
-                    
+                        menu.AddItem(new GUIContent("Select File"), false,
+                            () =>
+                            {
+                                Selection.activeObject = AssetDatabase.LoadAssetAtPath<TextAsset>(MarkdownFilePath);
+                            });
+
                     menu.ShowAsContext();
                     break;
 
                 case EventType.Layout:
-                    GUILayout.Space( mLayout.Height );
-                    mLayout.Arrange( width );
+                    GUILayout.Space(mLayout.Height);
+                    mLayout.Arrange(width);
                     break;
 
                 default:
@@ -215,8 +203,8 @@ namespace QFramework
                     break;
             }
         }
-        
-        
+
+
         public void UpdateText(string value)
         {
             if (mText != value)
@@ -225,8 +213,8 @@ namespace QFramework
                 mLayout = ParseDocument();
             }
         }
-        
-        float ContentHeight(float width)
+
+        private float ContentHeight(float width)
         {
             return mRaw ? GUI.skin.GetStyle("raw").CalcHeight(new GUIContent(mText), width) : mLayout.Height;
         }
@@ -235,6 +223,7 @@ namespace QFramework
         {
             mScrollPos = Vector2.zero;
         }
+
         public void DrawWithRect(Rect rect)
         {
             GUI.skin = mSkin;
@@ -281,21 +270,16 @@ namespace QFramework
                     DrawMarkdown(rectContainer.width);
                 }
 
-                GUILayout.Space(20);// scroll bar 增加 20 个像素
+                GUILayout.Space(20); // scroll bar 增加 20 个像素
                 GUILayout.EndHorizontal();
             }
 
-            var style  = GUI.skin.button;
-            var size   = style.fixedHeight;
-            var btn    = new Rect( Margin.x + contentWidth - size + 15, Margin.y + 30, size, size );
+            var style = GUI.skin.button;
+            var size = style.fixedHeight;
+            var btn = new Rect(Margin.x + contentWidth - size + 15, Margin.y + 30, size, size);
 
-            if( GUI.Button( btn, string.Empty, GUI.skin.GetStyle( mRaw ? "btnRaw" : "btnFile" ) ) )
-            {
-                mRaw = !mRaw;
-            }
+            if (GUI.Button(btn, string.Empty, GUI.skin.GetStyle(mRaw ? "btnRaw" : "btnFile"))) mRaw = !mRaw;
         }
-
-
     }
 }
 #endif

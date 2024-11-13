@@ -2,7 +2,7 @@
  * Copyright (c) 2017 xiaojun
  * Copyright (c) 2017 imagicbell
  * Copyright (c) 2017 ~ 2021.3  liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -12,10 +12,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,7 +26,6 @@
  ****************************************************************************/
 
 using System;
-using System.Collections;
 using System.Linq;
 using UnityEngine;
 
@@ -35,10 +34,6 @@ namespace QFramework
     [MonoSingletonPath("UIRoot/Manager")]
     public partial class UIManager : QMgrBehaviour, ISingleton
     {
-        void ISingleton.OnSingletonInit()
-        {
-        }
-
         private static UIManager mInstance;
 
         public static UIManager Instance
@@ -56,8 +51,14 @@ namespace QFramework
             }
         }
 
+        public override int ManagerId => QMgrID.UI;
 
-        public void OpenUIAsync(PanelSearchKeys panelSearchKeys,Action<IPanel> onLoad)
+        void ISingleton.OnSingletonInit()
+        {
+        }
+
+
+        public void OpenUIAsync(PanelSearchKeys panelSearchKeys, Action<IPanel> onLoad)
         {
             if (panelSearchKeys.OpenType == PanelOpenType.Single)
             {
@@ -65,7 +66,7 @@ namespace QFramework
 
                 if (retPanel == null)
                 {
-                    CreateUIAsync(panelSearchKeys, (panel) =>
+                    CreateUIAsync(panelSearchKeys, panel =>
                     {
                         retPanel = panel;
                         retPanel.Open(panelSearchKeys.UIData);
@@ -76,9 +77,7 @@ namespace QFramework
                 else
                 {
                     if (retPanel.Info != null && retPanel.Info.Level != panelSearchKeys.Level)
-                    {
-                        UIKit.Root.SetLevelOfPanel(panelSearchKeys.Level,retPanel);
-                    }
+                        UIKit.Root.SetLevelOfPanel(panelSearchKeys.Level, retPanel);
                     retPanel.Open(panelSearchKeys.UIData);
                     retPanel.Show();
                     onLoad?.Invoke(retPanel);
@@ -86,7 +85,7 @@ namespace QFramework
             }
             else
             {
-                CreateUIAsync(panelSearchKeys, (panel) =>
+                CreateUIAsync(panelSearchKeys, panel =>
                 {
                     panel.Open(panelSearchKeys.UIData);
                     panel.Show();
@@ -101,16 +100,11 @@ namespace QFramework
             {
                 var retPanel = UIKit.Table.GetPanelsByPanelSearchKeys(panelSearchKeys).FirstOrDefault();
 
-                if (retPanel == null)
-                {
-                    retPanel = CreateUI(panelSearchKeys);
-                }
+                if (retPanel == null) retPanel = CreateUI(panelSearchKeys);
 
                 if (retPanel.Info != null && retPanel.Info.Level != panelSearchKeys.Level)
-                {
-                    UIKit.Root.SetLevelOfPanel(panelSearchKeys.Level,retPanel);
-                }
-                
+                    UIKit.Root.SetLevelOfPanel(panelSearchKeys.Level, retPanel);
+
                 retPanel.Open(panelSearchKeys.UIData);
                 retPanel.Show();
                 return retPanel;
@@ -125,35 +119,29 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 显示UIBehaiviour
+        ///     显示UIBehaiviour
         /// </summary>
         /// <param name="uiBehaviourName"></param>
         public void ShowUI(PanelSearchKeys panelSearchKeys)
         {
             var retPanel = UIKit.Table.GetPanelsByPanelSearchKeys(panelSearchKeys).FirstOrDefault();
 
-            if (retPanel != null)
-            {
-                retPanel.Show();
-            }
+            if (retPanel != null) retPanel.Show();
         }
 
         /// <summary>
-        /// 隐藏UI
+        ///     隐藏UI
         /// </summary>
         /// <param name="uiBehaviourName"></param>
         public void HideUI(PanelSearchKeys panelSearchKeys)
         {
             var retPanel = UIKit.Table.GetPanelsByPanelSearchKeys(panelSearchKeys).FirstOrDefault();
 
-            if (retPanel != null)
-            {
-                retPanel.Hide();
-            }
+            if (retPanel != null) retPanel.Hide();
         }
 
         /// <summary>
-        /// 删除所有UI层
+        ///     删除所有UI层
         /// </summary>
         public void CloseAllUI()
         {
@@ -168,18 +156,15 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 隐藏所有 UI
+        ///     隐藏所有 UI
         /// </summary>
         public void HideAllUI()
         {
-            foreach (var panel in UIKit.Table)
-            {
-                panel.Hide();
-            }
+            foreach (var panel in UIKit.Table) panel.Hide();
         }
 
         /// <summary>
-        /// 关闭并卸载UI
+        ///     关闭并卸载UI
         /// </summary>
         /// <param name="behaviourName"></param>
         public void CloseUI(PanelSearchKeys panelSearchKeys)
@@ -199,25 +184,17 @@ namespace QFramework
         {
             var panel = UIKit.Table.GetPanelsByPanelSearchKeys(panelSearchKeys).FirstOrDefault();
 
-            if (panel != null)
-            {
-                UIKit.Table.Remove(panel);
-            }
+            if (panel != null) UIKit.Table.Remove(panel);
         }
 
         /// <summary>
-        /// 获取UIBehaviour
+        ///     获取UIBehaviour
         /// </summary>
         /// <param name="uiBehaviourName"></param>
         /// <returns></returns>
         public UIPanel GetUI(PanelSearchKeys panelSearchKeys)
         {
             return UIKit.Table.GetPanelsByPanelSearchKeys(panelSearchKeys).FirstOrDefault() as UIPanel;
-        }
-
-        public override int ManagerId
-        {
-            get { return QMgrID.UI; }
         }
 
         public IPanel CreateUI(PanelSearchKeys panelSearchKeys)

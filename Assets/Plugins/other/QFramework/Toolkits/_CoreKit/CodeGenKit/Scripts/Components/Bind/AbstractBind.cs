@@ -15,21 +15,21 @@ namespace QFramework
     {
         [HideInInspector] public BindType MarkType = BindType.DefaultUnityElement;
 
-        public string Comment => CustomComment;
-
-        public Transform Transform => transform;
-
         [HideInInspector] public string CustomComponentName;
 
 
         [HideInInspector] public string CustomComment;
 
+        [HideInInspector] [SerializeField] private string mComponentName;
+
+        public string Comment => CustomComment;
+
+        public Transform Transform => transform;
+
         public BindType GetBindType()
         {
             return MarkType;
         }
-
-        [HideInInspector] [SerializeField] private string mComponentName;
 
         public virtual string TypeName
         {
@@ -37,28 +37,22 @@ namespace QFramework
             {
                 if (MarkType == BindType.DefaultUnityElement)
                 {
-                    if (string.IsNullOrEmpty(mComponentName))
-                    {
-                        mComponentName = GetDefaultComponentName();
-                    }
+                    if (string.IsNullOrEmpty(mComponentName)) mComponentName = GetDefaultComponentName();
 
                     return mComponentName;
                 }
 
-                if (MarkType == BindType.Element || MarkType == BindType.Component)
-                {
-                    return CustomComponentName;
-                }
+                if (MarkType == BindType.Element || MarkType == BindType.Component) return CustomComponentName;
 
                 return mComponentName;
             }
         }
 
         /// <summary>
-        /// 组件获得优先级，可以节省一部分操作时间
+        ///     组件获得优先级，可以节省一部分操作时间
         /// </summary>
         /// <returns></returns>
-        string GetDefaultComponentName()
+        private string GetDefaultComponentName()
         {
             if (GetComponent<ViewController>()) return GetComponent<ViewController>().GetType().FullName;
 

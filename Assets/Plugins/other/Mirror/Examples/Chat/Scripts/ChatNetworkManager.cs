@@ -5,11 +5,11 @@ namespace Mirror.Examples.Chat
     [AddComponentMenu("")]
     public class ChatNetworkManager : NetworkManager
     {
-        public static new ChatNetworkManager singleton { get; private set; }
+        public new static ChatNetworkManager singleton { get; private set; }
 
         /// <summary>
-        /// Runs on both Server and Client
-        /// Networking is NOT initialized when this fires
+        ///     Runs on both Server and Client
+        ///     Networking is NOT initialized when this fires
         /// </summary>
         public override void Awake()
         {

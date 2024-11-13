@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -18,12 +18,12 @@ namespace QFramework
         {
             CodeGenKit.RegisterTemplate(nameof(ViewController), new ViewControllerTemplate());
         }
-        
+
         public CodeGenTask CreateTask(IBindGroup bindGroup)
         {
             var viewController = bindGroup.As<ViewController>();
 
-            return new CodeGenTask()
+            return new CodeGenTask
             {
                 GameObject = viewController.gameObject,
                 From = GameObjectFrom.Scene,

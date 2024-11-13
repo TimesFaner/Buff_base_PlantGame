@@ -1,5 +1,6 @@
 // "NetworkWriterPooled" instead of "PooledNetworkWriter" to group files, for
 // easier IDE workflow and more elegant code.
+
 using System;
 
 namespace Mirror
@@ -8,6 +9,9 @@ namespace Mirror
     // TODO make sealed again after removing obsolete NetworkWriterPooled!
     public class NetworkWriterPooled : NetworkWriter, IDisposable
     {
-        public void Dispose() => NetworkWriterPool.Return(this);
+        public void Dispose()
+        {
+            NetworkWriterPool.Return(this);
+        }
     }
 }

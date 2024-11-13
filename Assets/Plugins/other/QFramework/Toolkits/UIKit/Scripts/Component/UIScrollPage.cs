@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2018.8 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,60 +23,67 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using UnityEngine.Events;
 
 namespace QFramework
 {
-    public class UIScrollPageChangeEvent : UnityEvent<int, int> {}
-    
+    public class UIScrollPageChangeEvent : UnityEvent<int, int>
+    {
+    }
+
     public class UIScrollPage : MonoBehaviour, IBeginDragHandler, IEndDragHandler
     {
-        ScrollRect rect;
+        //滑动速度
+        public float smooting = 4;
+        private readonly float delay = 0.1f;
 
         //页面：0，1，2，3  索引从0开始
         //每页占的比列：0/3=0  1/3=0.333  2/3=0.6666 3/3=1
         //float[] pages = { 0f, 0.333f, 0.6666f, 1f };
-        List<float> pages = new List<float>();
+        private readonly List<float> pages = new();
 
-        int currentPageIndex = -1;
-
-        //滑动速度
-        public float smooting = 4;
-
-        //滑动的起始坐标
-        float targethorizontal = 0;
+        private int currentPageIndex = -1;
 
         //是否拖拽结束
-        bool isDrag = false;
+        private bool isDrag;
 
         /// <summary>
-        /// 用于返回一个页码，-1说明page的数据为0
+        ///     用于返回一个页码，-1说明page的数据为0
         /// </summary>
         private UIScrollPageChangeEvent mOnPageChanged;
 
-        float startime = 0f;
-        float delay = 0.1f;
+        private ScrollRect rect;
 
-        void Awake()
+        private float startime;
+
+        //滑动的起始坐标
+        private float targethorizontal;
+
+        private void Awake()
         {
             rect = transform.GetComponent<ScrollRect>();
             startime = Time.time;
         }
 
-        void Update()
+        private void Update()
         {
             if (Time.time < startime + delay) return;
             UpdatePages();
             //如果不判断。当在拖拽的时候要也会执行插值，所以会出现闪烁的效果
             //这里只要在拖动结束的时候。在进行插值
             if (!isDrag && pages.Count > 0)
-            {
-                rect.horizontalNormalizedPosition = Mathf.Lerp(rect.horizontalNormalizedPosition, targethorizontal, Time.deltaTime * smooting);
-            }
+                rect.horizontalNormalizedPosition = Mathf.Lerp(rect.horizontalNormalizedPosition, targethorizontal,
+                    Time.deltaTime * smooting);
+        }
+
+        private void OnDestroy()
+        {
+            if (mOnPageChanged != null)
+                mOnPageChanged.RemoveAllListeners();
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -90,7 +97,7 @@ namespace QFramework
 
             if (eventData != null)
             {
-                bool bLeft = eventData.position.x < eventData.pressPosition.x;
+                var bLeft = eventData.position.x < eventData.pressPosition.x;
                 if (bLeft)
                 {
                     if (currentPageIndex < pages.Count - 1)
@@ -101,6 +108,7 @@ namespace QFramework
                     if (currentPageIndex > 0)
                         currentPageIndex--;
                 }
+
                 mOnPageChanged.Invoke(pages.Count, currentPageIndex);
                 targethorizontal = pages[currentPageIndex];
             }
@@ -136,18 +144,14 @@ namespace QFramework
             //targethorizontal = pages[index];
         }
 
-        void UpdatePages()
+        private void UpdatePages()
         {
             // 获取子对象的数量
-            int count = this.rect.content.childCount;
-            int temp = 0;
-            for (int i = 0; i < count; i++)
-            {
-                if (this.rect.content.GetChild(i).gameObject.activeSelf)
-                {
+            var count = rect.content.childCount;
+            var temp = 0;
+            for (var i = 0; i < count; i++)
+                if (rect.content.GetChild(i).gameObject.activeSelf)
                     temp++;
-                }
-            }
             count = temp;
 
             if (pages.Count != count)
@@ -155,21 +159,22 @@ namespace QFramework
                 if (count != 0)
                 {
                     pages.Clear();
-                    for (int i = 0; i < count; i++)
+                    for (var i = 0; i < count; i++)
                     {
                         float page = 0;
                         if (count != 1)
-                            page = i / ((float) (count - 1));
+                            page = i / (float)(count - 1);
                         pages.Add(page);
                         //Debug.Log(i.ToString() + " page:" + page.ToString());
                     }
                 }
+
                 OnEndDrag(null);
             }
         }
 
         /// <summary>
-        /// force set page index
+        ///     force set page index
         /// </summary>
         /// <param name="pageIndex"></param>
         public void SetPage(int pageIndex)
@@ -184,7 +189,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// get all pages' count
+        ///     get all pages' count
         /// </summary>
         public int GetPageCount()
         {
@@ -192,15 +197,15 @@ namespace QFramework
         }
 
         /// <summary>
-        /// get current showed page index
+        ///     get current showed page index
         /// </summary>
         public int GetCurrentPageIndex()
         {
             return currentPageIndex;
         }
-        
+
         /// <summary>
-        /// register page change event listener
+        ///     register page change event listener
         /// </summary>
         public void AddPageChangeListener(UnityAction<int, int> listener)
         {
@@ -210,19 +215,13 @@ namespace QFramework
         }
 
         /// <summary>
-        /// remove page change event listener
+        ///     remove page change event listener
         /// </summary>
         public void RemovePageChangeListener(UnityAction<int, int> listener)
         {
             if (mOnPageChanged == null)
                 return;
             mOnPageChanged.RemoveListener(listener);
-        }
-
-        void OnDestroy()
-        {
-            if (mOnPageChanged != null)
-                mOnPageChanged.RemoveAllListeners();
         }
     }
 }

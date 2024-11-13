@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -79,6 +79,19 @@ foreach (var student in school.LevelIndex.Get(2).Where(s=>s.Age < 3))
 #endif
     public abstract class Table<TDataItem> : IEnumerable<TDataItem>, IDisposable
     {
+        public void Dispose()
+        {
+            OnDispose();
+        }
+
+
+        public abstract IEnumerator<TDataItem> GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
         public void Add(TDataItem item)
         {
             OnAdd(item);
@@ -104,37 +117,30 @@ foreach (var student in school.LevelIndex.Get(2).Where(s=>s.Age < 3))
 
         protected abstract void OnClear();
 
-
-        public abstract IEnumerator<TDataItem> GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        public void Dispose()
-        {
-            OnDispose();
-        }
-
         protected abstract void OnDispose();
     }
 
     public class TableIndex<TKeyType, TDataItem> : IDisposable
     {
-        private Dictionary<TKeyType, List<TDataItem>> mIndex =
-            new Dictionary<TKeyType, List<TDataItem>>();
+        private readonly Func<TDataItem, TKeyType> mGetKeyByDataItem;
 
-        private Func<TDataItem, TKeyType> mGetKeyByDataItem = null;
+        private Dictionary<TKeyType, List<TDataItem>> mIndex = new();
 
         public TableIndex(Func<TDataItem, TKeyType> keyGetter)
         {
             mGetKeyByDataItem = keyGetter;
         }
 
-        public IDictionary<TKeyType, List<TDataItem>> Dictionary
+        public IDictionary<TKeyType, List<TDataItem>> Dictionary => mIndex;
+
+
+        public void Dispose()
         {
-            get { return mIndex; }
+            foreach (var value in mIndex.Values) value.Release2Pool();
+
+            mIndex.Release2Pool();
+
+            mIndex = null;
         }
 
         public void Add(TDataItem dataItem)
@@ -166,10 +172,7 @@ foreach (var student in school.LevelIndex.Get(2).Where(s=>s.Age < 3))
         {
             List<TDataItem> retList = null;
 
-            if (mIndex.TryGetValue(key, out retList))
-            {
-                return retList;
-            }
+            if (mIndex.TryGetValue(key, out retList)) return retList;
 
             // 返回一个空的集合
             return Enumerable.Empty<TDataItem>();
@@ -177,25 +180,9 @@ foreach (var student in school.LevelIndex.Get(2).Where(s=>s.Age < 3))
 
         public void Clear()
         {
-            foreach (var value in mIndex.Values)
-            {
-                value.Clear();
-            }
+            foreach (var value in mIndex.Values) value.Clear();
 
             mIndex.Clear();
-        }
-
-
-        public void Dispose()
-        {
-            foreach (var value in mIndex.Values)
-            {
-                value.Release2Pool();
-            }
-
-            mIndex.Release2Pool();
-
-            mIndex = null;
         }
     }
 }

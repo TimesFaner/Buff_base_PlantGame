@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2017 ~ 2021.4 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -53,50 +53,32 @@ namespace QFramework
         public void Release(object refOwner = null)
         {
             --RefCount;
-            if (RefCount == 0)
-            {
-                OnZeroRef();
-            }
+            if (RefCount == 0) OnZeroRef();
         }
 
         protected virtual void OnZeroRef()
         {
         }
     }
-    
+
     public sealed class SafeARC : IRefCounter
     {
-        public int RefCount
-        {
-            get { return mOwners.Count; }
-        }
+        public HashSet<object> Owners { get; } = new();
 
-        public HashSet<object> Owners
-        {
-            get { return mOwners; }
-        }
-
-        readonly HashSet<object> mOwners = new HashSet<object>();
+        public int RefCount => Owners.Count;
 
         public void Retain(object refOwner)
         {
-            if (!Owners.Add(refOwner))
-            {
-                Debug.LogError("ObjectIsAlreadyRetainedByOwnerException");
-            }
+            if (!Owners.Add(refOwner)) Debug.LogError("ObjectIsAlreadyRetainedByOwnerException");
         }
 
         public void Release(object refOwner)
         {
-            if (!Owners.Remove(refOwner))
-            {
-                Debug.LogError("ObjectIsNotRetainedByOwnerExceptionWithHint");
-            }
+            if (!Owners.Remove(refOwner)) Debug.LogError("ObjectIsNotRetainedByOwnerExceptionWithHint");
         }
     }
 
     public sealed class UnsafeARC : SimpleRC
     {
-        
     }
 }

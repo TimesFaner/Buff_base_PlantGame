@@ -10,13 +10,13 @@ namespace ParrelSync
     public class ParrelSyncProjectSettings : ScriptableObject
     {
         private const string ParrelSyncScriptableObjectsDirectory = "Assets/Plugins/ParrelSync/ScriptableObjects";
-        private const string ParrelSyncSettingsPath = ParrelSyncScriptableObjectsDirectory + "/" +
-                                                       nameof(ParrelSyncProjectSettings) + ".asset";
 
-        [SerializeField]
-        [HideInInspector]
-        private List<string> m_OptionalSymbolicLinkFolders;
+        private const string ParrelSyncSettingsPath = ParrelSyncScriptableObjectsDirectory + "/" +
+                                                      nameof(ParrelSyncProjectSettings) + ".asset";
+
         public const string NameOfOptionalSymbolicLinkFolders = nameof(m_OptionalSymbolicLinkFolders);
+
+        [SerializeField] [HideInInspector] private List<string> m_OptionalSymbolicLinkFolders;
 
         private static ParrelSyncProjectSettings GetOrCreateSettings()
         {
@@ -34,9 +34,7 @@ namespace ParrelSync
             projectSettings = CreateInstance<ParrelSyncProjectSettings>();
             projectSettings.m_OptionalSymbolicLinkFolders = new List<string>();
             if (!Directory.Exists(ParrelSyncScriptableObjectsDirectory))
-            {
                 Directory.CreateDirectory(ParrelSyncScriptableObjectsDirectory);
-            }
             AssetDatabase.CreateAsset(projectSettings, ParrelSyncSettingsPath);
             AssetDatabase.SaveAssets();
             return projectSettings;
@@ -54,11 +52,6 @@ namespace ParrelSync
 
         private SerializedObject _parrelSyncProjectSettings;
 
-        private class Styles
-        {
-            public static readonly GUIContent SymlinkSectionHeading = new GUIContent("Optional Folders to Symbolically Link");
-        }
-
         private ParrelSyncSettingsProvider(string path, SettingsScope scope = SettingsScope.User)
             : base(path, scope)
         {
@@ -72,15 +65,14 @@ namespace ParrelSync
 
         public override void OnGUI(string searchContext)
         {
-            var property = _parrelSyncProjectSettings.FindProperty(ParrelSyncProjectSettings.NameOfOptionalSymbolicLinkFolders);
+            var property =
+                _parrelSyncProjectSettings.FindProperty(ParrelSyncProjectSettings.NameOfOptionalSymbolicLinkFolders);
             if (property is null || !property.isArray || property.arrayElementType != "string")
                 return;
 
             var optionalFolderPaths = new List<string>(property.arraySize);
             for (var i = 0; i < property.arraySize; ++i)
-            {
                 optionalFolderPaths.Add(property.GetArrayElementAtIndex(i).stringValue);
-            }
             optionalFolderPaths.Add("");
 
             GUILayout.BeginVertical("GroupBox");
@@ -91,7 +83,8 @@ namespace ParrelSync
             for (var i = 0; i < optionalFolderPaths.Count; ++i)
             {
                 GUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(optionalFolderPaths[i], EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+                EditorGUILayout.LabelField(optionalFolderPaths[i], EditorStyles.textField,
+                    GUILayout.Height(EditorGUIUtility.singleLineHeight));
                 if (GUILayout.Button("Select", GUILayout.Width(60)))
                 {
                     var result = EditorUtility.OpenFolderPanel("Select Folder to Symbolically Link...", "", "");
@@ -105,13 +98,16 @@ namespace ParrelSync
                         Debug.LogWarning("Symbolic Link folder must be within the project directory");
                     }
                 }
+
                 if (GUILayout.Button("Clear", GUILayout.Width(60)))
                 {
                     optionalFolderPaths[i] = "";
                     optionalFolderPathsIsDirty = true;
                 }
+
                 GUILayout.EndHorizontal();
             }
+
             GUILayout.EndVertical();
 
             if (!optionalFolderPathsIsDirty)
@@ -120,9 +116,7 @@ namespace ParrelSync
             optionalFolderPaths.RemoveAll(str => str == "");
             property.arraySize = optionalFolderPaths.Count;
             for (var i = 0; i < property.arraySize; ++i)
-            {
                 property.GetArrayElementAtIndex(i).stringValue = optionalFolderPaths[i];
-            }
             _parrelSyncProjectSettings.ApplyModifiedProperties();
             AssetDatabase.SaveAssets();
         }
@@ -135,6 +129,11 @@ namespace ParrelSync
             {
                 keywords = GetSearchKeywordsFromGUIContentProperties<Styles>()
             };
+        }
+
+        private class Styles
+        {
+            public static readonly GUIContent SymlinkSectionHeading = new("Optional Folders to Symbolically Link");
         }
     }
 }

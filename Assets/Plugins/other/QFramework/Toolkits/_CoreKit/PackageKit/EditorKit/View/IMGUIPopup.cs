@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -15,47 +15,30 @@ namespace QFramework
 {
     public interface IPopup : IMGUIView
     {
+        BindableProperty<int> IndexProperty { get; }
         IPopup WithIndexAndMenus(int index, params string[] menus);
 
         IPopup OnIndexChanged(Action<int> indexChanged);
 
         IPopup ToolbarStyle();
-
-        BindableProperty<int> IndexProperty { get; }
         IPopup Menus(List<string> value);
     }
 
     public class PopupView : IMGUIAbstractView, IPopup
     {
+        private string[] mMenus = { };
+
         protected PopupView()
         {
             mStyle = new FluentGUIStyle(() => EditorStyles.popup);
         }
 
-        public static IPopup Create()
-        {
-            return new PopupView();
-        }
-
-        private BindableProperty<int> mIndexProperty = new BindableProperty<int>(0);
-
-        public BindableProperty<int> IndexProperty
-        {
-            get { return mIndexProperty; }
-        }
+        public BindableProperty<int> IndexProperty { get; } = new();
 
         public IPopup Menus(List<string> menus)
         {
             mMenus = menus.ToArray();
             return this;
-        }
-
-        private string[] mMenus = { };
-
-        protected override void OnGUI()
-        {
-            IndexProperty.Value =
-                EditorGUILayout.Popup(IndexProperty.Value, mMenus, mStyle.Value, LayoutStyles);
         }
 
         public IPopup WithIndexAndMenus(int index, params string[] menus)
@@ -75,6 +58,17 @@ namespace QFramework
         {
             mStyle = new FluentGUIStyle(() => EditorStyles.toolbarPopup);
             return this;
+        }
+
+        public static IPopup Create()
+        {
+            return new PopupView();
+        }
+
+        protected override void OnGUI()
+        {
+            IndexProperty.Value =
+                EditorGUILayout.Popup(IndexProperty.Value, mMenus, mStyle.Value, LayoutStyles);
         }
     }
 }

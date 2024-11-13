@@ -14,20 +14,19 @@ using UnityEngine;
 
 namespace QFramework
 {
-    [CustomEditor( typeof( MDAsset ) )]
+    [CustomEditor(typeof(MDAsset))]
     public class MDEditorAsset : Editor
     {
+        private MDViewer mViewer;
         public GUISkin SkinDark => Resources.Load<GUISkin>("Skin/MarkdownViewerSkin");
         public GUISkin SkinLight => Resources.Load<GUISkin>("Skin/MarkdownSkinQS");
 
-        MDViewer mViewer;
-
         protected void OnEnable()
         {
-            var content = ( target as MDAsset ).text;
-            var path    = AssetDatabase.GetAssetPath( target );
+            var content = (target as MDAsset).text;
+            var path = AssetDatabase.GetAssetPath(target);
 
-            mViewer = new MDViewer( MDPreferences.DarkSkin ? SkinDark : SkinLight, path, content );
+            mViewer = new MDViewer(MDPreferences.DarkSkin ? SkinDark : SkinLight, path, content);
             EditorApplication.update += UpdateRequests;
         }
 
@@ -53,12 +52,9 @@ namespace QFramework
         }
 
 
-        void UpdateRequests()
+        private void UpdateRequests()
         {
-            if( mViewer.Update() )
-            {
-                Repaint();
-            }
+            if (mViewer.Update()) Repaint();
         }
     }
 }

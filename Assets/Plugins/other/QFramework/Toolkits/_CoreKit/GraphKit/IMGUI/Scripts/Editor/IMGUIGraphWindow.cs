@@ -1,16 +1,16 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
  ****************************************************************************/
 
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
-using System;
 using Object = UnityEngine.Object;
 
 namespace QFramework
@@ -19,13 +19,18 @@ namespace QFramework
     public partial class GUIGraphWindow : EditorWindow, IUnRegisterList
     {
         public static GUIGraphWindow current;
-
-        /// <summary> Stores node positions for all nodePorts. </summary>
-        public Dictionary<GUIGraphNodePort, Rect> portConnectionPoints => _portConnectionPoints;
-
-        private Dictionary<GUIGraphNodePort, Rect> _portConnectionPoints = new Dictionary<GUIGraphNodePort, Rect>();
         [SerializeField] private NodePortReference[] _references = new NodePortReference[0];
         [SerializeField] private Rect[] _rects = new Rect[0];
+        public GUIGraph graph;
+
+        private Func<bool> _isDocked;
+
+        private Vector2 _panOffset;
+
+        private float _zoom = 1;
+
+        /// <summary> Stores node positions for all nodePorts. </summary>
+        public Dictionary<GUIGraphNodePort, Rect> portConnectionPoints { get; } = new();
 
         private Func<bool> isDocked
         {
@@ -36,38 +41,52 @@ namespace QFramework
             }
         }
 
-        private Func<bool> _isDocked;
+        public Dictionary<GUIGraphNode, Vector2> nodeSizes { get; } = new();
 
-        [System.Serializable]
-        private class NodePortReference
+        public Vector2 panOffset
         {
-            [SerializeField] private GUIGraphNode _node;
-            [SerializeField] private string _name;
-
-            public NodePortReference(GUIGraphNodePort nodePort)
+            get => _panOffset;
+            set
             {
-                _node = nodePort.node;
-                _name = nodePort.fieldName;
+                _panOffset = value;
+                Repaint();
             }
+        }
 
-            public GUIGraphNodePort GetNodePort()
+        public float zoom
+        {
+            get => _zoom;
+            set
             {
-                if (_node == null)
+                _zoom = Mathf.Clamp(value, GUIGraphPreferences.GetSettings().minZoom,
+                    GUIGraphPreferences.GetSettings().maxZoom);
+                Repaint();
+            }
+        }
+
+        private void OnEnable()
+        {
+            // Reload portConnectionPoints if there are any
+            var length = _references.Length;
+            if (length == _rects.Length)
+                for (var i = 0; i < length; i++)
                 {
-                    return null;
+                    var nodePort = _references[i].GetNodePort();
+                    if (nodePort != null)
+                        portConnectionPoints.Add(nodePort, _rects[i]);
                 }
 
-                return _node.GetPort(_name);
-            }
+            LocaleKitEditor.IsCN.RegisterWithInitValue(_ => { graphEditor?.OnLanguageChanged(); })
+                .AddToUnregisterList(this);
         }
 
         private void OnDisable()
         {
             // Cache portConnectionPoints before serialization starts
-            int count = portConnectionPoints.Count;
+            var count = portConnectionPoints.Count;
             _references = new NodePortReference[count];
             _rects = new Rect[count];
-            int index = 0;
+            var index = 0;
             foreach (var portConnectionPoint in portConnectionPoints)
             {
                 _references[index] = new NodePortReference(portConnectionPoint.Key);
@@ -78,55 +97,7 @@ namespace QFramework
             this.UnRegisterAll();
         }
 
-        private void OnEnable()
-        {
-            // Reload portConnectionPoints if there are any
-            int length = _references.Length;
-            if (length == _rects.Length)
-            {
-                for (int i = 0; i < length; i++)
-                {
-                    GUIGraphNodePort nodePort = _references[i].GetNodePort();
-                    if (nodePort != null)
-                        _portConnectionPoints.Add(nodePort, _rects[i]);
-                }
-            }
-
-            LocaleKitEditor.IsCN.RegisterWithInitValue(_ => { graphEditor?.OnLanguageChanged(); })
-                .AddToUnregisterList(this);
-        }
-
-        public Dictionary<GUIGraphNode, Vector2> nodeSizes => _nodeSizes;
-
-        private Dictionary<GUIGraphNode, Vector2> _nodeSizes = new Dictionary<GUIGraphNode, Vector2>();
-        public GUIGraph graph;
-
-        public Vector2 panOffset
-        {
-            get { return _panOffset; }
-            set
-            {
-                _panOffset = value;
-                Repaint();
-            }
-        }
-
-        private Vector2 _panOffset;
-
-        public float zoom
-        {
-            get { return _zoom; }
-            set
-            {
-                _zoom = Mathf.Clamp(value, GUIGraphPreferences.GetSettings().minZoom,
-                    GUIGraphPreferences.GetSettings().maxZoom);
-                Repaint();
-            }
-        }
-
-        private float _zoom = 1;
-
-        void OnFocus()
+        private void OnFocus()
         {
             current = this;
             ValidateGraphEditor();
@@ -139,10 +110,12 @@ namespace QFramework
             dragThreshold = Math.Max(1f, Screen.width / 1000f);
         }
 
-        void OnLostFocus()
+        private void OnLostFocus()
         {
             if (graphEditor != null) graphEditor.OnWindowFocusLost();
         }
+
+        public List<IUnRegister> UnregisterList { get; } = new();
 
         [InitializeOnLoadMethod]
         private static void OnLoad()
@@ -154,17 +127,14 @@ namespace QFramework
         /// <summary> Handle Selection Change events</summary>
         private static void OnSelectionChanged()
         {
-            GUIGraph nodeGraph = Selection.activeObject as GUIGraph;
-            if (nodeGraph && !AssetDatabase.Contains(nodeGraph))
-            {
-                Open(nodeGraph);
-            }
+            var nodeGraph = Selection.activeObject as GUIGraph;
+            if (nodeGraph && !AssetDatabase.Contains(nodeGraph)) Open(nodeGraph);
         }
 
         /// <summary> Make sure the graph editor is assigned and to the right object </summary>
         private void ValidateGraphEditor()
         {
-            GUIGraphEditor graphEditor = GUIGraphEditor.GetEditor(graph, this);
+            var graphEditor = GUIGraphEditor.GetEditor(graph, this);
             if (this.graphEditor != graphEditor && graphEditor != null)
             {
                 this.graphEditor = graphEditor;
@@ -175,7 +145,7 @@ namespace QFramework
         /// <summary> Create editor window </summary>
         public static GUIGraphWindow Init()
         {
-            GUIGraphWindow w = CreateInstance<GUIGraphWindow>();
+            var w = CreateInstance<GUIGraphWindow>();
             w.titleContent = new GUIContent("GraphKit.IMGUI");
             w.wantsMouseMove = true;
             w.Show();
@@ -189,21 +159,22 @@ namespace QFramework
                 EditorUtility.SetDirty(graph);
                 if (GUIGraphPreferences.GetSettings().autoSave) AssetDatabase.SaveAssets();
             }
-            else SaveAs();
+            else
+            {
+                SaveAs();
+            }
         }
 
         public void SaveAs()
         {
-            string path = EditorUtility.SaveFilePanelInProject("Save NodeGraph", "NewNodeGraph", "asset", "");
+            var path = EditorUtility.SaveFilePanelInProject("Save NodeGraph", "NewNodeGraph", "asset", "");
             if (string.IsNullOrEmpty(path)) return;
-            else
-            {
-                GUIGraph existingGraph = AssetDatabase.LoadAssetAtPath<GUIGraph>(path);
-                if (existingGraph != null) AssetDatabase.DeleteAsset(path);
-                AssetDatabase.CreateAsset(graph, path);
-                EditorUtility.SetDirty(graph);
-                if (GUIGraphPreferences.GetSettings().autoSave) AssetDatabase.SaveAssets();
-            }
+
+            var existingGraph = AssetDatabase.LoadAssetAtPath<GUIGraph>(path);
+            if (existingGraph != null) AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(graph, path);
+            EditorUtility.SetDirty(graph);
+            if (GUIGraphPreferences.GetSettings().autoSave) AssetDatabase.SaveAssets();
         }
 
         private void DraggableWindow(int windowID)
@@ -213,12 +184,12 @@ namespace QFramework
 
         public Vector2 WindowToGridPosition(Vector2 windowPosition)
         {
-            return (windowPosition - (position.size * 0.5f) - (panOffset / zoom)) * zoom;
+            return (windowPosition - position.size * 0.5f - panOffset / zoom) * zoom;
         }
 
         public Vector2 GridToWindowPosition(Vector2 gridPosition)
         {
-            return (position.size * 0.5f) + (panOffset / zoom) + (gridPosition / zoom);
+            return position.size * 0.5f + panOffset / zoom + gridPosition / zoom;
         }
 
         public Rect GridToWindowRectNoClipped(Rect gridRect)
@@ -236,10 +207,10 @@ namespace QFramework
 
         public Vector2 GridToWindowPositionNoClipped(Vector2 gridPosition)
         {
-            Vector2 center = position.size * 0.5f;
+            var center = position.size * 0.5f;
             // UI Sharpness complete fix - Round final offset not panOffset
-            float xOffset = Mathf.Round(center.x * zoom + (panOffset.x + gridPosition.x));
-            float yOffset = Mathf.Round(center.y * zoom + (panOffset.y + gridPosition.y));
+            var xOffset = Mathf.Round(center.x * zoom + (panOffset.x + gridPosition.x));
+            var yOffset = Mathf.Round(center.y * zoom + (panOffset.y + gridPosition.y));
             return new Vector2(xOffset, yOffset);
         }
 
@@ -247,16 +218,19 @@ namespace QFramework
         {
             if (add)
             {
-                List<Object> selection = new List<Object>(Selection.objects);
+                var selection = new List<Object>(Selection.objects);
                 selection.Add(node);
                 Selection.objects = selection.ToArray();
             }
-            else Selection.objects = new Object[] { node };
+            else
+            {
+                Selection.objects = new Object[] { node };
+            }
         }
 
         public void DeselectNode(GUIGraphNode node)
         {
-            List<Object> selection = new List<Object>(Selection.objects);
+            var selection = new List<Object>(Selection.objects);
             selection.Remove(node);
             Selection.objects = selection.ToArray();
         }
@@ -264,7 +238,7 @@ namespace QFramework
         [OnOpenAsset(0)]
         public static bool OnOpen(int instanceID, int line)
         {
-            GUIGraph nodeGraph = EditorUtility.InstanceIDToObject(instanceID) as GUIGraph;
+            var nodeGraph = EditorUtility.InstanceIDToObject(instanceID) as GUIGraph;
             if (nodeGraph != null)
             {
                 Open(nodeGraph);
@@ -275,12 +249,12 @@ namespace QFramework
         }
 
 
-        static void TryUpdateGraphWindowName(GUIGraph graph)
+        private static void TryUpdateGraphWindowName(GUIGraph graph)
         {
-            GUIGraphWindow w = GetWindow(typeof(GUIGraphWindow), false, graph.Name, true) as GUIGraphWindow;
+            var w = GetWindow(typeof(GUIGraphWindow), false, graph.Name, true) as GUIGraphWindow;
             if (w.titleContent.text != graph.Name) w.titleContent.text = graph.Name;
         }
-        
+
         public static GUIGraphWindow OpenWithGraph(GUIGraph graph)
         {
             TryUpdateGraphWindowName(graph);
@@ -297,7 +271,7 @@ namespace QFramework
         {
             TryUpdateGraphWindowName(graph);
             if (!graph) return null;
-            GUIGraphWindow w = GetWindow(typeof(GUIGraphWindow), false, graph.Name, true) as GUIGraphWindow;
+            var w = GetWindow(typeof(GUIGraphWindow), false, graph.Name, true) as GUIGraphWindow;
             w.wantsMouseMove = true;
             w.graph = graph;
             return w;
@@ -306,14 +280,29 @@ namespace QFramework
         /// <summary> Repaint all open NodeEditorWindows. </summary>
         public static void RepaintAll()
         {
-            GUIGraphWindow[] windows = Resources.FindObjectsOfTypeAll<GUIGraphWindow>();
-            for (int i = 0; i < windows.Length; i++)
-            {
-                windows[i].Repaint();
-            }
+            var windows = Resources.FindObjectsOfTypeAll<GUIGraphWindow>();
+            for (var i = 0; i < windows.Length; i++) windows[i].Repaint();
         }
 
-        public List<IUnRegister> UnregisterList { get; } = new List<IUnRegister>();
+        [Serializable]
+        private class NodePortReference
+        {
+            [SerializeField] private GUIGraphNode _node;
+            [SerializeField] private string _name;
+
+            public NodePortReference(GUIGraphNodePort nodePort)
+            {
+                _node = nodePort.node;
+                _name = nodePort.fieldName;
+            }
+
+            public GUIGraphNodePort GetNodePort()
+            {
+                if (_node == null) return null;
+
+                return _node.GetPort(_name);
+            }
+        }
     }
 }
 #endif

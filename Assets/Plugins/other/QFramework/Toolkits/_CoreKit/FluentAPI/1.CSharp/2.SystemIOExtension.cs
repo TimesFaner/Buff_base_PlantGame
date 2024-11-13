@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -29,10 +29,7 @@ testDir.CreateDirIfNotExists();"
 #endif
         public static string CreateDirIfNotExists(this string dirFullPath)
         {
-            if (!Directory.Exists(dirFullPath))
-            {
-                Directory.CreateDirectory(dirFullPath);
-            }
+            if (!Directory.Exists(dirFullPath)) Directory.CreateDirectory(dirFullPath);
 
             return dirFullPath;
         }
@@ -49,10 +46,7 @@ testDir.DeleteDirIfExists();
 #endif
         public static void DeleteDirIfExists(this string dirFullPath)
         {
-            if (Directory.Exists(dirFullPath))
-            {
-                Directory.Delete(dirFullPath, true);
-            }
+            if (Directory.Exists(dirFullPath)) Directory.Delete(dirFullPath, true);
         }
 
 #if UNITY_EDITOR
@@ -67,10 +61,7 @@ testDir.EmptyDirIfExists();
 #endif
         public static void EmptyDirIfExists(this string dirFullPath)
         {
-            if (Directory.Exists(dirFullPath))
-            {
-                Directory.Delete(dirFullPath, true);
-            }
+            if (Directory.Exists(dirFullPath)) Directory.Delete(dirFullPath, true);
 
             Directory.CreateDirectory(dirFullPath);
         }
@@ -163,8 +154,8 @@ Debug.Log(fileName0);
         {
             return Path.GetExtension(filePath);
         }
-        
-        
+
+
 #if UNITY_EDITOR
         // v1 No.156
         [MethodAPI]
@@ -178,13 +169,9 @@ Debug.Log(fileName0);
 #endif
         public static string GetFolderPath(this string path)
         {
-                if (string.IsNullOrEmpty(path))
-                {
-                        return string.Empty;
-                }
+            if (string.IsNullOrEmpty(path)) return string.Empty;
 
-                return Path.GetDirectoryName(path);
+            return Path.GetDirectoryName(path);
         }
-
     }
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -20,10 +20,7 @@ namespace QFramework
 
         public void OnGUI()
         {
-            if (GUILayout.Button(Locale.Config))
-            {
-                Selection.activeObject = LanguageDefineConfig.Default;
-            }
+            if (GUILayout.Button(Locale.Config)) Selection.activeObject = LanguageDefineConfig.Default;
         }
 
         public void OnWindowGUIEnd()
@@ -35,7 +32,7 @@ namespace QFramework
         }
 
 
-        class Locale
+        private class Locale
         {
             public static string Config => LocaleKitEditor.IsCN.Value ? "配置" : "Config";
         }

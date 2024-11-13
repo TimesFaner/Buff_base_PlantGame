@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 ~ 2023 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEditor;
 using UnityEngine;
 
 namespace QFramework
@@ -21,20 +22,77 @@ namespace QFramework
             Output
         }
 
-        public int ConnectionCount
+        [SerializeField] private string _fieldName;
+        [SerializeField] private GUIGraphNode _node;
+        [SerializeField] private string _typeQualifiedName;
+        [SerializeField] private List<PortConnection> connections = new();
+        [SerializeField] private IO _direction;
+        [SerializeField] private GUIGraphNode.ConnectionType _connectionType;
+        [SerializeField] private GUIGraphNode.TypeConstraint _typeConstraint;
+        [SerializeField] private bool _dynamic;
+
+        private Type valueType;
+
+        /// <summary> Construct a static targetless nodeport. Used as a template. </summary>
+        public GUIGraphNodePort(FieldInfo fieldInfo)
         {
-            get { return connections.Count; }
+            _fieldName = fieldInfo.Name;
+            ValueType = fieldInfo.FieldType;
+            _dynamic = false;
+            var attribs = fieldInfo.GetCustomAttributes(false);
+            for (var i = 0; i < attribs.Length; i++)
+                if (attribs[i] is GUIGraphNode.InputAttribute)
+                {
+                    _direction = IO.Input;
+                    _connectionType = (attribs[i] as GUIGraphNode.InputAttribute).connectionType;
+                    _typeConstraint = (attribs[i] as GUIGraphNode.InputAttribute).typeConstraint;
+                }
+                else if (attribs[i] is GUIGraphNode.OutputAttribute)
+                {
+                    _direction = IO.Output;
+                    _connectionType = (attribs[i] as GUIGraphNode.OutputAttribute).connectionType;
+                    _typeConstraint = (attribs[i] as GUIGraphNode.OutputAttribute).typeConstraint;
+                }
         }
+
+        /// <summary> Copy a nodePort but assign it to another node. </summary>
+        public GUIGraphNodePort(GUIGraphNodePort nodePort, GUIGraphNode node)
+        {
+            _fieldName = nodePort._fieldName;
+            ValueType = nodePort.valueType;
+            _direction = nodePort.direction;
+            _dynamic = nodePort._dynamic;
+            _connectionType = nodePort._connectionType;
+            _typeConstraint = nodePort._typeConstraint;
+            _node = node;
+        }
+
+        /// <summary>
+        ///     Construct a dynamic port. Dynamic ports are not forgotten on reimport, and is ideal for runtime-created
+        ///     ports.
+        /// </summary>
+        public GUIGraphNodePort(string fieldName, Type type, IO direction, GUIGraphNode.ConnectionType connectionType,
+            GUIGraphNode.TypeConstraint typeConstraint, GUIGraphNode node)
+        {
+            _fieldName = fieldName;
+            ValueType = type;
+            _direction = direction;
+            _node = node;
+            _dynamic = true;
+            _connectionType = connectionType;
+            _typeConstraint = typeConstraint;
+        }
+
+        public int ConnectionCount => connections.Count;
 
         /// <summary> Return the first non-null connection </summary>
         public GUIGraphNodePort Connection
         {
             get
             {
-                for (int i = 0; i < connections.Count; i++)
-                {
-                    if (connections[i] != null) return connections[i].Port;
-                }
+                for (var i = 0; i < connections.Count; i++)
+                    if (connections[i] != null)
+                        return connections[i].Port;
 
                 return null;
             }
@@ -42,54 +100,36 @@ namespace QFramework
 
         public IO direction
         {
-            get { return _direction; }
-            internal set { _direction = value; }
+            get => _direction;
+            internal set => _direction = value;
         }
 
         public GUIGraphNode.ConnectionType connectionType
         {
-            get { return _connectionType; }
-            internal set { _connectionType = value; }
+            get => _connectionType;
+            internal set => _connectionType = value;
         }
 
         public GUIGraphNode.TypeConstraint typeConstraint
         {
-            get { return _typeConstraint; }
-            internal set { _typeConstraint = value; }
+            get => _typeConstraint;
+            internal set => _typeConstraint = value;
         }
 
         /// <summary> Is this port connected to anytihng? </summary>
-        public bool IsConnected
-        {
-            get { return connections.Count != 0; }
-        }
+        public bool IsConnected => connections.Count != 0;
 
-        public bool IsInput
-        {
-            get { return direction == IO.Input; }
-        }
+        public bool IsInput => direction == IO.Input;
 
-        public bool IsOutput
-        {
-            get { return direction == IO.Output; }
-        }
+        public bool IsOutput => direction == IO.Output;
 
-        public string fieldName
-        {
-            get { return _fieldName; }
-        }
+        public string fieldName => _fieldName;
 
         public GUIGraphNode node => _node;
 
-        public bool IsDynamic
-        {
-            get { return _dynamic; }
-        }
+        public bool IsDynamic => _dynamic;
 
-        public bool IsStatic
-        {
-            get { return !_dynamic; }
-        }
+        public bool IsStatic => !_dynamic;
 
         public Type ValueType
         {
@@ -106,70 +146,10 @@ namespace QFramework
             }
         }
 
-        private Type valueType;
-
-        [SerializeField] private string _fieldName;
-        [SerializeField] private GUIGraphNode _node;
-        [SerializeField] private string _typeQualifiedName;
-        [SerializeField] private List<PortConnection> connections = new List<PortConnection>();
-        [SerializeField] private IO _direction;
-        [SerializeField] private GUIGraphNode.ConnectionType _connectionType;
-        [SerializeField] private GUIGraphNode.TypeConstraint _typeConstraint;
-        [SerializeField] private bool _dynamic;
-
-        /// <summary> Construct a static targetless nodeport. Used as a template. </summary>
-        public GUIGraphNodePort(FieldInfo fieldInfo)
-        {
-            _fieldName = fieldInfo.Name;
-            ValueType = fieldInfo.FieldType;
-            _dynamic = false;
-            var attribs = fieldInfo.GetCustomAttributes(false);
-            for (int i = 0; i < attribs.Length; i++)
-            {
-                if (attribs[i] is GUIGraphNode.InputAttribute)
-                {
-                    _direction = IO.Input;
-                    _connectionType = (attribs[i] as GUIGraphNode.InputAttribute).connectionType;
-                    _typeConstraint = (attribs[i] as GUIGraphNode.InputAttribute).typeConstraint;
-                }
-                else if (attribs[i] is GUIGraphNode.OutputAttribute)
-                {
-                    _direction = IO.Output;
-                    _connectionType = (attribs[i] as GUIGraphNode.OutputAttribute).connectionType;
-                    _typeConstraint = (attribs[i] as GUIGraphNode.OutputAttribute).typeConstraint;
-                }
-            }
-        }
-
-        /// <summary> Copy a nodePort but assign it to another node. </summary>
-        public GUIGraphNodePort(GUIGraphNodePort nodePort, GUIGraphNode node)
-        {
-            _fieldName = nodePort._fieldName;
-            ValueType = nodePort.valueType;
-            _direction = nodePort.direction;
-            _dynamic = nodePort._dynamic;
-            _connectionType = nodePort._connectionType;
-            _typeConstraint = nodePort._typeConstraint;
-            _node = node;
-        }
-
-        /// <summary> Construct a dynamic port. Dynamic ports are not forgotten on reimport, and is ideal for runtime-created ports. </summary>
-        public GUIGraphNodePort(string fieldName, Type type, IO direction, GUIGraphNode.ConnectionType connectionType,
-            GUIGraphNode.TypeConstraint typeConstraint, GUIGraphNode node)
-        {
-            _fieldName = fieldName;
-            this.ValueType = type;
-            _direction = direction;
-            _node = node;
-            _dynamic = true;
-            _connectionType = connectionType;
-            _typeConstraint = typeConstraint;
-        }
-
         /// <summary> Checks all connections for invalid references, and removes them. </summary>
         public void VerifyConnections()
         {
-            for (int i = connections.Count - 1; i >= 0; i--)
+            for (var i = connections.Count - 1; i >= 0; i--)
             {
                 if (connections[i].node != null &&
                     !string.IsNullOrEmpty(connections[i].fieldName) &&
@@ -180,7 +160,9 @@ namespace QFramework
         }
 
         /// <summary> Return the output value of this node through its parent nodes GetValue override method. </summary>
-        /// <returns> <see cref="Node.GetValue(NodePort)"/> </returns>
+        /// <returns>
+        ///     <see cref="Node.GetValue(NodePort)" />
+        /// </returns>
         public object GetOutputValue()
         {
             if (direction == IO.Input) return null;
@@ -188,22 +170,26 @@ namespace QFramework
         }
 
         /// <summary> Return the output value of the first connected port. Returns null if none found or invalid.</summary>
-        /// <returns> <see cref="NodePort.GetOutputValue"/> </returns>
+        /// <returns>
+        ///     <see cref="NodePort.GetOutputValue" />
+        /// </returns>
         public object GetInputValue()
         {
-            GUIGraphNodePort connectedPort = Connection;
+            var connectedPort = Connection;
             if (connectedPort == null) return null;
             return connectedPort.GetOutputValue();
         }
 
         /// <summary> Return the output values of all connected ports. </summary>
-        /// <returns> <see cref="NodePort.GetOutputValue"/> </returns>
+        /// <returns>
+        ///     <see cref="NodePort.GetOutputValue" />
+        /// </returns>
         public object[] GetInputValues()
         {
-            object[] objs = new object[ConnectionCount];
-            for (int i = 0; i < ConnectionCount; i++)
+            var objs = new object[ConnectionCount];
+            for (var i = 0; i < ConnectionCount; i++)
             {
-                GUIGraphNodePort connectedPort = connections[i].Port;
+                var connectedPort = connections[i].Port;
                 if (connectedPort == null)
                 {
                     // if we happen to find a null port, remove it and look again
@@ -219,76 +205,81 @@ namespace QFramework
         }
 
         /// <summary> Return the output value of the first connected port. Returns null if none found or invalid. </summary>
-        /// <returns> <see cref="NodePort.GetOutputValue"/> </returns>
+        /// <returns>
+        ///     <see cref="NodePort.GetOutputValue" />
+        /// </returns>
         public T GetInputValue<T>()
         {
-            object obj = GetInputValue();
-            return obj is T ? (T)obj : default(T);
+            var obj = GetInputValue();
+            return obj is T ? (T)obj : default;
         }
 
         /// <summary> Return the output values of all connected ports. </summary>
-        /// <returns> <see cref="NodePort.GetOutputValue"/> </returns>
+        /// <returns>
+        ///     <see cref="NodePort.GetOutputValue" />
+        /// </returns>
         public T[] GetInputValues<T>()
         {
-            object[] objs = GetInputValues();
-            T[] ts = new T[objs.Length];
-            for (int i = 0; i < objs.Length; i++)
-            {
-                if (objs[i] is T) ts[i] = (T)objs[i];
-            }
+            var objs = GetInputValues();
+            var ts = new T[objs.Length];
+            for (var i = 0; i < objs.Length; i++)
+                if (objs[i] is T)
+                    ts[i] = (T)objs[i];
 
             return ts;
         }
 
         /// <summary> Return true if port is connected and has a valid input. </summary>
-        /// <returns> <see cref="NodePort.GetOutputValue"/> </returns>
+        /// <returns>
+        ///     <see cref="NodePort.GetOutputValue" />
+        /// </returns>
         public bool TryGetInputValue<T>(out T value)
         {
-            object obj = GetInputValue();
+            var obj = GetInputValue();
             if (obj is T)
             {
                 value = (T)obj;
                 return true;
             }
-            else
-            {
-                value = default(T);
-                return false;
-            }
+
+            value = default;
+            return false;
         }
 
         /// <summary> Return the sum of all inputs. </summary>
-        /// <returns> <see cref="NodePort.GetOutputValue"/> </returns>
+        /// <returns>
+        ///     <see cref="NodePort.GetOutputValue" />
+        /// </returns>
         public float GetInputSum(float fallback)
         {
-            object[] objs = GetInputValues();
+            var objs = GetInputValues();
             if (objs.Length == 0) return fallback;
             float result = 0;
-            for (int i = 0; i < objs.Length; i++)
-            {
-                if (objs[i] is float) result += (float)objs[i];
-            }
+            for (var i = 0; i < objs.Length; i++)
+                if (objs[i] is float)
+                    result += (float)objs[i];
 
             return result;
         }
 
         /// <summary> Return the sum of all inputs. </summary>
-        /// <returns> <see cref="NodePort.GetOutputValue"/> </returns>
+        /// <returns>
+        ///     <see cref="NodePort.GetOutputValue" />
+        /// </returns>
         public int GetInputSum(int fallback)
         {
-            object[] objs = GetInputValues();
+            var objs = GetInputValues();
             if (objs.Length == 0) return fallback;
-            int result = 0;
-            for (int i = 0; i < objs.Length; i++)
-            {
-                if (objs[i] is int) result += (int)objs[i];
-            }
+            var result = 0;
+            for (var i = 0; i < objs.Length; i++)
+                if (objs[i] is int)
+                    result += (int)objs[i];
 
             return result;
         }
 
-        /// <summary> Connect this <see cref="NodePort"/> to another </summary>
-        /// <param name="port">The <see cref="NodePort"/> to connect to</param>
+        /// <summary> Connect this <see cref="NodePort" /> to another </summary>
+        /// <param name="port">The <see cref="NodePort" /> to connect to</param>
         public void Connect(GUIGraphNodePort port)
         {
             if (connections == null) connections = new List<PortConnection>();
@@ -316,18 +307,13 @@ namespace QFramework
                 return;
             }
 #if UNITY_EDITOR
-            UnityEditor.Undo.RecordObject(node, "Connect Port");
-            UnityEditor.Undo.RecordObject(port.node, "Connect Port");
+            Undo.RecordObject(node, "Connect Port");
+            Undo.RecordObject(port.node, "Connect Port");
 #endif
             if (port.connectionType == GUIGraphNode.ConnectionType.Override && port.ConnectionCount != 0)
-            {
                 port.ClearConnections();
-            }
 
-            if (connectionType == GUIGraphNode.ConnectionType.Override && ConnectionCount != 0)
-            {
-                ClearConnections();
-            }
+            if (connectionType == GUIGraphNode.ConnectionType.Override && ConnectionCount != 0) ClearConnections();
 
             connections.Add(new PortConnection(port));
             if (port.connections == null) port.connections = new List<PortConnection>();
@@ -338,10 +324,10 @@ namespace QFramework
 
         public List<GUIGraphNodePort> GetConnections()
         {
-            List<GUIGraphNodePort> result = new List<GUIGraphNodePort>();
-            for (int i = 0; i < connections.Count; i++)
+            var result = new List<GUIGraphNodePort>();
+            for (var i = 0; i < connections.Count; i++)
             {
-                GUIGraphNodePort port = GetConnection(i);
+                var port = GetConnection(i);
                 if (port != null) result.Add(port);
             }
 
@@ -357,7 +343,7 @@ namespace QFramework
                 return null;
             }
 
-            GUIGraphNodePort port = connections[i].node.GetPort(connections[i].fieldName);
+            var port = connections[i].node.GetPort(connections[i].fieldName);
             if (port == null)
             {
                 connections.RemoveAt(i);
@@ -370,20 +356,18 @@ namespace QFramework
         /// <summary> Get index of the connection connecting this and specified ports </summary>
         public int GetConnectionIndex(GUIGraphNodePort port)
         {
-            for (int i = 0; i < ConnectionCount; i++)
-            {
-                if (connections[i].Port == port) return i;
-            }
+            for (var i = 0; i < ConnectionCount; i++)
+                if (connections[i].Port == port)
+                    return i;
 
             return -1;
         }
 
         public bool IsConnectedTo(GUIGraphNodePort port)
         {
-            for (int i = 0; i < connections.Count; i++)
-            {
-                if (connections[i].Port == port) return true;
-            }
+            for (var i = 0; i < connections.Count; i++)
+                if (connections[i].Port == port)
+                    return true;
 
             return false;
         }
@@ -421,25 +405,15 @@ namespace QFramework
         public void Disconnect(GUIGraphNodePort port)
         {
             // Remove this ports connection to the other
-            for (int i = connections.Count - 1; i >= 0; i--)
-            {
+            for (var i = connections.Count - 1; i >= 0; i--)
                 if (connections[i].Port == port)
-                {
                     connections.RemoveAt(i);
-                }
-            }
 
             if (port != null)
-            {
                 // Remove the other ports connection to this port
-                for (int i = 0; i < port.connections.Count; i++)
-                {
+                for (var i = 0; i < port.connections.Count; i++)
                     if (port.connections[i].Port == this)
-                    {
                         port.connections.RemoveAt(i);
-                    }
-                }
-            }
 
             // Trigger OnRemoveConnection
             node.OnRemoveConnection(this);
@@ -450,17 +424,11 @@ namespace QFramework
         public void Disconnect(int i)
         {
             // Remove the other ports connection to this port
-            GUIGraphNodePort otherPort = connections[i].Port;
+            var otherPort = connections[i].Port;
             if (otherPort != null)
-            {
-                for (int k = 0; k < otherPort.connections.Count; k++)
-                {
+                for (var k = 0; k < otherPort.connections.Count; k++)
                     if (otherPort.connections[k].Port == this)
-                    {
                         otherPort.connections.RemoveAt(i);
-                    }
-                }
-            }
 
             // Remove this ports connection to the other
             connections.RemoveAt(i);
@@ -472,10 +440,7 @@ namespace QFramework
 
         public void ClearConnections()
         {
-            while (connections.Count > 0)
-            {
-                Disconnect(connections[0].Port);
-            }
+            while (connections.Count > 0) Disconnect(connections[0].Port);
         }
 
         /// <summary> Get reroute points for a given connection. This is used for organization </summary>
@@ -487,40 +452,40 @@ namespace QFramework
         /// <summary> Swap connections with another node </summary>
         public void SwapConnections(GUIGraphNodePort targetPort)
         {
-            int aConnectionCount = connections.Count;
-            int bConnectionCount = targetPort.connections.Count;
+            var aConnectionCount = connections.Count;
+            var bConnectionCount = targetPort.connections.Count;
 
-            List<GUIGraphNodePort> portConnections = new List<GUIGraphNodePort>();
-            List<GUIGraphNodePort> targetPortConnections = new List<GUIGraphNodePort>();
+            var portConnections = new List<GUIGraphNodePort>();
+            var targetPortConnections = new List<GUIGraphNodePort>();
 
             // Cache port connections
-            for (int i = 0; i < aConnectionCount; i++)
+            for (var i = 0; i < aConnectionCount; i++)
                 portConnections.Add(connections[i].Port);
 
             // Cache target port connections
-            for (int i = 0; i < bConnectionCount; i++)
+            for (var i = 0; i < bConnectionCount; i++)
                 targetPortConnections.Add(targetPort.connections[i].Port);
 
             ClearConnections();
             targetPort.ClearConnections();
 
             // Add port connections to targetPort
-            for (int i = 0; i < portConnections.Count; i++)
+            for (var i = 0; i < portConnections.Count; i++)
                 targetPort.Connect(portConnections[i]);
 
             // Add target port connections to this one
-            for (int i = 0; i < targetPortConnections.Count; i++)
+            for (var i = 0; i < targetPortConnections.Count; i++)
                 Connect(targetPortConnections[i]);
         }
 
         /// <summary> Copy all connections pointing to a node and add them to this one </summary>
         public void AddConnections(GUIGraphNodePort targetPort)
         {
-            int connectionCount = targetPort.ConnectionCount;
-            for (int i = 0; i < connectionCount; i++)
+            var connectionCount = targetPort.ConnectionCount;
+            for (var i = 0; i < connectionCount; i++)
             {
-                PortConnection connection = targetPort.connections[i];
-                GUIGraphNodePort otherPort = connection.Port;
+                var connection = targetPort.connections[i];
+                var otherPort = connection.Port;
                 Connect(otherPort);
             }
         }
@@ -528,13 +493,13 @@ namespace QFramework
         /// <summary> Move all connections pointing to this node, to another node </summary>
         public void MoveConnections(GUIGraphNodePort targetPort)
         {
-            int connectionCount = connections.Count;
+            var connectionCount = connections.Count;
 
             // Add connections to target port
-            for (int i = 0; i < connectionCount; i++)
+            for (var i = 0; i < connectionCount; i++)
             {
-                PortConnection connection = targetPort.connections[i];
-                GUIGraphNodePort otherPort = connection.Port;
+                var connection = targetPort.connections[i];
+                var otherPort = connection.Port;
                 Connect(otherPort);
             }
 
@@ -544,9 +509,9 @@ namespace QFramework
         /// <summary> Swap connected nodes from the old list with nodes from the new list </summary>
         public void Redirect(List<GUIGraphNode> oldNodes, List<GUIGraphNode> newNodes)
         {
-            foreach (PortConnection connection in connections)
+            foreach (var connection in connections)
             {
-                int index = oldNodes.IndexOf(connection.node);
+                var index = oldNodes.IndexOf(connection.node);
                 if (index >= 0) connection.node = newNodes[index];
             }
         }
@@ -557,15 +522,10 @@ namespace QFramework
             [SerializeField] public string fieldName;
             [SerializeField] public GUIGraphNode node;
 
-            public GUIGraphNodePort Port
-            {
-                get { return port != null ? port : port = GetPort(); }
-            }
+            /// <summary> Extra connection path points for organization </summary>
+            [SerializeField] public List<Vector2> reroutePoints = new();
 
             [NonSerialized] private GUIGraphNodePort port;
-
-            /// <summary> Extra connection path points for organization </summary>
-            [SerializeField] public List<Vector2> reroutePoints = new List<Vector2>();
 
             public PortConnection(GUIGraphNodePort port)
             {
@@ -574,7 +534,9 @@ namespace QFramework
                 fieldName = port.fieldName;
             }
 
-            /// <summary> Returns the port that this <see cref="PortConnection"/> points to </summary>
+            public GUIGraphNodePort Port => port != null ? port : port = GetPort();
+
+            /// <summary> Returns the port that this <see cref="PortConnection" /> points to </summary>
             private GUIGraphNodePort GetPort()
             {
                 if (node == null || string.IsNullOrEmpty(fieldName)) return null;

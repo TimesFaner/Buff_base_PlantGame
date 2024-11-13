@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode

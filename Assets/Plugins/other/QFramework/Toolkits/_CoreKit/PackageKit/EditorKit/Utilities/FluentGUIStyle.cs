@@ -14,6 +14,36 @@ namespace QFramework
 {
     public class FluentGUIStyle
     {
+        private Action<GUIStyle> mOperations = style => { };
+
+        private Func<GUIStyle> mStyleFactory = () => new GUIStyle();
+
+        private GUIStyle mValue;
+
+        [MoonSharpHidden]
+        public FluentGUIStyle()
+        {
+        }
+
+        [MoonSharpHidden]
+        public FluentGUIStyle(Func<GUIStyle> styleFactory)
+        {
+            mStyleFactory = styleFactory;
+        }
+
+        public GUIStyle Value
+        {
+            get
+            {
+                if (mValue != null) return mValue;
+                mValue = mStyleFactory.Invoke();
+                mOperations(mValue);
+
+                return mValue;
+            }
+            set => mValue = value;
+        }
+
         public static FluentGUIStyle Label()
         {
             var fluentGUIStyle = new FluentGUIStyle();
@@ -46,42 +76,15 @@ namespace QFramework
             return this;
         }
 
-        private Func<GUIStyle> mStyleFactory = () => new GUIStyle();
-
-        private Action<GUIStyle> mOperations = style => { };
-
         public FluentGUIStyle Set(Action<GUIStyle> operation)
         {
             mOperations += operation;
             return this;
         }
 
-        [MoonSharpHidden]
-        public FluentGUIStyle()
+        public static implicit operator GUIStyle(FluentGUIStyle style)
         {
+            return style.Value;
         }
-
-        [MoonSharpHidden]
-        public FluentGUIStyle(Func<GUIStyle> styleFactory)
-        {
-            mStyleFactory = styleFactory;
-        }
-
-        private GUIStyle mValue = null;
-
-        public GUIStyle Value
-        {
-            get
-            {
-                if (mValue != null) return mValue;
-                mValue = mStyleFactory.Invoke();
-                mOperations(mValue);
-
-                return mValue;
-            }
-            set => mValue = value;
-        }
-
-        public static implicit operator GUIStyle(FluentGUIStyle style) => style.Value;
     }
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -31,7 +31,7 @@ namespace QFramework
 
         public string DragDescription =>
             CN ? "请将要生成脚本的文件夹拖到下边区域 或 自行填写目录到上一栏中" : "drag file or folder below or write in above";
-        
+
         public string PrefabDragDescription =>
             CN ? "请将要生成 Prefab 的文件夹拖到下边区域 或 自行填写目录到上一栏中" : "drag file or folder below or write in above";
     }

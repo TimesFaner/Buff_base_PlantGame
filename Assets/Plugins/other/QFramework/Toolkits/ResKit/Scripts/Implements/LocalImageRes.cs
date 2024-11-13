@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2017 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,11 +23,13 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using System;
+using System.Collections;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
 namespace QFramework
 {
-    using UnityEngine;
-    using System.Collections;
-
     public static class LocalImageResUtil
     {
         public static string ToLocalImageResName(this string selfFilePath)
@@ -35,18 +37,28 @@ namespace QFramework
             return string.Format("LocalImage:{0}", selfFilePath);
         }
     }
-    
+
     /// <summary>
-    /// 本地图片加载器
+    ///     本地图片加载器
     /// </summary>
     public class LocalImageRes : Res
     {
-        private string mFullPath;
         private string mHashCode;
         private object mRawAsset;
 #pragma warning disable CS0618
-        private WWW mWWW = null;
+        private WWW mWWW;
 #pragma warning restore CS0618
+
+        public string LocalResPath =>
+            string.Format("{0}{1}", AssetBundlePathHelper.PersistentDataPath4Photo, mHashCode);
+
+        public virtual object RawAsset => mRawAsset;
+
+        public bool NeedDownload => RefCount > 0;
+
+        public string Url { get; private set; }
+
+        public int FileSize => 1;
 
         public static LocalImageRes Allocate(string name)
         {
@@ -56,48 +68,20 @@ namespace QFramework
                 res.AssetName = name;
                 res.SetUrl(name.Substring(11));
             }
+
             return res;
         }
 
         public void SetDownloadProgress(int totalSize, int download)
         {
-
-        }
-
-        public string LocalResPath
-        {
-            get { return string.Format("{0}{1}", AssetBundlePathHelper.PersistentDataPath4Photo, mHashCode); }
-        }
-
-        public virtual object RawAsset
-        {
-            get { return mRawAsset; }
-        }
-
-        public bool NeedDownload
-        {
-            get { return RefCount > 0; }
-        }
-
-        public string Url
-        {
-            get { return mFullPath; }
-        }
-
-        public int FileSize
-        {
-            get { return 1; }
         }
 
         public void SetUrl(string url)
-        {            
-            if (string.IsNullOrEmpty(url))
-            {
-                return;
-            }
+        {
+            if (string.IsNullOrEmpty(url)) return;
 
-            mFullPath = url;
-            mHashCode = string.Format("Photo_{0}", mFullPath.GetHashCode());
+            Url = url;
+            mHashCode = string.Format("Photo_{0}", Url.GetHashCode());
         }
 
         public override bool UnloadImage(bool flag)
@@ -112,15 +96,9 @@ namespace QFramework
 
         public override void LoadAsync()
         {
-            if (!CheckLoadAble())
-            {
-                return;
-            }
+            if (!CheckLoadAble()) return;
 
-            if (string.IsNullOrEmpty(mAssetName))
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(mAssetName)) return;
 
             DoLoadWork();
         }
@@ -148,7 +126,7 @@ namespace QFramework
         {
             if (mAsset != null)
             {
-                GameObject.Destroy(mAsset);
+                Object.Destroy(mAsset);
                 mAsset = null;
             }
 
@@ -162,7 +140,6 @@ namespace QFramework
 
         public override void OnRecycled()
         {
-
         }
 
         public void DeleteOldResFile()
@@ -189,13 +166,13 @@ namespace QFramework
 
         //完全的WWW方式,Unity 帮助管理纹理缓存，并且效率貌似更高
         // TODO:persistantPath 用 read
-        public override IEnumerator DoLoadAsync(System.Action finishCallback)
+        public override IEnumerator DoLoadAsync(Action finishCallback)
         {
 //            var imageBytes = File.ReadAllBytes(mFullPath);
 
 //            Texture2D loadTexture2D = new Texture2D(256, 256, TextureFormat.RGB24,false);
 //            loadTexture2D.LoadImage(imageBytes);
-            
+
 //            if (RefCount <= 0)
 //            {
 //                OnResLoadFaild();
@@ -204,7 +181,7 @@ namespace QFramework
 //            }
 
 #pragma warning disable CS0618
-            WWW www = new WWW("file://" + mFullPath);
+            var www = new WWW("file://" + Url);
 #pragma warning restore CS0618
 
             mWWW = www;
@@ -215,7 +192,7 @@ namespace QFramework
 
             if (www.error != null)
             {
-                Debug.LogError(string.Format("Res:{0}, WWW Errors:{1}", mFullPath, www.error));
+                Debug.LogError(string.Format("Res:{0}, WWW Errors:{1}", Url, www.error));
                 OnResLoadFaild();
                 finishCallback();
                 yield break;
@@ -223,7 +200,7 @@ namespace QFramework
 
             if (!www.isDone)
             {
-                Debug.LogError("LocalImageRes WWW Not Done! Url:" + mFullPath);
+                Debug.LogError("LocalImageRes WWW Not Done! Url:" + Url);
                 OnResLoadFaild();
                 finishCallback();
 
@@ -256,10 +233,7 @@ namespace QFramework
 
         protected override float CalculateProgress()
         {
-            if (mWWW == null)
-            {
-                return 0;
-            }
+            if (mWWW == null) return 0;
 
             return mWWW.progress;
         }

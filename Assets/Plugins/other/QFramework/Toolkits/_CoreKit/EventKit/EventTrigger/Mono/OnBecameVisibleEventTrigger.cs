@@ -5,7 +5,7 @@ namespace QFramework
 {
     public class OnBecameVisibleEventTrigger : MonoBehaviour
     {
-        public readonly EasyEvent OnBecameVisibleEvent = new EasyEvent();
+        public readonly EasyEvent OnBecameVisibleEvent = new();
 
         private void OnBecameVisible()
         {

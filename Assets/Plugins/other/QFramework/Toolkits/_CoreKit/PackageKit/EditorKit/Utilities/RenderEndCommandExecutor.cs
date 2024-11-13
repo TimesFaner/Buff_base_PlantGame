@@ -6,24 +6,19 @@
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
+using System;
 using System.Collections.Generic;
 
 namespace QFramework
 {
-
     public class RenderEndCommandExecutor
     {
         // 全局的
-        private static RenderEndCommandExecutor mGlobal = new RenderEndCommandExecutor();
+        private static readonly RenderEndCommandExecutor mGlobal = new();
 
-        private Queue<System.Action> mPrivateCommands = new Queue<System.Action>();
+        private Queue<Action> mCommands { get; } = new();
 
-        private Queue<System.Action> mCommands
-        {
-            get { return mPrivateCommands; }
-        }
-
-        public static void PushCommand(System.Action command)
+        public static void PushCommand(Action command)
         {
             mGlobal.Push(command);
         }
@@ -33,17 +28,14 @@ namespace QFramework
             mGlobal.Execute();
         }
 
-        public void Push(System.Action command)
+        public void Push(Action command)
         {
             mCommands.Enqueue(command);
         }
 
         public void Execute()
         {
-            while (mCommands.Count > 0)
-            {
-                mCommands.Dequeue().Invoke();
-            }
+            while (mCommands.Count > 0) mCommands.Dequeue().Invoke();
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2017 ~ 2018.5 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,11 +23,11 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using UnityEngine;
+
 namespace QFramework
 {
-    using UnityEngine;
-    
-	public static class UIRectTransformExtension
+    public static class UIRectTransformExtension
     {
         public static Vector2 GetLocalPosInRect(this RectTransform selfRectTrans, Camera camera = null)
         {
@@ -41,15 +41,15 @@ namespace QFramework
         {
             if (null == camera)
                 camera = UIKit.Root.Canvas.worldCamera;
- 
+
             return RectTransformUtility.RectangleContainsScreenPoint(selfRectTrans, Input.mousePosition, camera);
         }
- 
+
         public static Vector2 ToScreenPoint(this RectTransform selfRectTrans)
         {
             return RectTransformUtility.WorldToScreenPoint(UIKit.Root.Canvas.worldCamera, selfRectTrans.position);
         }
- 
+
         public static Vector2 ToScreenPoint(this RectTransform selfRectTrans, Vector2 worldPos)
         {
             return RectTransformUtility.WorldToScreenPoint(UIKit.Root.Canvas.worldCamera, worldPos);
@@ -71,5 +71,5 @@ namespace QFramework
                 out retLocalPos);
             return retLocalPos;
         }
-	}
+    }
 }

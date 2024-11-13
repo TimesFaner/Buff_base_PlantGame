@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -10,15 +10,21 @@
 using System;
 using System.Reflection;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace QFramework
 {
     /// <summary>
-    /// 普通单例创建类
+    ///     普通单例创建类
     /// </summary>
     internal static class SingletonCreator
     {
-        static T CreateNonPublicConstructorObject<T>() where T : class
+        /// <summary>
+        ///     单元测试模式 标签
+        /// </summary>
+        public static bool IsUnitTestMode { get; set; }
+
+        private static T CreateNonPublicConstructorObject<T>() where T : class
         {
             var type = typeof(T);
             // 获取私有构造函数
@@ -27,10 +33,7 @@ namespace QFramework
             // 获取无参构造函数
             var ctor = Array.Find(constructorInfos, c => c.GetParameters().Length == 0);
 
-            if (ctor == null)
-            {
-                throw new Exception("Non-Public Constructor() not found! in " + type);
-            }
+            if (ctor == null) throw new Exception("Non-Public Constructor() not found! in " + type);
 
             return ctor.Invoke(null) as T;
         }
@@ -40,26 +43,15 @@ namespace QFramework
             var type = typeof(T);
             var monoBehaviourType = typeof(MonoBehaviour);
 
-            if (monoBehaviourType.IsAssignableFrom(type))
-            {
-                return CreateMonoSingleton<T>();
-            }
-            else
-            {
-                var instance = CreateNonPublicConstructorObject<T>();
-                instance.OnSingletonInit();
-                return instance;
-            }
+            if (monoBehaviourType.IsAssignableFrom(type)) return CreateMonoSingleton<T>();
+
+            var instance = CreateNonPublicConstructorObject<T>();
+            instance.OnSingletonInit();
+            return instance;
         }
 
-
         /// <summary>
-        /// 单元测试模式 标签
-        /// </summary>
-        public static bool IsUnitTestMode { get; set; }
-
-        /// <summary>
-        /// 查找Obj（一个嵌套查找Obj的过程）
+        ///     查找Obj（一个嵌套查找Obj的过程）
         /// </summary>
         /// <param name="root">父节点</param>
         /// <param name="subPath">拆分后的路径节点</param>
@@ -79,39 +71,25 @@ namespace QFramework
             else
             {
                 var child = root.transform.Find(subPath[index]);
-                if (child != null)
-                {
-                    client = child.gameObject;
-                }
+                if (child != null) client = child.gameObject;
             }
 
             if (client == null)
-            {
                 if (build)
                 {
                     client = new GameObject(subPath[index]);
-                    if (root != null)
-                    {
-                        client.transform.SetParent(root.transform);
-                    }
+                    if (root != null) client.transform.SetParent(root.transform);
 
-                    if (dontDestroy && index == 0 && !IsUnitTestMode)
-                    {
-                        GameObject.DontDestroyOnLoad(client);
-                    }
+                    if (dontDestroy && index == 0 && !IsUnitTestMode) Object.DontDestroyOnLoad(client);
                 }
-            }
 
-            if (client == null)
-            {
-                return null;
-            }
+            if (client == null) return null;
 
             return ++index == subPath.Length ? client : FindGameObject(client, subPath, index, build, dontDestroy);
         }
 
         /// <summary>
-        /// 泛型方法：创建MonoBehaviour单例
+        ///     泛型方法：创建MonoBehaviour单例
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
@@ -125,7 +103,7 @@ namespace QFramework
                 return instance;
 
             //判断当前场景中是否存在T实例
-            instance = UnityEngine.Object.FindObjectOfType(type) as T;
+            instance = Object.FindObjectOfType(type) as T;
             if (instance != null)
             {
                 instance.OnSingletonInit();
@@ -139,10 +117,7 @@ namespace QFramework
             foreach (var atribute in attributes)
             {
                 var defineAttri = atribute as MonoSingletonPathAttribute;
-                if (defineAttri == null)
-                {
-                    continue;
-                }
+                if (defineAttri == null) continue;
 
                 instance = CreateComponentOnGameObject<T>(defineAttri.PathInHierarchy, true);
                 break;
@@ -153,7 +128,7 @@ namespace QFramework
             {
                 var obj = new GameObject(typeof(T).Name);
                 if (!IsUnitTestMode)
-                    UnityEngine.Object.DontDestroyOnLoad(obj);
+                    Object.DontDestroyOnLoad(obj);
                 instance = obj.AddComponent(typeof(T)) as T;
             }
 
@@ -162,7 +137,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 在GameObject上创建T组件（脚本）
+        ///     在GameObject上创建T组件（脚本）
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="path">路径（应该就是Hierarchy下的树结构路径）</param>
@@ -174,17 +149,14 @@ namespace QFramework
             if (obj == null)
             {
                 obj = new GameObject("Singleton of " + typeof(T).Name);
-                if (dontDestroy && !IsUnitTestMode)
-                {
-                    UnityEngine.Object.DontDestroyOnLoad(obj);
-                }
+                if (dontDestroy && !IsUnitTestMode) Object.DontDestroyOnLoad(obj);
             }
 
             return obj.AddComponent(typeof(T)) as T;
         }
 
         /// <summary>
-        /// 查找Obj（对于路径 进行拆分）
+        ///     查找Obj（对于路径 进行拆分）
         /// </summary>
         /// <param name="path">路径</param>
         /// <param name="build">true</param>
@@ -192,16 +164,10 @@ namespace QFramework
         /// <returns></returns>
         private static GameObject FindGameObject(string path, bool build, bool dontDestroy)
         {
-            if (string.IsNullOrEmpty(path))
-            {
-                return null;
-            }
+            if (string.IsNullOrEmpty(path)) return null;
 
             var subPath = path.Split('/');
-            if (subPath == null || subPath.Length == 0)
-            {
-                return null;
-            }
+            if (subPath == null || subPath.Length == 0) return null;
 
             return FindGameObject(null, subPath, 0, build, dontDestroy);
         }

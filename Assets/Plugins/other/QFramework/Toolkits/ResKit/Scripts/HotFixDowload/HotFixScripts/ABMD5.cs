@@ -1,9 +1,9 @@
-
+using System;
 
 namespace QFramework
 {
-    [System.Serializable]
-    public class ABMD5  
+    [Serializable]
+    public class ABMD5
     {
         public string ABName;
         public float ABSize;

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -15,28 +15,28 @@ using UnityEngine;
 namespace QFramework
 {
     /// <summary> Deals with modified assets </summary>
-    class GUIGraphImporter : AssetPostprocessor
+    internal class GUIGraphImporter : AssetPostprocessor
     {
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets,
             string[] movedAssets, string[] movedFromAssetPaths)
         {
-            foreach (string path in importedAssets)
+            foreach (var path in importedAssets)
             {
                 // Skip processing anything without the .asset extension
                 if (Path.GetExtension(path) != ".asset") continue;
 
                 // Get the object that is requested for deletion
-                GUIGraph graph = AssetDatabase.LoadAssetAtPath<GUIGraph>(path);
+                var graph = AssetDatabase.LoadAssetAtPath<GUIGraph>(path);
                 if (graph == null) continue;
 
                 // Get attributes
-                Type graphType = graph.GetType();
-                GUIGraph.RequireNodeAttribute[] attribs = Array.ConvertAll(
+                var graphType = graph.GetType();
+                var attribs = Array.ConvertAll(
                     graphType.GetCustomAttributes(typeof(GUIGraph.RequireNodeAttribute), true),
                     x => x as GUIGraph.RequireNodeAttribute);
 
-                Vector2 position = Vector2.zero;
-                foreach (GUIGraph.RequireNodeAttribute attrib in attribs)
+                var position = Vector2.zero;
+                foreach (var attrib in attribs)
                 {
                     if (attrib.type0 != null) AddRequired(graph, attrib.type0, ref position);
                     if (attrib.type1 != null) AddRequired(graph, attrib.type1, ref position);
@@ -49,7 +49,7 @@ namespace QFramework
         {
             if (!graph.nodes.Any(x => x.GetType() == type))
             {
-                GUIGraphNode node = graph.AddNode(type);
+                var node = graph.AddNode(type);
                 node.position = position;
                 position.x += 200;
                 if (node.name == null || node.name.Trim() == "")

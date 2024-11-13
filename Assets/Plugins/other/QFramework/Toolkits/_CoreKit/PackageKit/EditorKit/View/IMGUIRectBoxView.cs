@@ -1,11 +1,12 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
+using System;
 using System.Xml;
 using UnityEngine;
 
@@ -18,18 +19,13 @@ namespace QFramework
 
     public class IMGUIRectBoxView : IMGUIAbstractView, IMGUIRectBox
     {
-        public IMGUIRectBoxView()
-        {
-            mStyle = new FluentGUIStyle(() => GUI.skin.box);
-        }
-
-        private Rect mRect = new Rect(0, 0, 200, 100);
+        private Rect mRect = new(0, 0, 200, 100);
 
         private string mText = string.Empty;
 
-        protected override void OnGUI()
+        public IMGUIRectBoxView()
         {
-            GUI.Box(mRect, mText, mStyle.Value);
+            mStyle = new FluentGUIStyle(() => GUI.skin.box);
         }
 
         public IMGUIRectBox Text(string labelText)
@@ -37,11 +33,6 @@ namespace QFramework
             mText = labelText;
 
             return this;
-        }
-
-        public T Convert<T>(XmlNode node) where T : class
-        {
-            throw new System.NotImplementedException();
         }
 
         public IMGUIRectBox Rect(Rect rect)
@@ -86,6 +77,16 @@ namespace QFramework
         {
             mRect.height = height;
             return this;
+        }
+
+        protected override void OnGUI()
+        {
+            GUI.Box(mRect, mText, mStyle.Value);
+        }
+
+        public T Convert<T>(XmlNode node) where T : class
+        {
+            throw new NotImplementedException();
         }
     }
 }

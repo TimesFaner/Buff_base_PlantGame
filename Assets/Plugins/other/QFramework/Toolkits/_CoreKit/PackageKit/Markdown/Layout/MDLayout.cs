@@ -13,8 +13,8 @@ namespace QFramework
 {
     internal class MDLayout
     {
-        MDContext mContext;
-        MDBlockContainer mDocument;
+        private readonly MDContext mContext;
+        private readonly MDBlockContainer mDocument;
 
         public MDLayout(MDContext context, MDBlockContainer doc)
         {
@@ -22,10 +22,7 @@ namespace QFramework
             mDocument = doc;
         }
 
-        public float Height
-        {
-            get { return mDocument.Rect.height; }
-        }
+        public float Height => mDocument.Rect.height;
 
         public MDBlock Find(string id)
         {

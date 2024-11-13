@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2021.3 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,17 +30,17 @@ namespace QFramework
 {
     public class ResKitEditorAPI
     {
+        public static bool SimulationMode
+        {
+            get => AssetBundlePathHelper.SimulationMode;
+            set => AssetBundlePathHelper.SimulationMode = value;
+        }
+
         public static void BuildAssetBundles()
         {
             AssetDatabase.RemoveUnusedAssetBundleNames();
             AssetDatabase.Refresh();
             BuildScript.BuildAssetBundles(EditorUserBuildSettings.activeBuildTarget);
-        }
-
-        public static bool SimulationMode
-        {
-            get => AssetBundlePathHelper.SimulationMode;
-            set => AssetBundlePathHelper.SimulationMode = value;
         }
 
         public static void ForceClearAssetBundles()

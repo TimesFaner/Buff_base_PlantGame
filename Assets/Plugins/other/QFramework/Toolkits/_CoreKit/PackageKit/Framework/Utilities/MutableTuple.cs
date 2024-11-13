@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2020.10 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -22,7 +22,7 @@ namespace QFramework
 
         public override bool Equals(object obj)
         {
-            MutableTuple<T1, T2> p = obj as MutableTuple<T1, T2>;
+            var p = obj as MutableTuple<T1, T2>;
             if (obj == null) return false;
 
             if (Item1 == null)
@@ -48,7 +48,7 @@ namespace QFramework
 
         public override int GetHashCode()
         {
-            int hash = 0;
+            var hash = 0;
             if (Item1 != null)
                 hash ^= Item1.GetHashCode();
             if (Item2 != null)

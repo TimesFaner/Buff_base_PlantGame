@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -15,27 +15,9 @@ namespace QFramework
 {
     internal class ClassAPIRenderInfo
     {
-        public string Description =>
-            LocaleKitEditor.IsCN.Value ? mDescriptionCN.Description : mDescriptionEN.Description;
-
-        public string ClassName { get; private set; }
-        public string DisplayMenuName { get; private set; }
-        public string DisplayClassName { get; private set; }
-        public string Namespace { get; private set; }
-
-        public string ExampleCode { get; private set; }
-        public string GroupName { get; private set; }
-
+        private readonly Type mType;
         private APIDescriptionCNAttribute mDescriptionCN;
         private APIDescriptionENAttribute mDescriptionEN;
-
-        public List<PropertyAPIRenderInfo> Properties { get; private set; }
-        public List<MethodAPIRenderInfo> Methods { get; private set; }
-        
-        public int RenderOrder { get; private set; }
-
-
-        private Type mType;
 
         public ClassAPIRenderInfo(Type type, ClassAPIAttribute classAPIAttribute)
         {
@@ -46,19 +28,31 @@ namespace QFramework
             DisplayClassName = classAPIAttribute.DisplayClassName;
         }
 
+        public string Description =>
+            LocaleKitEditor.IsCN.Value ? mDescriptionCN.Description : mDescriptionEN.Description;
+
+        public string ClassName { get; private set; }
+        public string DisplayMenuName { get; private set; }
+        public string DisplayClassName { get; }
+        public string Namespace { get; private set; }
+
+        public string ExampleCode { get; private set; }
+        public string GroupName { get; private set; }
+
+        public List<PropertyAPIRenderInfo> Properties { get; private set; }
+        public List<MethodAPIRenderInfo> Methods { get; private set; }
+
+        public int RenderOrder { get; private set; }
+
         public void Parse()
         {
             if (DisplayClassName.IsNullOrEmpty())
-            {
                 ClassName = mType.Name;
-            }
             else
-            {
                 ClassName = DisplayClassName;
-            }
 
-            mDescriptionCN = mType.GetAttribute<APIDescriptionCNAttribute>(false);
-            mDescriptionEN = mType.GetAttribute<APIDescriptionENAttribute>(false);
+            mDescriptionCN = mType.GetAttribute<APIDescriptionCNAttribute>();
+            mDescriptionEN = mType.GetAttribute<APIDescriptionENAttribute>();
             Namespace = mType.Namespace;
 
             Properties = mType.GetProperties()
@@ -70,11 +64,8 @@ namespace QFramework
                 .Select(m => new MethodAPIRenderInfo(m)).ToList();
 
 
-            var exampleCode = mType.GetAttribute<APIExampleCodeAttribute>(false);
-            if (exampleCode != null)
-            {
-                ExampleCode = exampleCode.Code;
-            }
+            var exampleCode = mType.GetAttribute<APIExampleCodeAttribute>();
+            if (exampleCode != null) ExampleCode = exampleCode.Code;
         }
     }
 }

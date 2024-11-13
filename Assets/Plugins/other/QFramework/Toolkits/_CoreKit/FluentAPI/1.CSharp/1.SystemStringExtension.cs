@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -21,6 +21,10 @@ namespace QFramework
 #endif
     public static class SystemStringExtension
     {
+            /// <summary>
+            ///     缓存
+            /// </summary>
+            private static readonly char[] mCachedSplitCharArray = { '.' };
 #if UNITY_EDITOR
         // v1 No.18
         [MethodAPI]
@@ -68,7 +72,7 @@ Debug.Log(""   "".IsTrimNullOrEmpty());
         }
 
         /// <summary>
-        /// Check Whether string trim is null or empty
+        ///     Check Whether string trim is null or empty
         /// </summary>
         /// <param name="selfStr"></param>
         /// <returns></returns>
@@ -86,12 +90,6 @@ Debug.Log(""  123  "".IsTrimNotNullAndEmpty());
         {
             return selfStr != null && !string.IsNullOrEmpty(selfStr.Trim());
         }
-
-
-        /// <summary>
-        /// 缓存
-        /// </summary>
-        private static readonly char[] mCachedSplitCharArray = { '.' };
 
 #if UNITY_EDITOR
         // v1 No.22
@@ -189,7 +187,7 @@ Debug.Log(number);
 DateTime.Now.ToString().ToDataTime();
         ")]
 #endif
-        public static DateTime ToDateTime(this string selfStr, DateTime defaultValue = default(DateTime))
+        public static DateTime ToDateTime(this string selfStr, DateTime defaultValue = default)
         {
             return DateTime.TryParse(selfStr, out var retValue) ? retValue : defaultValue;
         }
@@ -257,7 +255,7 @@ Debug.Log(""Hello World "".RemoveString(""Hello"","" ""));
         {
             return targets.Aggregate(str, (current, t) => current.Replace(t, string.Empty));
         }
-        
+
 #if UNITY_EDITOR
         // v1.0.39
         [MethodAPI]
@@ -270,7 +268,7 @@ Debug.Log(new List<string>() { ""1"",""2"",""3""}.StringJoin("",""));
 #endif
         public static string StringJoin(this IEnumerable<string> self, string separator)
         {
-                return string.Join(separator, self);
+            return string.Join(separator, self);
         }
     }
 }

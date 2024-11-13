@@ -12,13 +12,20 @@ namespace QFramework
 {
     public class UIKitCreateServiceView
     {
-        public EditorWindow EditorWindow { get; set; }
+        private readonly Queue<Action> mCommands = new();
 
-        public void Init()
+
+        private readonly Lazy<GUIStyle> mLabelStyle = new(() =>
         {
-        }
+            var labelStyle = new GUIStyle(GUI.skin.GetStyle("label"))
+            {
+                richText = true
+            };
+            return labelStyle;
+        });
 
         private string mPanelNameToCreate = string.Empty;
+        public EditorWindow EditorWindow { get; set; }
 
         private string mModuleFolder
         {
@@ -59,15 +66,9 @@ namespace QFramework
                 UIKitSettingData.Load().UIScriptDir)
             .Replace(".prefab", ".Designer.cs");
 
-
-        private Lazy<GUIStyle> mLabelStyle = new Lazy<GUIStyle>(() =>
+        public void Init()
         {
-            var labelStyle = new GUIStyle(GUI.skin.GetStyle("label"))
-            {
-                richText = true
-            };
-            return labelStyle;
-        });
+        }
 
         public void OnGUI()
         {
@@ -141,14 +142,9 @@ namespace QFramework
             }
         }
 
-        private Queue<Action> mCommands = new Queue<Action>();
-
         public void OnWindowGUIEnd()
         {
-            if (mCommands.Count > 0)
-            {
-                mCommands.Dequeue().Invoke();
-            }
+            if (mCommands.Count > 0) mCommands.Dequeue().Invoke();
         }
 
         public void OnDestroy()
@@ -193,10 +189,7 @@ namespace QFramework
 
                 mCommands.Enqueue(() =>
                 {
-                    if (EditorWindow)
-                    {
-                        EditorWindow.Close();
-                    }
+                    if (EditorWindow) EditorWindow.Close();
 
                     var currentScene = SceneManager.GetActiveScene();
                     EditorSceneManager.SaveScene(currentScene);
@@ -238,7 +231,7 @@ namespace QFramework
 
                     // 标记 AssetBundle
                     ResKitAssetsMenu.MarkAB(panelPrefabPath);
-                    
+
                     var tester = new GameObject("Test{0}".FillFormat(panelName));
                     var uiPanelTester = tester.AddComponent<ResKitUIPanelTester>();
                     uiPanelTester.PanelName = panelName;
@@ -249,7 +242,7 @@ namespace QFramework
             }
         }
 
-        class LocaleText
+        private class LocaleText
         {
             public static string CreateUIPanel => LocaleKitEditor.IsCN.Value ? "创建 UI Panel" : "Create UI Panel";
             public static string ModuleFolder => LocaleKitEditor.IsCN.Value ? "模块目录:" : "Module Folder";

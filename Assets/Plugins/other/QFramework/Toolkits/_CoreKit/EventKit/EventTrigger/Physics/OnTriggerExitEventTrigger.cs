@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -13,10 +13,11 @@ namespace QFramework
 {
     public class OnTriggerExitEventTrigger : MonoBehaviour
     {
-        public readonly EasyEvent<Collider> OnTriggerExitEvent = new EasyEvent<Collider>();
+        public readonly EasyEvent<Collider> OnTriggerExitEvent = new();
+
         private void OnTriggerExit(Collider collider)
         {
-            OnTriggerExitEvent.Trigger(collider);         
+            OnTriggerExitEvent.Trigger(collider);
         }
     }
 
@@ -28,7 +29,7 @@ namespace QFramework
             return self.GetOrAddComponent<OnTriggerExitEventTrigger>().OnTriggerExitEvent
                 .Register(onTriggerExit);
         }
-        
+
         public static IUnRegister OnTriggerExitEvent(this GameObject self, Action<Collider> onTriggerExit)
         {
             return self.GetOrAddComponent<OnTriggerExitEventTrigger>().OnTriggerExitEvent

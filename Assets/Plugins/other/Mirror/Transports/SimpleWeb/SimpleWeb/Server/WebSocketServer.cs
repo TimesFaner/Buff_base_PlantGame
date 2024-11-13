@@ -8,22 +8,23 @@ namespace Mirror.SimpleWeb
 {
     public class WebSocketServer
     {
-        public readonly ConcurrentQueue<Message> receiveQueue = new ConcurrentQueue<Message>();
+        private readonly BufferPool bufferPool;
+        private readonly ConcurrentDictionary<int, Connection> connections = new();
+        private readonly ServerHandshake handShake;
+        private readonly int maxMessageSize;
+        public readonly ConcurrentQueue<Message> receiveQueue = new();
+        private readonly ServerSslHelper sslHelper;
 
-        readonly TcpConfig tcpConfig;
-        readonly int maxMessageSize;
+        private readonly TcpConfig tcpConfig;
 
-        TcpListener listener;
-        Thread acceptThread;
-        bool serverStopped;
-        readonly ServerHandshake handShake;
-        readonly ServerSslHelper sslHelper;
-        readonly BufferPool bufferPool;
-        readonly ConcurrentDictionary<int, Connection> connections = new ConcurrentDictionary<int, Connection>();
+        private int _idCounter;
+        private Thread acceptThread;
 
-        int _idCounter = 0;
+        private TcpListener listener;
+        private bool serverStopped;
 
-        public WebSocketServer(TcpConfig tcpConfig, int maxMessageSize, int handshakeMaxSize, SslConfig sslConfig, BufferPool bufferPool)
+        public WebSocketServer(TcpConfig tcpConfig, int maxMessageSize, int handshakeMaxSize, SslConfig sslConfig,
+            BufferPool bufferPool)
         {
             this.tcpConfig = tcpConfig;
             this.maxMessageSize = maxMessageSize;
@@ -55,17 +56,17 @@ namespace Mirror.SimpleWeb
             listener?.Stop();
             acceptThread = null;
 
-            Console.WriteLine($"[SimpleWebTransport] Server stopped...closing all connections.");
+            Console.WriteLine("[SimpleWebTransport] Server stopped...closing all connections.");
 
             // make copy so that foreach doesn't break if values are removed
-            Connection[] connectionsCopy = connections.Values.ToArray();
-            foreach (Connection conn in connectionsCopy)
+            var connectionsCopy = connections.Values.ToArray();
+            foreach (var conn in connectionsCopy)
                 conn.Dispose();
 
             connections.Clear();
         }
 
-        void acceptLoop()
+        private void acceptLoop()
         {
             try
             {
@@ -73,17 +74,17 @@ namespace Mirror.SimpleWeb
                 {
                     while (true)
                     {
-                        TcpClient client = listener.AcceptTcpClient();
+                        var client = listener.AcceptTcpClient();
                         tcpConfig.ApplyTo(client);
 
                         // TODO keep track of connections before they are in connections dictionary
                         //      this might not be a problem as HandshakeAndReceiveLoop checks for stop
                         //      and returns/disposes before sending message to queue
-                        Connection conn = new Connection(client, AfterConnectionDisposed);
+                        var conn = new Connection(client, AfterConnectionDisposed);
                         Console.WriteLine($"[SimpleWebTransport] A client connected {conn}", false);
 
                         // handshake needs its own thread as it needs to wait for message from client
-                        Thread receiveThread = new Thread(() => HandshakeAndReceiveLoop(conn));
+                        var receiveThread = new Thread(() => HandshakeAndReceiveLoop(conn));
 
                         conn.receiveThread = receiveThread;
 
@@ -98,16 +99,25 @@ namespace Mirror.SimpleWeb
                     throw;
                 }
             }
-            catch (ThreadInterruptedException e) { Log.InfoException(e); }
-            catch (ThreadAbortException e) { Log.InfoException(e); }
-            catch (Exception e) { Log.Exception(e); }
+            catch (ThreadInterruptedException e)
+            {
+                Log.InfoException(e);
+            }
+            catch (ThreadAbortException e)
+            {
+                Log.InfoException(e);
+            }
+            catch (Exception e)
+            {
+                Log.Exception(e);
+            }
         }
 
-        void HandshakeAndReceiveLoop(Connection conn)
+        private void HandshakeAndReceiveLoop(Connection conn)
         {
             try
             {
-                bool success = sslHelper.TryCreateStream(conn);
+                var success = sslHelper.TryCreateStream(conn);
                 if (!success)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -120,7 +130,9 @@ namespace Mirror.SimpleWeb
                 success = handShake.TryHandshake(conn);
 
                 if (success)
+                {
                     Console.WriteLine($"[SimpleWebTransport] Sent Handshake {conn}, false");
+                }
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -142,12 +154,12 @@ namespace Mirror.SimpleWeb
 
                 receiveQueue.Enqueue(new Message(conn.connId, EventType.Connected));
 
-                Thread sendThread = new Thread(() =>
+                var sendThread = new Thread(() =>
                 {
-                    SendLoop.Config sendConfig = new SendLoop.Config(
+                    var sendConfig = new SendLoop.Config(
                         conn,
-                        bufferSize: Constants.HeaderSize + maxMessageSize,
-                        setMask: false);
+                        Constants.HeaderSize + maxMessageSize,
+                        false);
 
                     SendLoop.Loop(sendConfig);
                 });
@@ -157,10 +169,10 @@ namespace Mirror.SimpleWeb
                 sendThread.Name = $"SendThread {conn.connId}";
                 sendThread.Start();
 
-                ReceiveLoop.Config receiveConfig = new ReceiveLoop.Config(
+                var receiveConfig = new ReceiveLoop.Config(
                     conn,
                     maxMessageSize,
-                    expectMask: true,
+                    true,
                     receiveQueue,
                     bufferPool);
 
@@ -191,18 +203,18 @@ namespace Mirror.SimpleWeb
             }
         }
 
-        void AfterConnectionDisposed(Connection conn)
+        private void AfterConnectionDisposed(Connection conn)
         {
             if (conn.connId != Connection.IdNotSet)
             {
                 receiveQueue.Enqueue(new Message(conn.connId, EventType.Disconnected));
-                connections.TryRemove(conn.connId, out Connection _);
+                connections.TryRemove(conn.connId, out var _);
             }
         }
 
         public void Send(int id, ArrayBuffer buffer)
         {
-            if (connections.TryGetValue(id, out Connection conn))
+            if (connections.TryGetValue(id, out var conn))
             {
                 conn.sendQueue.Enqueue(buffer);
                 conn.sendPending.Set();
@@ -210,14 +222,15 @@ namespace Mirror.SimpleWeb
             else
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[SimpleWebTransport] Cannot send message to {id} because connection was not found in dictionary. Maybe it disconnected.");
+                Console.WriteLine(
+                    $"[SimpleWebTransport] Cannot send message to {id} because connection was not found in dictionary. Maybe it disconnected.");
                 Console.ResetColor();
             }
         }
 
         public bool CloseConnection(int id)
         {
-            if (connections.TryGetValue(id, out Connection conn))
+            if (connections.TryGetValue(id, out var conn))
             {
                 Console.ForegroundColor = ConsoleColor.Magenta;
                 Console.WriteLine($"[SimpleWebTransport] Kicking connection {id}");
@@ -225,22 +238,21 @@ namespace Mirror.SimpleWeb
                 conn.Dispose();
                 return true;
             }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[SimpleWebTransport] Failed to kick {id} because id not found.");
-                Console.ResetColor();
 
-                return false;
-            }
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"[SimpleWebTransport] Failed to kick {id} because id not found.");
+            Console.ResetColor();
+
+            return false;
         }
 
         public string GetClientAddress(int id)
         {
-            if (!connections.TryGetValue(id, out Connection conn))
+            if (!connections.TryGetValue(id, out var conn))
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[SimpleWebTransport] Cannot get address of connection {id} because connection was not found in dictionary.");
+                Console.WriteLine(
+                    $"[SimpleWebTransport] Cannot get address of connection {id} because connection was not found in dictionary.");
                 Console.ResetColor();
                 return null;
             }
@@ -250,10 +262,11 @@ namespace Mirror.SimpleWeb
 
         public Request GetClientRequest(int id)
         {
-            if (!connections.TryGetValue(id, out Connection conn))
+            if (!connections.TryGetValue(id, out var conn))
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[SimpleWebTransport] Cant get request of connection {id} because connection was not found in dictionary.");
+                Console.WriteLine(
+                    $"[SimpleWebTransport] Cant get request of connection {id} because connection was not found in dictionary.");
                 Console.ResetColor();
                 return null;
             }

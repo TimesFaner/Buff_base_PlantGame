@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace QFramework
 {
     public class AssetDataTable : Table<AssetData>
     {
-        public TableIndex<string, AssetData> NameIndex = new TableIndex<string, AssetData>(data => data.AssetName);
+        public TableIndex<string, AssetData> NameIndex = new(data => data.AssetName);
 
         public AssetData GetAssetDataByResSearchKeys(ResSearchKeys resSearchKeys)
         {
@@ -16,9 +15,7 @@ namespace QFramework
                 .Get(assetName);
 
             if (resSearchKeys.OwnerBundle != null)
-            {
                 assetDatas = assetDatas.Where(a => a.OwnerBundleName == resSearchKeys.OwnerBundle);
-            }
 
             if (resSearchKeys.AssetType != null)
             {
@@ -32,12 +29,8 @@ namespace QFramework
                     var newAssetDatas = assetDatas.Where(a => a.AssetObjectTypeCode == assetTypeCode);
 
                     // 有可能是从旧的 AssetBundle 中加载出来的资源
-                    if (newAssetDatas.Any())
-                    {
-                        assetDatas = newAssetDatas;
-                    }
+                    if (newAssetDatas.Any()) assetDatas = newAssetDatas;
                 }
-
             }
 
             return assetDatas.FirstOrDefault();

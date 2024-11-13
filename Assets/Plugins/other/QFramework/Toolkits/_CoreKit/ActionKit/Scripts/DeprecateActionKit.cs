@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2018 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -32,7 +32,7 @@ namespace QFramework
 
     /// <inheritdoc />
     /// <summary>
-    /// 延时执行节点
+    ///     延时执行节点
     /// </summary>
     [Serializable]
     [ActionGroup("ActionKit")]
@@ -40,11 +40,20 @@ namespace QFramework
     {
         [SerializeField] public float DelayTime;
 
-        public System.Action OnDelayFinish { get; set; }
+        public Action OnDelayFinish { get; set; }
 
         public float CurrentSeconds { get; set; }
 
-        public static DelayAction Allocate(float delayTime, System.Action onDelayFinish = null)
+        public void OnRecycled()
+        {
+            OnDelayFinish = null;
+            DelayTime = 0.0f;
+            Reset();
+        }
+
+        public bool IsRecycled { get; set; }
+
+        public static DelayAction Allocate(float delayTime, Action onDelayFinish = null)
         {
             var retNode = SafeObjectPool<DelayAction>.Instance.Allocate();
             retNode.DelayTime = delayTime;
@@ -62,30 +71,18 @@ namespace QFramework
         {
             CurrentSeconds += dt;
             Finished = CurrentSeconds >= DelayTime;
-            if (Finished && OnDelayFinish != null)
-            {
-                OnDelayFinish();
-            }
+            if (Finished && OnDelayFinish != null) OnDelayFinish();
         }
 
         protected override void OnDispose()
         {
             SafeObjectPool<DelayAction>.Instance.Recycle(this);
         }
-
-        public void OnRecycled()
-        {
-            OnDelayFinish = null;
-            DelayTime = 0.0f;
-            Reset();
-        }
-
-        public bool IsRecycled { get; set; }
     }
 
     public static class DelayActionExtensions
     {
-        public static IDeprecateAction Delay<T>(this T selfBehaviour, float seconds, System.Action delayEvent)
+        public static IDeprecateAction Delay<T>(this T selfBehaviour, float seconds, Action delayEvent)
             where T : MonoBehaviour
         {
             var delayAction = DelayAction.Allocate(seconds, delayEvent);
@@ -101,7 +98,7 @@ namespace QFramework
 
     /// <inheritdoc />
     /// <summary>
-    /// 安枕执行节点
+    ///     安枕执行节点
     /// </summary>
     [Serializable]
     [ActionGroup("ActionKit")]
@@ -109,11 +106,22 @@ namespace QFramework
     {
         [SerializeField] public int FrameCount;
 
-        public System.Action OnDelayFrameFinish { get; set; }
+        private int StartFrame;
+
+        public Action OnDelayFrameFinish { get; set; }
 
         public float CurrentSeconds { get; set; }
 
-        public static DelayFrameAction Allocate(int frameCount, System.Action onDelayFrameFinish = null)
+        public void OnRecycled()
+        {
+            OnDelayFrameFinish = null;
+            FrameCount = 0;
+            Reset();
+        }
+
+        public bool IsRecycled { get; set; }
+
+        public static DelayFrameAction Allocate(int frameCount, Action onDelayFrameFinish = null)
         {
             var retNode = SafeObjectPool<DelayFrameAction>.Instance.Allocate();
             retNode.FrameCount = frameCount;
@@ -127,8 +135,6 @@ namespace QFramework
             CurrentSeconds = 0.0f;
         }
 
-        private int StartFrame;
-
         protected override void OnBegin()
         {
             base.OnBegin();
@@ -140,36 +146,24 @@ namespace QFramework
         {
             Finished = Time.frameCount - StartFrame >= FrameCount;
 
-            if (Finished && OnDelayFrameFinish != null)
-            {
-                OnDelayFrameFinish();
-            }
+            if (Finished && OnDelayFrameFinish != null) OnDelayFrameFinish();
         }
 
         protected override void OnDispose()
         {
             SafeObjectPool<DelayFrameAction>.Instance.Recycle(this);
         }
-
-        public void OnRecycled()
-        {
-            OnDelayFrameFinish = null;
-            FrameCount = 0;
-            Reset();
-        }
-
-        public bool IsRecycled { get; set; }
     }
 
     public static class DelayFrameActionExtensions
     {
-        public static void DelayFrame<T>(this T selfBehaviour, int frameCount, System.Action delayFrameEvent)
+        public static void DelayFrame<T>(this T selfBehaviour, int frameCount, Action delayFrameEvent)
             where T : MonoBehaviour
         {
             selfBehaviour.ExecuteNode(DelayFrameAction.Allocate(frameCount, delayFrameEvent));
         }
 
-        public static void NextFrame<T>(this T selfBehaviour, System.Action nextFrameEvent)
+        public static void NextFrame<T>(this T selfBehaviour, Action nextFrameEvent)
             where T : MonoBehaviour
         {
             selfBehaviour.ExecuteNode(DelayFrameAction.Allocate(1, nextFrameEvent));
@@ -188,42 +182,12 @@ namespace QFramework
 
     /// <inheritdoc />
     /// <summary>
-    /// 延时执行节点
+    ///     延时执行节点
     /// </summary>
     [OnlyUsedByCode]
     public class EventAction : ActionKitAction, IPoolable
     {
-        private System.Action mOnExecuteEvent;
-
-        /// <summary>
-        /// TODO:这里填可变参数会有问题
-        /// </summary>
-        /// <param name="onExecuteEvents"></param>
-        /// <returns></returns>
-        public static EventAction Allocate(params System.Action[] onExecuteEvents)
-        {
-            var retNode = SafeObjectPool<EventAction>.Instance.Allocate();
-            Array.ForEach(onExecuteEvents, onExecuteEvent => retNode.mOnExecuteEvent += onExecuteEvent);
-            return retNode;
-        }
-
-        /// <summary>
-        /// finished
-        /// </summary>
-        protected override void OnExecute(float dt)
-        {
-            if (mOnExecuteEvent != null)
-            {
-                mOnExecuteEvent.Invoke();
-            }
-
-            Finished = true;
-        }
-
-        protected override void OnDispose()
-        {
-            SafeObjectPool<EventAction>.Instance.Recycle(this);
-        }
+        private Action mOnExecuteEvent;
 
         public void OnRecycled()
         {
@@ -232,12 +196,51 @@ namespace QFramework
         }
 
         public bool IsRecycled { get; set; }
+
+        /// <summary>
+        ///     TODO:这里填可变参数会有问题
+        /// </summary>
+        /// <param name="onExecuteEvents"></param>
+        /// <returns></returns>
+        public static EventAction Allocate(params Action[] onExecuteEvents)
+        {
+            var retNode = SafeObjectPool<EventAction>.Instance.Allocate();
+            Array.ForEach(onExecuteEvents, onExecuteEvent => retNode.mOnExecuteEvent += onExecuteEvent);
+            return retNode;
+        }
+
+        /// <summary>
+        ///     finished
+        /// </summary>
+        protected override void OnExecute(float dt)
+        {
+            if (mOnExecuteEvent != null) mOnExecuteEvent.Invoke();
+
+            Finished = true;
+        }
+
+        protected override void OnDispose()
+        {
+            SafeObjectPool<EventAction>.Instance.Recycle(this);
+        }
     }
 
     [OnlyUsedByCode]
     public class OnlyBeginAction : ActionKitAction, IPoolable, IPoolType
     {
         private Action<OnlyBeginAction> mBeginAction;
+
+        public void OnRecycled()
+        {
+            mBeginAction = null;
+        }
+
+        public bool IsRecycled { get; set; }
+
+        public void Recycle2Cache()
+        {
+            SafeObjectPool<OnlyBeginAction>.Instance.Recycle(this);
+        }
 
         public static OnlyBeginAction Allocate(Action<OnlyBeginAction> beginAction)
         {
@@ -248,35 +251,28 @@ namespace QFramework
             return retSimpleAction;
         }
 
-        public void OnRecycled()
-        {
-            mBeginAction = null;
-        }
-
         protected override void OnBegin()
         {
-            if (mBeginAction != null)
-            {
-                mBeginAction.Invoke(this);
-            }
-        }
-
-        public bool IsRecycled { get; set; }
-
-        public void Recycle2Cache()
-        {
-            SafeObjectPool<OnlyBeginAction>.Instance.Recycle(this);
+            if (mBeginAction != null) mBeginAction.Invoke(this);
         }
     }
 
     /// <inheritdoc />
     /// <summary>
-    /// like filter, add condition
+    ///     like filter, add condition
     /// </summary>
     [OnlyUsedByCode]
     public class UntilAction : ActionKitAction, IPoolable
     {
         private Func<bool> mCondition;
+
+        void IPoolable.OnRecycled()
+        {
+            Reset();
+            mCondition = null;
+        }
+
+        bool IPoolable.IsRecycled { get; set; }
 
         public static UntilAction Allocate(Func<bool> condition)
         {
@@ -294,74 +290,54 @@ namespace QFramework
         {
             SafeObjectPool<UntilAction>.Instance.Recycle(this);
         }
-
-        void IPoolable.OnRecycled()
-        {
-            Reset();
-            mCondition = null;
-        }
-
-        bool IPoolable.IsRecycled { get; set; }
     }
 
     internal class OnDestroyDisposeTrigger : MonoBehaviour
     {
-        HashSet<IDisposable> mDisposables = new HashSet<IDisposable>();
-
-        public void AddDispose(IDisposable disposable)
-        {
-            if (!mDisposables.Contains(disposable))
-            {
-                mDisposables.Add(disposable);
-            }
-        }
+        private HashSet<IDisposable> mDisposables = new();
 
         private void OnDestroy()
         {
             if (Application.isPlaying)
             {
-                foreach (var disposable in mDisposables)
-                {
-                    disposable.Dispose();
-                }
+                foreach (var disposable in mDisposables) disposable.Dispose();
 
                 mDisposables.Clear();
                 mDisposables = null;
             }
+        }
+
+        public void AddDispose(IDisposable disposable)
+        {
+            if (!mDisposables.Contains(disposable)) mDisposables.Add(disposable);
         }
     }
 
     internal class OnDisableDisposeTrigger : MonoBehaviour
     {
-        HashSet<IDisposable> mDisposables = new HashSet<IDisposable>();
-
-        public void AddDispose(IDisposable disposable)
-        {
-            if (!mDisposables.Contains(disposable))
-            {
-                mDisposables.Add(disposable);
-            }
-        }
+        private HashSet<IDisposable> mDisposables = new();
 
         private void OnDisable()
         {
             if (Application.isPlaying)
             {
-                foreach (var disposable in mDisposables)
-                {
-                    disposable.Dispose();
-                }
+                foreach (var disposable in mDisposables) disposable.Dispose();
 
                 mDisposables.Clear();
                 mDisposables = null;
             }
+        }
+
+        public void AddDispose(IDisposable disposable)
+        {
+            if (!mDisposables.Contains(disposable)) mDisposables.Add(disposable);
         }
     }
 
     internal static class IDisposableExtensions
     {
         /// <summary>
-        /// 与 GameObject 绑定销毁
+        ///     与 GameObject 绑定销毁
         /// </summary>
         /// <param name="self"></param>
         /// <param name="component"></param>
@@ -369,60 +345,48 @@ namespace QFramework
         {
             var onDestroyDisposeTrigger = component.gameObject.GetComponent<OnDestroyDisposeTrigger>();
             if (!onDestroyDisposeTrigger)
-            {
                 onDestroyDisposeTrigger = component.gameObject.AddComponent<OnDestroyDisposeTrigger>();
-            }
 
             onDestroyDisposeTrigger.AddDispose(self);
         }
     }
 
     /// <summary>
-    /// 时间轴执行节点
+    ///     时间轴执行节点
     /// </summary>
     public class Timeline : ActionKitAction
     {
-        private float mCurTime = 0;
-
-        public System.Action OnTimelineBeganCallback
-        {
-            get { return OnBeganCallback; }
-            set { OnBeganCallback = value; }
-        }
-
-        public System.Action OnTimelineEndedCallback
-        {
-            get { return OnEndedCallback; }
-            set { OnEndedCallback = value; }
-        }
+        private float mCurTime;
 
         public Action<string> OnKeyEventsReceivedCallback = null;
 
-        public class TimelinePair
-        {
-            public float Time;
-            public IDeprecateAction Node;
+        /// <summary>
+        ///     refator 2 one list? all in one list;
+        /// </summary>
+        public Queue<TimelinePair> TimelineQueue = new();
 
-            public TimelinePair(float time, IDeprecateAction node)
-            {
-                Time = time;
-                Node = node;
-            }
+        public Timeline(params TimelinePair[] pairs)
+        {
+            foreach (var pair in pairs) TimelineQueue.Enqueue(pair);
         }
 
-        /// <summary>
-        /// refator 2 one list? all in one list;
-        /// </summary>
-        public Queue<TimelinePair> TimelineQueue = new Queue<TimelinePair>();
+        public Action OnTimelineBeganCallback
+        {
+            get => OnBeganCallback;
+            set => OnBeganCallback = value;
+        }
+
+        public Action OnTimelineEndedCallback
+        {
+            get => OnEndedCallback;
+            set => OnEndedCallback = value;
+        }
 
         protected override void OnReset()
         {
             mCurTime = 0.0f;
 
-            foreach (var timelinePair in TimelineQueue)
-            {
-                timelinePair.Node.Reset();
-            }
+            foreach (var timelinePair in TimelineQueue) timelinePair.Node.Reset();
         }
 
         protected override void OnExecute(float dt)
@@ -430,20 +394,8 @@ namespace QFramework
             mCurTime += dt;
 
             foreach (var pair in TimelineQueue.Where(pair => pair.Time < mCurTime && !pair.Node.Finished))
-            {
                 if (pair.Node.Execute(dt))
-                {
                     Finished = TimelineQueue.Count(timelinePair => !timelinePair.Node.Finished) == 0;
-                }
-            }
-        }
-
-        public Timeline(params TimelinePair[] pairs)
-        {
-            foreach (var pair in pairs)
-            {
-                TimelineQueue.Enqueue(pair);
-            }
         }
 
         public void Append(TimelinePair pair)
@@ -458,20 +410,37 @@ namespace QFramework
 
         protected override void OnDispose()
         {
-            foreach (var timelinePair in TimelineQueue)
-            {
-                timelinePair.Node.Dispose();
-            }
+            foreach (var timelinePair in TimelineQueue) timelinePair.Node.Dispose();
 
             TimelineQueue.Clear();
             TimelineQueue = null;
+        }
+
+        public class TimelinePair
+        {
+            public IDeprecateAction Node;
+            public float Time;
+
+            public TimelinePair(float time, IDeprecateAction node)
+            {
+                Time = time;
+                Node = node;
+            }
         }
     }
 
     public class KeyEventAction : ActionKitAction, IPoolable
     {
-        private Timeline mTimeline;
         private string mEventName;
+        private Timeline mTimeline;
+
+        public void OnRecycled()
+        {
+            mTimeline = null;
+            mEventName = null;
+        }
+
+        public bool IsRecycled { get; set; }
 
         public static KeyEventAction Allocate(string eventName, Timeline timeline)
         {
@@ -496,19 +465,11 @@ namespace QFramework
         {
             SafeObjectPool<KeyEventAction>.Instance.Recycle(this);
         }
-
-        public void OnRecycled()
-        {
-            mTimeline = null;
-            mEventName = null;
-        }
-
-        public bool IsRecycled { get; set; }
     }
 
     public class AsyncNode : ActionKitAction
     {
-        public HashSet<IDeprecateAction> mActions = new HashSet<IDeprecateAction>();
+        public HashSet<IDeprecateAction> mActions = new();
 
         public void Add(IDeprecateAction action)
         {
@@ -527,7 +488,7 @@ namespace QFramework
 
     public class QueueNode : ActionKitAction
     {
-        private Queue<IDeprecateAction> mQueue = new Queue<IDeprecateAction>(20);
+        private readonly Queue<IDeprecateAction> mQueue = new(20);
 
         public void Enqueue(IDeprecateAction action)
         {
@@ -536,10 +497,7 @@ namespace QFramework
 
         protected override void OnExecute(float dt)
         {
-            if (mQueue.Count != 0 && mQueue.Peek().Execute(dt))
-            {
-                mQueue.Dequeue().Dispose();
-            }
+            if (mQueue.Count != 0 && mQueue.Peek().Execute(dt)) mQueue.Dequeue().Dispose();
         }
     }
 
@@ -551,6 +509,12 @@ namespace QFramework
     [OnlyUsedByCode]
     public class RepeatNode : ActionKitAction, INode
     {
+        private int mCurRepeatCount;
+
+        private IDeprecateAction mNode;
+
+        public int RepeatCount = 1;
+
         public RepeatNode(IDeprecateAction node, int repeatCount = -1)
         {
             RepeatCount = repeatCount;
@@ -567,18 +531,9 @@ namespace QFramework
             }
         }
 
-        private IDeprecateAction mNode;
-
-        public int RepeatCount = 1;
-
-        private int mCurRepeatCount = 0;
-
         protected override void OnReset()
         {
-            if (null != mNode)
-            {
-                mNode.Reset();
-            }
+            if (null != mNode) mNode.Reset();
 
             mCurRepeatCount = 0;
             Finished = false;
@@ -588,10 +543,7 @@ namespace QFramework
         {
             if (RepeatCount == -1)
             {
-                if (mNode.Execute(dt))
-                {
-                    mNode.Reset();
-                }
+                if (mNode.Execute(dt)) mNode.Reset();
 
                 return;
             }
@@ -602,10 +554,7 @@ namespace QFramework
                 mCurRepeatCount++;
             }
 
-            if (mCurRepeatCount == RepeatCount)
-            {
-                Finished = true;
-            }
+            if (mCurRepeatCount == RepeatCount) Finished = true;
         }
 
         protected override void OnDispose()
@@ -619,18 +568,24 @@ namespace QFramework
     }
 
     /// <summary>
-    /// 序列执行节点
+    ///     序列执行节点
     /// </summary>
     [OnlyUsedByCode]
     public class SequenceNode : ActionKitAction, INode, IResetable
     {
-        protected List<IDeprecateAction> mNodes = ListPool<IDeprecateAction>.Get();
         protected List<IDeprecateAction> mExcutingNodes = ListPool<IDeprecateAction>.Get();
+        protected List<IDeprecateAction> mNodes = ListPool<IDeprecateAction>.Get();
 
-        public int TotalCount
+        public SequenceNode(params IDeprecateAction[] nodes)
         {
-            get { return mExcutingNodes.Count; }
+            foreach (var node in nodes)
+            {
+                mNodes.Add(node);
+                mExcutingNodes.Add(node);
+            }
         }
+
+        public int TotalCount => mExcutingNodes.Count;
 
         public IDeprecateAction CurrentExecutingNode
         {
@@ -669,10 +624,7 @@ namespace QFramework
 
                     OnCurrentActionFinished();
 
-                    if (mExcutingNodes.Count == 0)
-                    {
-                        break;
-                    }
+                    if (mExcutingNodes.Count == 0) break;
                 }
             }
 
@@ -681,15 +633,6 @@ namespace QFramework
 
         protected virtual void OnCurrentActionFinished()
         {
-        }
-
-        public SequenceNode(params IDeprecateAction[] nodes)
-        {
-            foreach (var node in nodes)
-            {
-                mNodes.Add(node);
-                mExcutingNodes.Add(node);
-            }
         }
 
         public SequenceNode Append(IDeprecateAction appendedNode)
@@ -720,12 +663,20 @@ namespace QFramework
     }
 
     /// <summary>
-    /// 并发执行的协程
+    ///     并发执行的协程
     /// </summary>
     [OnlyUsedByCode]
     public class SpawnNode : ActionKitAction
     {
+        private int mFinishCount;
         protected List<ActionKitAction> mNodes = ListPool<ActionKitAction>.Get();
+
+        public SpawnNode(params ActionKitAction[] nodes)
+        {
+            mNodes.AddRange(nodes);
+
+            foreach (var nodeAction in nodes) nodeAction.OnEndedCallback += IncreaseFinishCount;
+        }
 
         protected override void OnReset()
         {
@@ -735,10 +686,7 @@ namespace QFramework
 
         public override void Finish()
         {
-            for (var i = mNodes.Count - 1; i >= 0; i--)
-            {
-                mNodes[i].Finish();
-            }
+            for (var i = mNodes.Count - 1; i >= 0; i--) mNodes[i].Finish();
 
             base.Finish();
         }
@@ -753,31 +701,16 @@ namespace QFramework
             }
         }
 
-        private int mFinishCount = 0;
-
         private void IncreaseFinishCount()
         {
             mFinishCount++;
-        }
-
-        public SpawnNode(params ActionKitAction[] nodes)
-        {
-            mNodes.AddRange(nodes);
-
-            foreach (var nodeAction in nodes)
-            {
-                nodeAction.OnEndedCallback += IncreaseFinishCount;
-            }
         }
 
         public void Add(params ActionKitAction[] nodes)
         {
             mNodes.AddRange(nodes);
 
-            foreach (var nodeAction in nodes)
-            {
-                nodeAction.OnEndedCallback += IncreaseFinishCount;
-            }
+            foreach (var nodeAction in nodes) nodeAction.OnEndedCallback += IncreaseFinishCount;
         }
 
         protected override void OnDispose()
@@ -795,27 +728,20 @@ namespace QFramework
 
     public class ActionKitFSM
     {
+        private readonly Dictionary<Type, ActionKitFSMState> mStates = new();
+        private readonly ActionKitFSMTransitionTable mTrasitionTable = new();
         public ActionKitFSMState CurrentState { get; private set; }
         public Type PreviousStateType { get; private set; }
 
         public void Update()
         {
-            if (CurrentState != null)
-            {
-                CurrentState.Update();
-            }
+            if (CurrentState != null) CurrentState.Update();
         }
 
         public void FixedUpdate()
         {
-            if (CurrentState != null)
-            {
-                CurrentState.FixedUpdate();
-            }
+            if (CurrentState != null) CurrentState.FixedUpdate();
         }
-
-        private Dictionary<Type, ActionKitFSMState> mStates = new Dictionary<Type, ActionKitFSMState>();
-        private ActionKitFSMTransitionTable mTrasitionTable = new ActionKitFSMTransitionTable();
 
 
         public void AddState(ActionKitFSMState state)
@@ -831,7 +757,6 @@ namespace QFramework
         public bool HandleEvent<TTransition>() where TTransition : ActionKitFSMTransition
         {
             foreach (var transition in mTrasitionTable.TypeIndex.Get(typeof(TTransition)))
-            {
                 if (transition.SrcStateTypes.Contains(CurrentState.GetType()))
                 {
                     var currentState = CurrentState;
@@ -842,7 +767,6 @@ namespace QFramework
                     CurrentState.Enter();
                     return true;
                 }
-            }
 
             return false;
         }
@@ -916,17 +840,14 @@ namespace QFramework
 
     public class ActionKitFSMState<T> : ActionKitFSMState
     {
+        protected T mTarget;
+
         public ActionKitFSMState(T target)
         {
             mTarget = target;
         }
 
-        protected T mTarget;
-
-        public T Target
-        {
-            get { return mTarget; }
-        }
+        public T Target => mTarget;
     }
 
     public class ActionKitFSMTransition
@@ -942,16 +863,12 @@ namespace QFramework
         public ActionKitFSMTransition AddSrcState<T>() where T : ActionKitFSMState
         {
             if (SrcStateTypes == null)
-            {
-                SrcStateTypes = new HashSet<Type>()
+                SrcStateTypes = new HashSet<Type>
                 {
                     typeof(T)
                 };
-            }
             else
-            {
                 SrcStateTypes.Add(typeof(T));
-            }
 
             return this;
         }
@@ -966,18 +883,12 @@ namespace QFramework
 
     public class ActionKitFSMTransition<TSrcState, TDstState> : ActionKitFSMTransition
     {
-        private Type mSrcStateType = typeof(TSrcState);
-        private Type mDstStateType = typeof(TDstState);
+        private readonly Type mDstStateType = typeof(TDstState);
+        private readonly Type mSrcStateType = typeof(TSrcState);
 
-        public override HashSet<Type> SrcStateTypes
-        {
-            get { return new HashSet<Type>() { mSrcStateType }; }
-        }
+        public override HashSet<Type> SrcStateTypes => new() { mSrcStateType };
 
-        public override Type DstStateType
-        {
-            get { return mDstStateType; }
-        }
+        public override Type DstStateType => mDstStateType;
     }
 
     public struct EnumStateChangeEvent<T> where T : struct, IComparable, IConvertible, IFormattable
@@ -1003,17 +914,20 @@ namespace QFramework
 
     public class EnumStateMachine<T> : IEnumStateMachine where T : struct, IComparable, IConvertible, IFormattable
     {
-        /// If you set TriggerEvents to true, the state machine will trigger events when entering and exiting a state. 
-        /// Additionnally, if you also use a StateMachineProcessor, it'll trigger events for the current state on FixedUpdate, LateUpdate, but also
-        /// on Update (separated in EarlyUpdate, Update and EndOfUpdate, triggered in this order at Update()
-        /// To listen to these events, from any class, in its Start() method (or wherever you prefer), use MMEventManager.StartListening(gameObject.GetInstanceID().ToString()+"XXXEnter",OnXXXEnter);
-        /// where XXX is the name of the state you're listening to, and OnXXXEnter is the method you want to call when that event is triggered.
-        /// MMEventManager.StartListening(gameObject.GetInstanceID().ToString()+"CrouchingEarlyUpdate",OnCrouchingEarlyUpdate); for example will listen to the Early Update event of the Crouching state, and 
-        /// will trigger the OnCrouchingEarlyUpdate() method. 
-        public bool TriggerEvents { get; set; }
-
         /// the name of the target gameobject
         public GameObject Target;
+
+        /// <summary>
+        ///     Creates a new StateMachine, with a targetName (used for events, usually use GetInstanceID()), and whether you want
+        ///     to use events with it or not
+        /// </summary>
+        /// <param name="targetName">Target name.</param>
+        /// <param name="triggerEvents">If set to <c>true</c> trigger events.</param>
+        public EnumStateMachine(GameObject target, bool triggerEvents)
+        {
+            Target = target;
+            TriggerEvents = triggerEvents;
+        }
 
         /// the current character's movement state
         public T CurrentState { get; protected set; }
@@ -1021,57 +935,45 @@ namespace QFramework
         /// the character's movement state before entering the current one
         public T PreviousState { get; protected set; }
 
-        /// <summary>
-        /// Creates a new StateMachine, with a targetName (used for events, usually use GetInstanceID()), and whether you want to use events with it or not
-        /// </summary>
-        /// <param name="targetName">Target name.</param>
-        /// <param name="triggerEvents">If set to <c>true</c> trigger events.</param>
-        public EnumStateMachine(GameObject target, bool triggerEvents)
-        {
-            this.Target = target;
-            this.TriggerEvents = triggerEvents;
-        }
+        /// If you set TriggerEvents to true, the state machine will trigger events when entering and exiting a state. 
+        /// Additionnally, if you also use a StateMachineProcessor, it'll trigger events for the current state on FixedUpdate, LateUpdate, but also
+        /// on Update (separated in EarlyUpdate, Update and EndOfUpdate, triggered in this order at Update()
+        /// To listen to these events, from any class, in its Start() method (or wherever you prefer), use MMEventManager.StartListening(gameObject.GetInstanceID().ToString()+"XXXEnter",OnXXXEnter);
+        /// where XXX is the name of the state you're listening to, and OnXXXEnter is the method you want to call when that event is triggered.
+        /// MMEventManager.StartListening(gameObject.GetInstanceID().ToString()+"CrouchingEarlyUpdate",OnCrouchingEarlyUpdate); for example will listen to the Early Update event of the Crouching state, and 
+        /// will trigger the OnCrouchingEarlyUpdate() method.
+        public bool TriggerEvents { get; set; }
 
         /// <summary>
-        /// 切换状态
+        ///     切换状态
         /// </summary>
         /// <param name="newState">New state.</param>
         public virtual void ChangeState(T newState)
         {
             // if the "new state" is the current one, we do nothing and exit
-            if (newState.Equals(CurrentState))
-            {
-                return;
-            }
+            if (newState.Equals(CurrentState)) return;
 
             // we store our previous character movement state
             PreviousState = CurrentState;
             CurrentState = newState;
 
-            if (TriggerEvents)
-            {
-                TypeEventSystem.Global.Send(new EnumStateChangeEvent<T>(this));
-            }
+            if (TriggerEvents) TypeEventSystem.Global.Send(new EnumStateChangeEvent<T>(this));
         }
 
         /// <summary>
-        /// 返回上一个状态
+        ///     返回上一个状态
         /// </summary>
         public virtual void RestorePreviousState()
         {
             CurrentState = PreviousState;
 
-            if (TriggerEvents)
-            {
-                TypeEventSystem.Global.Send(new EnumStateChangeEvent<T>(this));
-            }
+            if (TriggerEvents) TypeEventSystem.Global.Send(new EnumStateChangeEvent<T>(this));
         }
     }
 
     public class ActionKitFSMTransitionTable : Table<ActionKitFSMTransition>
     {
-        public TableIndex<Type, ActionKitFSMTransition> TypeIndex =
-            new TableIndex<Type, ActionKitFSMTransition>(t => t.GetType());
+        public TableIndex<Type, ActionKitFSMTransition> TypeIndex = new(t => t.GetType());
 
         protected override void OnAdd(ActionKitFSMTransition item)
         {
@@ -1100,11 +1002,22 @@ namespace QFramework
     }
 
     /// <summary>
-    /// FSM 基于枚举的状态机
+    ///     FSM 基于枚举的状态机
     /// </summary>
     public class FSM<TStateEnum, TEventEnum> : IDisposable
     {
-        private Action<TStateEnum, TStateEnum> mOnStateChanged = null;
+        /// <summary>
+        ///     FSM onStateChagned.
+        /// </summary>
+        public delegate void FSMOnStateChanged(params object[] param);
+
+        private readonly Action<TStateEnum, TStateEnum> mOnStateChanged;
+
+        /// <summary>
+        ///     The m state dict.
+        /// </summary>
+        private readonly Dictionary<TStateEnum, FSMState<TStateEnum>>
+            mStateDict = new();
 
         public FSM(Action<TStateEnum, TStateEnum> onStateChanged = null)
         {
@@ -1112,38 +1025,113 @@ namespace QFramework
         }
 
         /// <summary>
-        /// FSM onStateChagned.
+        ///     The state of the m current.
         /// </summary>
-        public delegate void FSMOnStateChanged(params object[] param);
+        public TStateEnum State { get; private set; }
+
+        public void Dispose()
+        {
+            Clear();
+        }
 
         /// <summary>
-        /// QFSM state.
+        ///     Adds the state.
+        /// </summary>
+        /// <param name="name">Name.</param>
+        private void AddState(TStateEnum name)
+        {
+            mStateDict[name] = new FSMState<TStateEnum>(name);
+        }
+
+        /// <summary>
+        ///     Adds the translation.
+        /// </summary>
+        /// <param name="fromState">From state.</param>
+        /// <param name="name">Name.</param>
+        /// <param name="toState">To state.</param>
+        /// <param name="onStateChagned">Callfunc.</param>
+        public void AddTransition(TStateEnum fromState, TEventEnum name, TStateEnum toState,
+            Action<object[]> onStateChagned = null)
+        {
+            if (!mStateDict.ContainsKey(fromState)) AddState(fromState);
+
+            if (!mStateDict.ContainsKey(toState)) AddState(toState);
+
+            mStateDict[fromState].TranslationDict[name] =
+                new FSMTranslation<TStateEnum, TEventEnum>(fromState, name, toState, onStateChagned);
+        }
+
+        /// <summary>
+        ///     Start the specified name.
+        /// </summary>
+        /// <param name="name">Name.</param>
+        public void Start(TStateEnum name)
+        {
+            State = name;
+        }
+
+        /// <summary>
+        ///     Handles the event.
+        /// </summary>
+        /// <param name="name">Name.</param>
+        /// <param name="param">Parameter.</param>
+        public void HandleEvent(TEventEnum name, params object[] param)
+        {
+            if (State != null && mStateDict[State].TranslationDict.ContainsKey(name))
+            {
+                var tempTranslation = mStateDict[State].TranslationDict[name];
+
+                if (tempTranslation.OnTranslationCallback != null) tempTranslation.OnTranslationCallback.Invoke(param);
+
+                if (mOnStateChanged != null) mOnStateChanged.Invoke(State, tempTranslation.ToState);
+
+                State = tempTranslation.ToState;
+            }
+        }
+
+        /// <summary>
+        ///     Clear this instance.
+        /// </summary>
+        public void Clear()
+        {
+            foreach (var keyValuePair in mStateDict)
+            {
+                foreach (var translationDictValue in keyValuePair.Value.TranslationDict.Values)
+                    translationDictValue.OnTranslationCallback = null;
+
+                keyValuePair.Value.TranslationDict.Clear();
+            }
+
+            mStateDict.Clear();
+        }
+
+        /// <summary>
+        ///     QFSM state.
         /// </summary>
         public class FSMState<TName>
         {
+            /// <summary>
+            ///     The translation dict.
+            /// </summary>
+            public readonly Dictionary<TEventEnum, FSMTranslation<TName, TEventEnum>> TranslationDict = new();
+
             public TName Name;
 
             public FSMState(TName name)
             {
                 Name = name;
             }
-
-            /// <summary>
-            /// The translation dict.
-            /// </summary>
-            public readonly Dictionary<TEventEnum, FSMTranslation<TName, TEventEnum>> TranslationDict =
-                new Dictionary<TEventEnum, FSMTranslation<TName, TEventEnum>>();
         }
 
         /// <summary>
-        /// Translation 
+        ///     Translation
         /// </summary>
         public class FSMTranslation<TStateName, KEventName>
         {
             public TStateName FromState;
             public KEventName Name;
-            public TStateName ToState;
             public Action<object[]> OnTranslationCallback; // 回调函数
+            public TStateName ToState;
 
             public FSMTranslation(TStateName fromState, KEventName name, TStateName toState,
                 Action<object[]> onStateChagned)
@@ -1154,180 +1142,31 @@ namespace QFramework
                 OnTranslationCallback = onStateChagned;
             }
         }
-
-        /// <summary>
-        /// The state of the m current.
-        /// </summary>
-        TStateEnum mCurState;
-
-        public TStateEnum State
-        {
-            get { return mCurState; }
-        }
-
-        /// <summary>
-        /// The m state dict.
-        /// </summary>
-        Dictionary<TStateEnum, FSMState<TStateEnum>>
-            mStateDict = new Dictionary<TStateEnum, FSMState<TStateEnum>>();
-
-        /// <summary>
-        /// Adds the state.
-        /// </summary>
-        /// <param name="name">Name.</param>
-        private void AddState(TStateEnum name)
-        {
-            mStateDict[name] = new FSMState<TStateEnum>(name);
-        }
-
-        /// <summary>
-        /// Adds the translation.
-        /// </summary>
-        /// <param name="fromState">From state.</param>
-        /// <param name="name">Name.</param>
-        /// <param name="toState">To state.</param>
-        /// <param name="onStateChagned">Callfunc.</param>
-        public void AddTransition(TStateEnum fromState, TEventEnum name, TStateEnum toState,
-            Action<object[]> onStateChagned = null)
-        {
-            if (!mStateDict.ContainsKey(fromState))
-            {
-                AddState(fromState);
-            }
-
-            if (!mStateDict.ContainsKey(toState))
-            {
-                AddState(toState);
-            }
-
-            mStateDict[fromState].TranslationDict[name] =
-                new FSMTranslation<TStateEnum, TEventEnum>(fromState, name, toState, onStateChagned);
-        }
-
-        /// <summary>
-        /// Start the specified name.
-        /// </summary>
-        /// <param name="name">Name.</param>
-        public void Start(TStateEnum name)
-        {
-            mCurState = name;
-        }
-
-        /// <summary>
-        /// Handles the event.
-        /// </summary>
-        /// <param name="name">Name.</param>
-        /// <param name="param">Parameter.</param>
-        public void HandleEvent(TEventEnum name, params object[] param)
-        {
-            if (mCurState != null && mStateDict[mCurState].TranslationDict.ContainsKey(name))
-            {
-                var tempTranslation = mStateDict[mCurState].TranslationDict[name];
-
-                if (tempTranslation.OnTranslationCallback != null)
-                {
-                    tempTranslation.OnTranslationCallback.Invoke(param);
-                }
-
-                if (mOnStateChanged != null)
-                {
-                    mOnStateChanged.Invoke(mCurState, tempTranslation.ToState);
-                }
-
-                mCurState = tempTranslation.ToState;
-            }
-        }
-
-        /// <summary>
-        /// Clear this instance.
-        /// </summary>
-        public void Clear()
-        {
-            foreach (var keyValuePair in mStateDict)
-            {
-                foreach (var translationDictValue in keyValuePair.Value.TranslationDict.Values)
-                {
-                    translationDictValue.OnTranslationCallback = null;
-                }
-
-                keyValuePair.Value.TranslationDict.Clear();
-            }
-
-            mStateDict.Clear();
-        }
-
-        public void Dispose()
-        {
-            Clear();
-        }
     }
 
     /// <summary>
-    /// QFSM lite.
-    /// 基于字符串的状态机
+    ///     QFSM lite.
+    ///     基于字符串的状态机
     /// </summary>
     public class QFSMLite
     {
         /// <summary>
-        /// FSM callfunc.
+        ///     FSM callfunc.
         /// </summary>
         public delegate void FSMCallfunc(params object[] param);
 
         /// <summary>
-        /// QFSM state.
+        ///     The m state dict.
         /// </summary>
-        class QFSMState
-        {
-            public string Name;
-
-            public QFSMState(string name)
-            {
-                Name = name;
-            }
-
-            /// <summary>
-            /// The translation dict.
-            /// </summary>
-            public readonly Dictionary<string, QFSMTranslation> TranslationDict =
-                new Dictionary<string, QFSMTranslation>();
-        }
+        private readonly Dictionary<string, QFSMState> mStateDict = new();
 
         /// <summary>
-        /// Translation 
+        ///     The state of the m current.
         /// </summary>
-        public class QFSMTranslation
-        {
-            public string FromState;
-            public string Name;
-            public string ToState;
-            public FSMCallfunc OnTranslationCallback; // 回调函数
-
-            public QFSMTranslation(string fromState, string name, string toState, FSMCallfunc onTranslationCallback)
-            {
-                FromState = fromState;
-                ToState = toState;
-                Name = name;
-                OnTranslationCallback = onTranslationCallback;
-            }
-        }
+        public string State { get; private set; }
 
         /// <summary>
-        /// The state of the m current.
-        /// </summary>
-        string mCurState;
-
-        public string State
-        {
-            get { return mCurState; }
-        }
-
-        /// <summary>
-        /// The m state dict.
-        /// </summary>
-        Dictionary<string, QFSMState> mStateDict = new Dictionary<string, QFSMState>();
-
-        /// <summary>
-        /// Adds the state.
+        ///     Adds the state.
         /// </summary>
         /// <param name="name">Name.</param>
         public void AddState(string name)
@@ -1336,7 +1175,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Adds the translation.
+        ///     Adds the translation.
         /// </summary>
         /// <param name="fromState">From state.</param>
         /// <param name="name">Name.</param>
@@ -1348,35 +1187,72 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Start the specified name.
+        ///     Start the specified name.
         /// </summary>
         /// <param name="name">Name.</param>
         public void Start(string name)
         {
-            mCurState = name;
+            State = name;
         }
 
         /// <summary>
-        /// Handles the event.
+        ///     Handles the event.
         /// </summary>
         /// <param name="name">Name.</param>
         /// <param name="param">Parameter.</param>
         public void HandleEvent(string name, params object[] param)
         {
-            if (mCurState != null && mStateDict[mCurState].TranslationDict.ContainsKey(name))
+            if (State != null && mStateDict[State].TranslationDict.ContainsKey(name))
             {
-                var tempTranslation = mStateDict[mCurState].TranslationDict[name];
+                var tempTranslation = mStateDict[State].TranslationDict[name];
                 tempTranslation.OnTranslationCallback(param);
-                mCurState = tempTranslation.ToState;
+                State = tempTranslation.ToState;
             }
         }
 
         /// <summary>
-        /// Clear this instance.
+        ///     Clear this instance.
         /// </summary>
         public void Clear()
         {
             mStateDict.Clear();
+        }
+
+        /// <summary>
+        ///     QFSM state.
+        /// </summary>
+        private class QFSMState
+        {
+            /// <summary>
+            ///     The translation dict.
+            /// </summary>
+            public readonly Dictionary<string, QFSMTranslation> TranslationDict = new();
+
+            public string Name;
+
+            public QFSMState(string name)
+            {
+                Name = name;
+            }
+        }
+
+        /// <summary>
+        ///     Translation
+        /// </summary>
+        public class QFSMTranslation
+        {
+            public string FromState;
+            public string Name;
+            public FSMCallfunc OnTranslationCallback; // 回调函数
+            public string ToState;
+
+            public QFSMTranslation(string fromState, string name, string toState, FSMCallfunc onTranslationCallback)
+            {
+                FromState = fromState;
+                ToState = toState;
+                Name = name;
+                OnTranslationCallback = onTranslationCallback;
+            }
         }
     }
 
@@ -1384,16 +1260,16 @@ namespace QFramework
     {
         bool Disposed { get; }
 
+        bool Finished { get; }
+
         bool Execute(float delta);
 
         void Reset();
 
         void Finish();
-
-        bool Finished { get; }
     }
 
-    [System.Serializable]
+    [Serializable]
     public class ActionData
     {
         [SerializeField] public string ActionName;
@@ -1408,34 +1284,10 @@ namespace QFramework
     [Serializable]
     public abstract class ActionKitAction : IDeprecateAction
     {
-        public System.Action OnBeganCallback = null;
-        public System.Action OnEndedCallback = null;
-        public System.Action OnDisposedCallback = null;
-
-        protected bool mOnBeginCalled = false;
-
-        #region IAction Support
-
-        bool IDeprecateAction.Disposed
-        {
-            get { return mDisposed; }
-        }
-
-        protected bool mDisposed = false;
-
-        public bool Finished { get; protected set; }
-
-        public virtual void Finish()
-        {
-            Finished = true;
-        }
-
-        public void Break()
-        {
-            Finished = true;
-        }
-
-        #endregion
+        protected bool mOnBeginCalled;
+        public Action OnBeganCallback;
+        public Action OnDisposedCallback;
+        public Action OnEndedCallback;
 
         #region ResetableSupport
 
@@ -1455,40 +1307,46 @@ namespace QFramework
         public bool Execute(float dt)
         {
             if (mDisposed) return true;
-            
+
             // 有可能被别的地方调用
-            if (Finished)
-            {
-                return Finished;
-            }
+            if (Finished) return Finished;
 
             if (!mOnBeginCalled)
             {
                 mOnBeginCalled = true;
                 OnBegin();
 
-                if (OnBeganCallback != null)
-                {
-                    OnBeganCallback.Invoke();
-                }
+                if (OnBeganCallback != null) OnBeganCallback.Invoke();
             }
 
-            if (!Finished)
-            {
-                OnExecute(dt);
-            }
+            if (!Finished) OnExecute(dt);
 
             if (Finished)
             {
-                if (OnEndedCallback != null)
-                {
-                    OnEndedCallback.Invoke();
-                }
+                if (OnEndedCallback != null) OnEndedCallback.Invoke();
 
                 OnEnd();
             }
 
             return Finished || mDisposed;
+        }
+
+        #endregion
+
+        #region IDisposable Support
+
+        public void Dispose()
+        {
+            if (mDisposed) return;
+            mDisposed = true;
+
+            OnBeganCallback = null;
+            OnEndedCallback = null;
+
+            if (OnDisposedCallback != null) OnDisposedCallback.Invoke();
+
+            OnDisposedCallback = null;
+            OnDispose();
         }
 
         #endregion
@@ -1502,7 +1360,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// finished
+        ///     finished
         /// </summary>
         protected virtual void OnExecute(float dt)
         {
@@ -1516,23 +1374,22 @@ namespace QFramework
         {
         }
 
-        #region IDisposable Support
+        #region IAction Support
 
-        public void Dispose()
+        bool IDeprecateAction.Disposed => mDisposed;
+
+        protected bool mDisposed;
+
+        public bool Finished { get; protected set; }
+
+        public virtual void Finish()
         {
-            if (mDisposed) return;
-            mDisposed = true;
+            Finished = true;
+        }
 
-            OnBeganCallback = null;
-            OnEndedCallback = null;
-
-            if (OnDisposedCallback != null)
-            {
-                OnDisposedCallback.Invoke();
-            }
-
-            OnDisposedCallback = null;
-            OnDispose();
+        public void Break()
+        {
+            Finished = true;
         }
 
         #endregion
@@ -1553,21 +1410,18 @@ namespace QFramework
     }
 
     /// <summary>
-    /// 支持链式方法
+    ///     支持链式方法
     /// </summary>
     public class SequenceNodeChain : ActionChain
     {
-        protected override ActionKitAction mNode
-        {
-            get { return mSequenceNode; }
-        }
-
         private SequenceNode mSequenceNode;
 
         public SequenceNodeChain()
         {
             mSequenceNode = new SequenceNode();
         }
+
+        protected override ActionKitAction mNode => mSequenceNode;
 
         public override IActionChain Append(IDeprecateAction node)
         {
@@ -1586,11 +1440,6 @@ namespace QFramework
 
     public class RepeatNodeChain : ActionChain
     {
-        protected override ActionKitAction mNode
-        {
-            get { return mRepeatNodeAction; }
-        }
-
         private RepeatNode mRepeatNodeAction;
 
         private SequenceNode mSequenceNode;
@@ -1600,6 +1449,8 @@ namespace QFramework
             mSequenceNode = new SequenceNode();
             mRepeatNodeAction = new RepeatNode(mSequenceNode, repeatCount);
         }
+
+        protected override ActionKitAction mNode => mRepeatNodeAction;
 
         public override IActionChain Append(IDeprecateAction node)
         {
@@ -1611,10 +1462,7 @@ namespace QFramework
         {
             base.OnDispose();
 
-            if (null != mRepeatNodeAction)
-            {
-                mRepeatNodeAction.Dispose();
-            }
+            if (null != mRepeatNodeAction) mRepeatNodeAction.Dispose();
 
             mRepeatNodeAction = null;
 
@@ -1630,33 +1478,30 @@ namespace QFramework
 
     public interface IDisposeEventRegister
     {
-        void OnDisposed(System.Action onDisposedEvent);
+        void OnDisposed(Action onDisposedEvent);
 
-        IDisposeEventRegister OnFinished(System.Action onFinishedEvent);
+        IDisposeEventRegister OnFinished(Action onFinishedEvent);
     }
 
     public static class IActionExtension
     {
+        private static readonly WaitForEndOfFrame mEndOfFrame = new();
+
         public static T ExecuteNode<T>(this T selBehaviour, IDeprecateAction commandNode) where T : MonoBehaviour
         {
             selBehaviour.StartCoroutine(commandNode.Execute());
             return selBehaviour;
         }
 
-        private static WaitForEndOfFrame mEndOfFrame = new WaitForEndOfFrame();
-
         public static IEnumerator Execute(this IDeprecateAction selfNode)
         {
             if (selfNode.Finished) selfNode.Reset();
 
-            while (!selfNode.Execute(Time.deltaTime))
-            {
-                yield return mEndOfFrame;
-            }
+            while (!selfNode.Execute(Time.deltaTime)) yield return mEndOfFrame;
         }
     }
 
-    public static partial class IActionChainExtention
+    public static class IActionChainExtention
     {
         public static IActionChain Repeat<T>(this T selfbehaviour, int count = -1) where T : MonoBehaviour
         {
@@ -1679,7 +1524,7 @@ namespace QFramework
 
 
         /// <summary>
-        /// Same as Delayw
+        ///     Same as Delayw
         /// </summary>
         /// <param name="senfChain"></param>
         /// <param name="seconds"></param>
@@ -1689,7 +1534,7 @@ namespace QFramework
             return senfChain.Append(DelayAction.Allocate(seconds));
         }
 
-        public static IActionChain Event(this IActionChain selfChain, params System.Action[] onEvents)
+        public static IActionChain Event(this IActionChain selfChain, params Action[] onEvents)
         {
             return selfChain.Append(EventAction.Allocate(onEvents));
         }
@@ -1712,23 +1557,46 @@ namespace QFramework
 
     public abstract class ActionChain : ActionKitAction, IActionChain, IDisposeWhen
     {
-        public MonoBehaviour Executer { get; set; }
+        private Func<bool> mDisposeCondition;
+
+        private bool mDisposeWhenCondition;
+        private Action mOnDisposedEvent;
 
         protected abstract ActionKitAction mNode { get; }
+        public MonoBehaviour Executer { get; set; }
 
         public abstract IActionChain Append(IDeprecateAction node);
 
+        public IDisposeWhen Begin()
+        {
+            Executer.ExecuteNode(this);
+            return this;
+        }
+
+        public IDisposeEventRegister DisposeWhen(Func<bool> condition)
+        {
+            mDisposeWhenCondition = true;
+            mDisposeCondition = condition;
+            return this;
+        }
+
+        IDisposeEventRegister IDisposeEventRegister.OnFinished(Action onFinishedEvent)
+        {
+            OnEndedCallback += onFinishedEvent;
+            return this;
+        }
+
+        public void OnDisposed(Action onDisposedEvent)
+        {
+            mOnDisposedEvent = onDisposedEvent;
+        }
+
         protected override void OnExecute(float dt)
         {
-
             if (mDisposeWhenCondition && mDisposeCondition != null && mDisposeCondition.Invoke())
-            {
                 Finish();
-            }
             else
-            {
                 Finished = mNode.Execute(dt);
-            }
         }
 
         protected override void OnEnd()
@@ -1744,47 +1612,11 @@ namespace QFramework
             mDisposeWhenCondition = false;
             mDisposeCondition = null;
 
-            if (mOnDisposedEvent != null)
-            {
-                mOnDisposedEvent.Invoke();
-            }
+            if (mOnDisposedEvent != null) mOnDisposedEvent.Invoke();
 
             mOnDisposedEvent = null;
         }
-
-        public IDisposeWhen Begin()
-        {
-            Executer.ExecuteNode(this);
-            return this;
-        }
-
-        private bool mDisposeWhenCondition = false;
-        private Func<bool> mDisposeCondition;
-        private System.Action mOnDisposedEvent = null;
-
-        public IDisposeEventRegister DisposeWhen(Func<bool> condition)
-        {
-            mDisposeWhenCondition = true;
-            mDisposeCondition = condition;
-            return this;
-        }
-
-        IDisposeEventRegister IDisposeEventRegister.OnFinished(System.Action onFinishedEvent)
-        {
-            OnEndedCallback += onFinishedEvent;
-            return this;
-        }
-
-        public void OnDisposed(System.Action onDisposedEvent)
-        {
-            mOnDisposedEvent = onDisposedEvent;
-        }
     }
-
-    
-    
-
-    
 
 
     #region ECA
@@ -1826,15 +1658,6 @@ namespace QFramework
         public IECACondition<T> C { get; set; }
         public IECAAction<T> A { get; set; }
 
-
-        void OnEvent(T t)
-        {
-            if (C.Match(t))
-            {
-                A.Execute(t);
-            }
-        }
-
         public IECARule<T> Build()
         {
             E.Register(OnEvent);
@@ -1847,6 +1670,12 @@ namespace QFramework
             E = null;
             C = null;
             A = null;
+        }
+
+
+        private void OnEvent(T t)
+        {
+            if (C.Match(t)) A.Execute(t);
         }
     }
 
@@ -1999,7 +1828,6 @@ namespace QFramework
             };
         }
     }
-    
 
     #endregion
 }

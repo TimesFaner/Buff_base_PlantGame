@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2017 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,138 +29,120 @@ using UnityEngine.UI;
 
 namespace QFramework
 {
-	/// <summary>
-	/// 动画播放控件
-	/// http://www.cnblogs.com/mrblue/p/5191183.html
-	/// </summary>
-	[RequireComponent(typeof(Image))]
-	public class UISpriteAnimation : MonoBehaviour
-	{
-		private Image mImageSource;
-		private int mCurFrame = 0;
-		private float mDelta = 0;
+    /// <summary>
+    ///     动画播放控件
+    ///     http://www.cnblogs.com/mrblue/p/5191183.html
+    /// </summary>
+    [RequireComponent(typeof(Image))]
+    public class UISpriteAnimation : MonoBehaviour
+    {
+        public float FPS = 5;
+        public List<Sprite> SpriteFrames;
+        public bool IsPlaying;
+        public bool Forward = true;
+        public bool AutoPlay;
+        public bool Loop;
+        private int mCurFrame;
+        private float mDelta;
+        private Image mImageSource;
 
-		public float FPS = 5;
-		public List<Sprite> SpriteFrames;
-		public bool IsPlaying = false;
-		public bool Forward = true;
-		public bool AutoPlay = false;
-		public bool Loop = false;
+        public int FrameCount => SpriteFrames.Count;
 
-		public int FrameCount
-		{
-			get { return SpriteFrames.Count; }
-		}
+        private void Awake()
+        {
+            mImageSource = GetComponent<Image>();
+        }
 
-		void Awake()
-		{
-			mImageSource = GetComponent<Image>();
-		}
+        private void Start()
+        {
+            if (AutoPlay)
+                Play();
+            else
+                IsPlaying = false;
+        }
 
-		void Start()
-		{
-			if (AutoPlay)
-			{
-				Play();
-			}
-			else
-			{
-				IsPlaying = false;
-			}
-		}
+        private void Update()
+        {
+            if (!IsPlaying || 0 == FrameCount) return;
 
-		private void SetSprite(int idx)
-		{
-			mImageSource.sprite = SpriteFrames[idx];
-			mImageSource.SetNativeSize();
-		}
+            mDelta += Time.deltaTime;
+            if (mDelta > 1 / FPS)
+            {
+                mDelta = 0;
+                if (Forward)
+                    mCurFrame++;
+                else
+                    mCurFrame--;
 
-		public void Play()
-		{
-			IsPlaying = true;
-			Forward = true;
-		}
+                if (mCurFrame >= FrameCount)
+                {
+                    if (Loop)
+                    {
+                        mCurFrame = 0;
+                    }
+                    else
+                    {
+                        IsPlaying = false;
+                        return;
+                    }
+                }
+                else if (mCurFrame < 0)
+                {
+                    if (Loop)
+                    {
+                        mCurFrame = FrameCount - 1;
+                    }
+                    else
+                    {
+                        IsPlaying = false;
+                        return;
+                    }
+                }
 
-		public void PlayReverse()
-		{
-			IsPlaying = true;
-			Forward = false;
-		}
+                SetSprite(mCurFrame);
+            }
+        }
 
-		void Update()
-		{
-			if (!IsPlaying || 0 == FrameCount)
-			{
-				return;
-			}
+        private void SetSprite(int idx)
+        {
+            mImageSource.sprite = SpriteFrames[idx];
+            mImageSource.SetNativeSize();
+        }
 
-			mDelta += Time.deltaTime;
-			if (mDelta > 1 / FPS)
-			{
-				mDelta = 0;
-				if (Forward)
-				{
-					mCurFrame++;
-				}
-				else
-				{
-					mCurFrame--;
-				}
+        public void Play()
+        {
+            IsPlaying = true;
+            Forward = true;
+        }
 
-				if (mCurFrame >= FrameCount)
-				{
-					if (Loop)
-					{
-						mCurFrame = 0;
-					}
-					else
-					{
-						IsPlaying = false;
-						return;
-					}
-				}
-				else if (mCurFrame < 0)
-				{
-					if (Loop)
-					{
-						mCurFrame = FrameCount - 1;
-					}
-					else
-					{
-						IsPlaying = false;
-						return;
-					}
-				}
+        public void PlayReverse()
+        {
+            IsPlaying = true;
+            Forward = false;
+        }
 
-				SetSprite(mCurFrame);
-			}
-		}
+        public void Pause()
+        {
+            IsPlaying = false;
+        }
 
-		public void Pause()
-		{
-			IsPlaying = false;
-		}
+        public void Resume()
+        {
+            if (!IsPlaying) IsPlaying = true;
+        }
 
-		public void Resume()
-		{
-			if (!IsPlaying)
-			{
-				IsPlaying = true;
-			}
-		}
+        public void Stop()
+        {
+            mCurFrame = 0;
+            SetSprite(mCurFrame);
+            IsPlaying = false;
+        }
 
-		public void Stop()
-		{
-			mCurFrame = 0;
-			SetSprite(mCurFrame);
-			IsPlaying = false;
-		}
-
-		public void Rewind()
-		{
-			mCurFrame = 0;
-			SetSprite(mCurFrame);
-			Play();
-		}
-	}
+        public void Rewind()
+        {
+            mCurFrame = 0;
+            SetSprite(mCurFrame);
+            Play();
+        }
+    }
 }

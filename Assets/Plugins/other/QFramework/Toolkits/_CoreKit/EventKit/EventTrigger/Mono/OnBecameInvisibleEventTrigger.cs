@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -13,7 +13,7 @@ namespace QFramework
 {
     public class OnBecameInvisibleEventTrigger : MonoBehaviour
     {
-        public readonly EasyEvent OnBecameInvisibleEvent = new EasyEvent();
+        public readonly EasyEvent OnBecameInvisibleEvent = new();
 
         private void OnBecameInvisible()
         {

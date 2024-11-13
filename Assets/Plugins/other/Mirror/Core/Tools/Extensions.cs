@@ -6,8 +6,10 @@ namespace Mirror
 {
     public static class Extensions
     {
-        public static string ToHexString(this ArraySegment<byte> segment) =>
-            BitConverter.ToString(segment.Array, segment.Offset, segment.Count);
+        public static string ToHexString(this ArraySegment<byte> segment)
+        {
+            return BitConverter.ToString(segment.Array, segment.Offset, segment.Count);
+        }
 
         // string.GetHashCode is not guaranteed to be the same on all
         // machines, but we need one that is the same on all machines.
@@ -17,8 +19,8 @@ namespace Mirror
         {
             unchecked
             {
-                int hash = 23;
-                foreach (char c in text)
+                var hash = 23;
+                foreach (var c in text)
                     hash = hash * 31 + c;
 
                 //UnityEngine.Debug.Log($"Created stable hash {(ushort)hash} for {text}");

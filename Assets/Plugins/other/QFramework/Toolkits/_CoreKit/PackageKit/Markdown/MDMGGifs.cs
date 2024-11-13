@@ -1,10 +1,11 @@
 //#define mgGIF_UNSAFE
 
-using UnityEngine;
 using System;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Runtime.InteropServices; // unsafe
+using UnityEngine;
+
+// unsafe
 
 namespace QFramework
 {
@@ -12,10 +13,10 @@ namespace QFramework
 
     public class MDGifImage : ICloneable
     {
-        public int Width;
-        public int Height;
         public int Delay; // milliseconds
+        public int Height;
         public Color32[] RawImage;
+        public int Width;
 
         public MDGifImage()
         {
@@ -66,22 +67,22 @@ namespace QFramework
         // GIF format enums
 
         [Flags]
-        enum ImageFlag
+        private enum ImageFlag
         {
             Interlaced = 0x40,
             ColourTable = 0x80,
             TableSizeMask = 0x07,
-            BitDepthMask = 0x70,
+            BitDepthMask = 0x70
         }
 
-        enum Block
+        private enum Block
         {
             Image = 0x2C,
             Extension = 0x21,
             End = 0x3B
         }
 
-        enum Extension
+        private enum Extension
         {
             GraphicControl = 0xF9,
             Comments = 0xFE,
@@ -89,7 +90,7 @@ namespace QFramework
             ApplicationData = 0xFF
         }
 
-        enum Disposal
+        private enum Disposal
         {
             None = 0x00,
             DoNotDispose = 0x04,
@@ -98,7 +99,7 @@ namespace QFramework
         }
 
         [Flags]
-        enum ControlFlags
+        private enum ControlFlags
         {
             HasTransparency = 0x01,
             DisposalMask = 0x0C
@@ -107,30 +108,30 @@ namespace QFramework
 
         //------------------------------------------------------------------------------
 
-        const uint NoCode = 0xFFFF;
-        const ushort NoTransparency = 0xFFFF;
+        private const uint NoCode = 0xFFFF;
+        private const ushort NoTransparency = 0xFFFF;
 
         // input stream to decode
-        byte[] Input;
-        int D;
+        private byte[] Input;
+        private int D;
 
         // colour table
-        Color32[] GlobalColourTable;
-        Color32[] LocalColourTable;
-        Color32[] ActiveColourTable;
-        ushort TransparentIndex;
+        private Color32[] GlobalColourTable;
+        private Color32[] LocalColourTable;
+        private Color32[] ActiveColourTable;
+        private ushort TransparentIndex;
 
         // current image
-        MDGifImage Image = new MDGifImage();
-        ushort ImageLeft;
-        ushort ImageTop;
-        ushort ImageWidth;
-        ushort ImageHeight;
+        private readonly MDGifImage Image = new();
+        private ushort ImageLeft;
+        private ushort ImageTop;
+        private ushort ImageWidth;
+        private ushort ImageHeight;
 
-        Color32[] Output;
-        Color32[] PreviousImage;
+        private Color32[] Output;
+        private Color32[] PreviousImage;
 
-        readonly int[] Pow2 = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 };
+        private readonly int[] Pow2 = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 };
 
         //------------------------------------------------------------------------------
         // ctor
@@ -162,35 +163,29 @@ namespace QFramework
         // reading data utility functions
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        byte ReadByte()
+        private byte ReadByte()
         {
             return Input[D++];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        ushort ReadUInt16()
+        private ushort ReadUInt16()
         {
-            return (ushort)(Input[D++] | Input[D++] << 8);
+            return (ushort)(Input[D++] | (Input[D++] << 8));
         }
 
         //------------------------------------------------------------------------------
 
-        void ReadHeader()
+        private void ReadHeader()
         {
-            if (Input == null || Input.Length <= 12)
-            {
-                throw new Exception("Invalid data");
-            }
+            if (Input == null || Input.Length <= 12) throw new Exception("Invalid data");
 
             // signature
 
             Version = Encoding.ASCII.GetString(Input, 0, 6);
             D = 6;
 
-            if (Version != "GIF87a" && Version != "GIF89a")
-            {
-                throw new Exception("Unsupported GIF version");
-            }
+            if (Version != "GIF87a" && Version != "GIF89a") throw new Exception("Unsupported GIF version");
 
             // read header
 
@@ -205,10 +200,7 @@ namespace QFramework
 
             ReadByte(); // aspect ratio
 
-            if (flags.HasFlag(ImageFlag.ColourTable))
-            {
-                ReadColourTable(GlobalColourTable, flags);
-            }
+            if (flags.HasFlag(ImageFlag.ColourTable)) ReadColourTable(GlobalColourTable, flags);
 
             BackgroundColour = GlobalColourTable[bgIndex];
         }
@@ -219,10 +211,7 @@ namespace QFramework
         {
             // if at start of data, read header
 
-            if (D == 0)
-            {
-                ReadHeader();
-            }
+            if (D == 0) ReadHeader();
 
             // read blocks until we find an image block
 
@@ -238,10 +227,7 @@ namespace QFramework
 
                         var img = ReadImageBlock();
 
-                        if (img != null)
-                        {
-                            return img;
-                        }
+                        if (img != null) return img;
                     }
                         break;
 
@@ -250,13 +236,9 @@ namespace QFramework
                         var ext = (Extension)ReadByte();
 
                         if (ext == Extension.GraphicControl)
-                        {
                             ReadControlBlock();
-                        }
                         else
-                        {
                             SkipBlocks();
-                        }
                     }
                         break;
 
@@ -276,26 +258,24 @@ namespace QFramework
 
         //------------------------------------------------------------------------------
 
-        Color32[] ReadColourTable(Color32[] colourTable, ImageFlag flags)
+        private Color32[] ReadColourTable(Color32[] colourTable, ImageFlag flags)
         {
             var tableSize = Pow2[(int)(flags & ImageFlag.TableSizeMask) + 1];
 
             for (var i = 0; i < tableSize; i++)
-            {
                 colourTable[i] = new Color32(
                     Input[D++],
                     Input[D++],
                     Input[D++],
                     0xFF
                 );
-            }
 
             return colourTable;
         }
 
         //------------------------------------------------------------------------------
 
-        void SkipBlocks()
+        private void SkipBlocks()
         {
             var blockSize = Input[D++];
 
@@ -308,7 +288,7 @@ namespace QFramework
 
         //------------------------------------------------------------------------------
 
-        void ReadControlBlock()
+        private void ReadControlBlock()
         {
             // read block
 
@@ -321,13 +301,9 @@ namespace QFramework
             // has transparent colour?
 
             if (flags.HasFlag(ControlFlags.HasTransparency))
-            {
                 TransparentIndex = transparentColour;
-            }
             else
-            {
                 TransparentIndex = NoTransparency;
-            }
 
             // dispose of current image
 
@@ -351,10 +327,7 @@ namespace QFramework
 
                     Output = new Color32[Width * Height];
 
-                    if (PreviousImage != null)
-                    {
-                        Array.Copy(PreviousImage, Output, Output.Length);
-                    }
+                    if (PreviousImage != null) Array.Copy(PreviousImage, Output, Output.Length);
 
                     break;
             }
@@ -362,7 +335,7 @@ namespace QFramework
 
         //------------------------------------------------------------------------------
 
-        MDGifImage ReadImageBlock()
+        private MDGifImage ReadImageBlock()
         {
             // read image block header
 
@@ -374,21 +347,14 @@ namespace QFramework
 
             // bad image if we don't have any dimensions
 
-            if (ImageWidth == 0 || ImageHeight == 0)
-            {
-                return null;
-            }
+            if (ImageWidth == 0 || ImageHeight == 0) return null;
 
             // read colour table
 
             if (flags.HasFlag(ImageFlag.ColourTable))
-            {
                 ActiveColourTable = ReadColourTable(LocalColourTable, flags);
-            }
             else
-            {
                 ActiveColourTable = GlobalColourTable;
-            }
 
             if (Output == null)
             {
@@ -402,10 +368,7 @@ namespace QFramework
 
             // deinterlace
 
-            if (flags.HasFlag(ImageFlag.Interlaced))
-            {
-                Deinterlace();
-            }
+            if (flags.HasFlag(ImageFlag.Interlaced)) Deinterlace();
 
             // return image
 
@@ -416,7 +379,7 @@ namespace QFramework
         //------------------------------------------------------------------------------
         // decode interlaced images
 
-        void Deinterlace()
+        private void Deinterlace()
         {
             var numRows = Output.Length / Width;
             var writePos = Output.Length - Width; // NB: work backwards due to Y-coord flip
@@ -823,26 +786,23 @@ namespace QFramework
         }
 
 
-        int[] Indices = new int[4096];
-        ushort[] Codes = new ushort[128 * 1024];
-        uint[] CurBlock = new uint[64];
+        private readonly int[] Indices = new int[4096];
+        private ushort[] Codes = new ushort[128 * 1024];
+        private readonly uint[] CurBlock = new uint[64];
 
-        void DecompressLZW()
+        private void DecompressLZW()
         {
             // output write position
 
-            int row = (Height - ImageTop - 1) * Width; // reverse rows for unity texture coords
+            var row = (Height - ImageTop - 1) * Width; // reverse rows for unity texture coords
             int col = ImageLeft;
-            int rightEdge = ImageLeft + ImageWidth;
+            var rightEdge = ImageLeft + ImageWidth;
 
             // setup codes
 
             int minimumCodeSize = Input[D++];
 
-            if (minimumCodeSize > 11)
-            {
-                minimumCodeSize = 11;
-            }
+            if (minimumCodeSize > 11) minimumCodeSize = 11;
 
             var codeSize = minimumCodeSize + 1;
             var nextSize = Pow2[codeSize];
@@ -864,22 +824,22 @@ namespace QFramework
 
             // LZW decode loop
 
-            uint previousCode = NoCode; // last code processed
-            uint mask = (uint)(nextSize - 1); // mask out code bits
+            var previousCode = NoCode; // last code processed
+            var mask = (uint)(nextSize - 1); // mask out code bits
             uint
                 shiftRegister =
                     0; // shift register holds the bytes coming in from the input stream, we shift down by the number of bits
 
-            int bitsAvailable = 0; // number of bits available to read in the shift register
-            int bytesAvailable = 0; // number of bytes left in current block
+            var bitsAvailable = 0; // number of bits available to read in the shift register
+            var bytesAvailable = 0; // number of bytes left in current block
 
-            int blockPos = 0;
+            var blockPos = 0;
 
             while (true)
             {
                 // get next code
 
-                uint curCode = shiftRegister & mask;
+                var curCode = shiftRegister & mask;
 
                 if (bitsAvailable >= codeSize)
                 {
@@ -899,10 +859,7 @@ namespace QFramework
                         bytesAvailable = Input[D++];
 
                         // exit if end of stream
-                        if (bytesAvailable == 0)
-                        {
-                            return;
-                        }
+                        if (bytesAvailable == 0) return;
 
                         // read block
                         CurBlock[(bytesAvailable - 1) / 4] = 0; // zero last entry
@@ -914,7 +871,7 @@ namespace QFramework
                     // load shift register
 
                     shiftRegister = CurBlock[blockPos++];
-                    int newBits = bytesAvailable >= 4 ? 32 : bytesAvailable * 8;
+                    var newBits = bytesAvailable >= 4 ? 32 : bytesAvailable * 8;
                     bytesAvailable -= 4;
 
                     // read remaining bits
@@ -952,14 +909,13 @@ namespace QFramework
 
                     continue;
                 }
-                else if (curCode == endCode)
-                {
+
+                if (curCode == endCode)
                     // stop
                     break;
-                }
 
-                bool plusOne = false;
-                int codePos = 0;
+                var plusOne = false;
+                var codePos = 0;
 
                 if (curCode < numCodes)
                 {
@@ -983,14 +939,11 @@ namespace QFramework
                 var codeLength = Codes[codePos++];
                 var newCode = Codes[codePos];
 
-                for (int i = 0; i < codeLength; i++)
+                for (var i = 0; i < codeLength; i++)
                 {
                     var code = Codes[codePos++];
 
-                    if (code != TransparentIndex && col < Width)
-                    {
-                        Output[row + col] = ActiveColourTable[code];
-                    }
+                    if (code != TransparentIndex && col < Width) Output[row + col] = ActiveColourTable[code];
 
                     if (++col == rightEdge)
                     {
@@ -1007,20 +960,14 @@ namespace QFramework
 
                 if (plusOne)
                 {
-                    if (newCode != TransparentIndex && col < Width)
-                    {
-                        Output[row + col] = ActiveColourTable[newCode];
-                    }
+                    if (newCode != TransparentIndex && col < Width) Output[row + col] = ActiveColourTable[newCode];
 
                     if (++col == rightEdge)
                     {
                         col = ImageLeft;
                         row -= Width;
 
-                        if (row < 0)
-                        {
-                            break;
-                        }
+                        if (row < 0) break;
                     }
                 }
 
@@ -1035,10 +982,7 @@ namespace QFramework
 
                     // resize buffer if required (should be rare)
 
-                    if (codesEnd + codeLength + 1 >= Codes.Length)
-                    {
-                        Array.Resize(ref Codes, Codes.Length * 2);
-                    }
+                    if (codesEnd + codeLength + 1 >= Codes.Length) Array.Resize(ref Codes, Codes.Length * 2);
 
                     // add new code
 
@@ -1049,10 +993,7 @@ namespace QFramework
 
                     var stop = codesEnd + codeLength;
 
-                    while (codesEnd < stop)
-                    {
-                        Codes[codesEnd++] = Codes[codePos++];
-                    }
+                    while (codesEnd < stop) Codes[codesEnd++] = Codes[codePos++];
 
                     // append new code
 

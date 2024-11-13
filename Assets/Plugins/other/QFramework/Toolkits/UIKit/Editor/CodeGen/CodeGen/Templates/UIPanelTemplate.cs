@@ -1,16 +1,16 @@
 /****************************************************************************
  * Copyright (c) 2016 ~ 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
- * 
+ *
  ****************************************************************************/
+
+using System.IO;
 
 namespace QFramework
 {
-    using System.IO;
-
     public class UIPanelTemplate
     {
         public static void Write(string name, string srcFilePath, string scriptNamespace,
@@ -18,10 +18,7 @@ namespace QFramework
         {
             var scriptFile = srcFilePath;
 
-            if (File.Exists(scriptFile))
-            {
-                return;
-            }
+            if (File.Exists(scriptFile)) return;
 
             var writer = File.CreateText(scriptFile);
 
@@ -42,7 +39,7 @@ namespace QFramework
                         classScope.CustomScope("protected override void OnInit(IUIData uiData = null)", false,
                             function =>
                             {
-                                function.Custom(string.Format("mData = uiData as {0} ?? new {0}();",(name + "Data")));
+                                function.Custom(string.Format("mData = uiData as {0} ?? new {0}();", name + "Data"));
                                 function.Custom("// please add init code here");
                             });
 

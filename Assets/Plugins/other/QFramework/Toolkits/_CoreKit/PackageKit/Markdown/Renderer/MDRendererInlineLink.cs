@@ -28,10 +28,7 @@ namespace QFramework
             {
                 renderer.Link = url;
 
-                if (string.IsNullOrEmpty(node.Title) == false)
-                {
-                    renderer.ToolTip = node.Title;
-                }
+                if (string.IsNullOrEmpty(node.Title) == false) renderer.ToolTip = node.Title;
 
                 renderer.WriteChildren(node);
 

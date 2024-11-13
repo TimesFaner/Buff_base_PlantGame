@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2017 ~ 2020.1 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,26 +24,24 @@
  ****************************************************************************/
 
 using System;
-using UnityEngine;
 
 namespace QFramework
 {
     public class PanelSearchKeys : IPoolType, IPoolable
     {
-        public Type PanelType;
-
         public string AssetBundleName;
 
         public string GameObjName;
 
         public UILevel Level = UILevel.Common;
 
-        public IUIData UIData;
-        
-        
-        public IPanel Panel;
-        
         public PanelOpenType OpenType = PanelOpenType.Single;
+
+
+        public IPanel Panel;
+        public Type PanelType;
+
+        public IUIData UIData;
 
 
         public void OnRecycled()
@@ -57,6 +55,11 @@ namespace QFramework
 
         public bool IsRecycled { get; set; }
 
+        public void Recycle2Cache()
+        {
+            SafeObjectPool<PanelSearchKeys>.Instance.Recycle(this);
+        }
+
 
         public override string ToString()
         {
@@ -67,11 +70,6 @@ namespace QFramework
         public static PanelSearchKeys Allocate()
         {
             return SafeObjectPool<PanelSearchKeys>.Instance.Allocate();
-        }
-
-        public void Recycle2Cache()
-        {
-            SafeObjectPool<PanelSearchKeys>.Instance.Recycle(this);
         }
     }
 }

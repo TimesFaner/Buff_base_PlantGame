@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -13,21 +13,16 @@ namespace QFramework
 {
     public class TreeNode : VerticalLayout
     {
-        public BindableProperty<bool> Spread = null;
-
-        public string Content;
-
-
         private readonly IMGUIHorizontalLayout mFirstLine = EasyIMGUI.Horizontal();
 
-        private VerticalLayout mSpreadView = new VerticalLayout();
+        private readonly VerticalLayout mSpreadView = new();
+
+        public string Content;
+        public BindableProperty<bool> Spread;
 
         public TreeNode(bool spread, string content, int indent = 0, bool autosaveSpreadState = false)
         {
-            if (autosaveSpreadState)
-            {
-                spread = EditorPrefs.GetBool(content, spread);
-            }
+            if (autosaveSpreadState) spread = EditorPrefs.GetBool(content, spread);
 
             Content = content;
             Spread = new BindableProperty<bool>(spread);
@@ -37,10 +32,7 @@ namespace QFramework
             mFirstLine.Parent(this);
             mFirstLine.AddChild(EasyIMGUI.Space().Pixel(indent));
 
-            if (autosaveSpreadState)
-            {
-                Spread.Register(value => EditorPrefs.SetBool(content, value));
-            }
+            if (autosaveSpreadState) Spread.Register(value => EditorPrefs.SetBool(content, value));
 
 
             EasyIMGUI.Custom().OnGUI(() =>
@@ -51,10 +43,7 @@ namespace QFramework
 
             EasyIMGUI.Custom().OnGUI(() =>
             {
-                if (Spread.Value)
-                {
-                    mSpreadView.DrawGUI();
-                }
+                if (Spread.Value) mSpreadView.DrawGUI();
             }).Parent(this);
         }
 

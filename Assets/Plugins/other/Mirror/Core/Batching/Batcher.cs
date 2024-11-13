@@ -8,6 +8,7 @@
 // includes timestamp for tick batching.
 // -> allows NetworkTransform etc. to use timestamp without including it in
 //    every single message
+
 using System;
 using System.Collections.Generic;
 
@@ -15,6 +16,17 @@ namespace Mirror
 {
     public class Batcher
     {
+        // TimeStamp header size. each batch has one.
+        public const int TimestampSize = sizeof(double);
+
+        // full batches ready to be sent.
+        // DO NOT queue NetworkMessage, it would box.
+        // DO NOT queue each serialization separately.
+        //        it would allocate too many writers.
+        //        https://github.com/vis2k/Mirror/pull/3127
+        // => best to build batches on the fly.
+        private readonly Queue<NetworkWriterPooled> batches = new();
+
         // batching threshold instead of max size.
         // -> small messages are fit into threshold sized batches
         // -> messages larger than threshold are single batches
@@ -27,34 +39,27 @@ namespace Mirror
         // 2) timestamp batching: if each batch is expected to contain a
         //    timestamp, then large messages have to be a batch too. otherwise
         //    they would not contain a timestamp
-        readonly int threshold;
-
-        // TimeStamp header size. each batch has one.
-        public const int TimestampSize = sizeof(double);
-
-        // Message header size. each message has one.
-        public static int MessageHeaderSize(int messageSize) =>
-            Compression.VarUIntSize((ulong)messageSize);
-
-        // maximum overhead for a single message.
-        // useful for the outside to calculate max message sizes.
-        public static int MaxMessageOverhead(int messageSize) =>
-            TimestampSize + MessageHeaderSize(messageSize);
-
-        // full batches ready to be sent.
-        // DO NOT queue NetworkMessage, it would box.
-        // DO NOT queue each serialization separately.
-        //        it would allocate too many writers.
-        //        https://github.com/vis2k/Mirror/pull/3127
-        // => best to build batches on the fly.
-        readonly Queue<NetworkWriterPooled> batches = new Queue<NetworkWriterPooled>();
+        private readonly int threshold;
 
         // current batch in progress
-        NetworkWriterPooled batch;
+        private NetworkWriterPooled batch;
 
         public Batcher(int threshold)
         {
             this.threshold = threshold;
+        }
+
+        // Message header size. each message has one.
+        public static int MessageHeaderSize(int messageSize)
+        {
+            return Compression.VarUIntSize((ulong)messageSize);
+        }
+
+        // maximum overhead for a single message.
+        // useful for the outside to calculate max message sizes.
+        public static int MaxMessageOverhead(int messageSize)
+        {
+            return TimestampSize + MessageHeaderSize(messageSize);
         }
 
         // add a message for batching
@@ -63,8 +68,8 @@ namespace Mirror
         public void AddMessage(ArraySegment<byte> message, double timeStamp)
         {
             // predict the needed size, which is varint(size) + content
-            int headerSize = Compression.VarUIntSize((ulong)message.Count);
-            int neededSize = headerSize + message.Count;
+            var headerSize = Compression.VarUIntSize((ulong)message.Count);
+            var neededSize = headerSize + message.Count;
 
             // when appending to a batch in progress, check final size.
             // if it expands beyond threshold, then we should finalize it first.
@@ -109,14 +114,14 @@ namespace Mirror
         }
 
         // helper function to copy a batch to writer and return it to pool
-        static void CopyAndReturn(NetworkWriterPooled batch, NetworkWriter writer)
+        private static void CopyAndReturn(NetworkWriterPooled batch, NetworkWriter writer)
         {
             // make sure the writer is fresh to avoid uncertain situations
             if (writer.Position != 0)
-                throw new ArgumentException($"GetBatch needs a fresh writer!");
+                throw new ArgumentException("GetBatch needs a fresh writer!");
 
             // copy to the target writer
-            ArraySegment<byte> segment = batch.ToArraySegment();
+            var segment = batch.ToArraySegment();
             writer.WriteBytes(segment.Array, segment.Offset, segment.Count);
 
             // return batch to pool for reuse
@@ -129,7 +134,7 @@ namespace Mirror
         public bool GetBatch(NetworkWriter writer)
         {
             // get first batch from queue (if any)
-            if (batches.TryDequeue(out NetworkWriterPooled first))
+            if (batches.TryDequeue(out var first))
             {
                 CopyAndReturn(first, writer);
                 return true;

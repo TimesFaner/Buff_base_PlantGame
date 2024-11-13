@@ -4,6 +4,7 @@
 //
 // however, some of the old NetworkTime code remains for ping time (rtt).
 // some users may still be using that.
+
 using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -20,7 +21,8 @@ namespace Mirror
         public static float PingInterval = 2;
 
         // DEPRECATED 2023-07-06
-        [Obsolete("NetworkTime.PingFrequency was renamed to PingInterval, because we use it as seconds, not as Hz. Please rename all usages, but keep using it just as before.")]
+        [Obsolete(
+            "NetworkTime.PingFrequency was renamed to PingInterval, because we use it as seconds, not as Hz. Please rename all usages, but keep using it just as before.")]
         public static float PingFrequency
         {
             get => PingInterval;
@@ -30,9 +32,9 @@ namespace Mirror
         /// <summary>Average out the last few results from Ping</summary>
         public static int PingWindowSize = 6;
 
-        static double lastPingTime;
+        private static double lastPingTime;
 
-        static ExponentialMovingAverage _rtt = new ExponentialMovingAverage(PingWindowSize);
+        private static ExponentialMovingAverage _rtt = new(PingWindowSize);
 
         /// <summary>Returns double precision clock time _in this system_, unaffected by the network.</summary>
 #if UNITY_2020_3_OR_NEWER
@@ -103,7 +105,7 @@ namespace Mirror
             // localTime (double) instead of Time.time for accuracy over days
             if (localTime >= lastPingTime + PingInterval)
             {
-                NetworkPingMessage pingMessage = new NetworkPingMessage(localTime);
+                var pingMessage = new NetworkPingMessage(localTime);
                 NetworkClient.Send(pingMessage, Channels.Unreliable);
                 lastPingTime = localTime;
             }
@@ -116,9 +118,9 @@ namespace Mirror
         internal static void OnServerPing(NetworkConnectionToClient conn, NetworkPingMessage message)
         {
             // Debug.Log($"OnServerPing conn:{conn}");
-            NetworkPongMessage pongMessage = new NetworkPongMessage
+            var pongMessage = new NetworkPongMessage
             {
-                localTime = message.localTime,
+                localTime = message.localTime
             };
             conn.Send(pongMessage, Channels.Unreliable);
         }
@@ -132,7 +134,7 @@ namespace Mirror
             if (message.localTime > localTime) return;
 
             // how long did this message take to come back
-            double newRtt = localTime - message.localTime;
+            var newRtt = localTime - message.localTime;
             _rtt.Add(newRtt);
         }
 
@@ -143,9 +145,9 @@ namespace Mirror
         internal static void OnClientPing(NetworkPingMessage message)
         {
             // Debug.Log($"OnClientPing conn:{conn}");
-            NetworkPongMessage pongMessage = new NetworkPongMessage
+            var pongMessage = new NetworkPongMessage
             {
-                localTime = message.localTime,
+                localTime = message.localTime
             };
             NetworkClient.Send(pongMessage, Channels.Unreliable);
         }
@@ -159,7 +161,7 @@ namespace Mirror
             if (message.localTime > localTime) return;
 
             // how long did this message take to come back
-            double newRtt = localTime - message.localTime;
+            var newRtt = localTime - message.localTime;
             conn._rtt.Add(newRtt);
         }
     }

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -13,24 +13,16 @@ namespace QFramework
 {
     internal class CoroutineAction : IAction
     {
-        private static SimpleObjectPool<CoroutineAction> mPool =
-            new SimpleObjectPool<CoroutineAction>(() => new CoroutineAction(), null, 10);
+        private static readonly SimpleObjectPool<CoroutineAction> mPool = new(() => new CoroutineAction(), null, 10);
 
-        private Func<IEnumerator> mCoroutineGetter = null;
+        private Func<IEnumerator> mCoroutineGetter;
 
-        private CoroutineAction(){}
-        
-        public static CoroutineAction Allocate(Func<IEnumerator> coroutineGetter)
+        private CoroutineAction()
         {
-            var coroutineAction = mPool.Allocate();
-            coroutineAction.ActionID = ActionKit.ID_GENERATOR++;
-            coroutineAction.Deinited = false;
-            coroutineAction.Reset();
-            coroutineAction.mCoroutineGetter = coroutineGetter;
-            return coroutineAction;
         }
 
         public bool Paused { get; set; }
+
         public void Deinit()
         {
             if (!Deinited)
@@ -38,7 +30,7 @@ namespace QFramework
                 Deinited = true;
                 mCoroutineGetter = null;
 
-                ActionQueue.AddCallback(new ActionQueueRecycleCallback<CoroutineAction>(mPool,this));
+                ActionQueue.AddCallback(new ActionQueueRecycleCallback<CoroutineAction>(mPool, this));
             }
         }
 
@@ -51,12 +43,11 @@ namespace QFramework
         public bool Deinited { get; set; }
         public ulong ActionID { get; set; }
         public ActionStatus Status { get; set; }
+
         public void OnStart()
         {
-            ActionKitMonoBehaviourEvents.Instance.ExecuteCoroutine(mCoroutineGetter(), () =>
-            {
-                Status = ActionStatus.Finished;
-            });
+            ActionKitMonoBehaviourEvents.Instance.ExecuteCoroutine(mCoroutineGetter(),
+                () => { Status = ActionStatus.Finished; });
         }
 
         public void OnExecute(float dt)
@@ -66,15 +57,25 @@ namespace QFramework
         public void OnFinish()
         {
         }
+
+        public static CoroutineAction Allocate(Func<IEnumerator> coroutineGetter)
+        {
+            var coroutineAction = mPool.Allocate();
+            coroutineAction.ActionID = ActionKit.ID_GENERATOR++;
+            coroutineAction.Deinited = false;
+            coroutineAction.Reset();
+            coroutineAction.mCoroutineGetter = coroutineGetter;
+            return coroutineAction;
+        }
     }
-    
+
     public static class CoroutineExtension
     {
         public static ISequence Coroutine(this ISequence self, Func<IEnumerator> coroutineGetter)
         {
             return self.Append(CoroutineAction.Allocate(coroutineGetter));
         }
-        
+
         public static IAction ToAction(this IEnumerator self)
         {
             return CoroutineAction.Allocate(() => self);

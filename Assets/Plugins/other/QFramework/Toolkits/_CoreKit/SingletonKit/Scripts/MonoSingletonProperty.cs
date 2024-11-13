@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -64,10 +64,7 @@ var gameManager = GameManager.Instance;
         {
             get
             {
-                if (null == mInstance)
-                {
-                    mInstance = SingletonCreator.CreateMonoSingleton<T>();
-                }
+                if (null == mInstance) mInstance = SingletonCreator.CreateMonoSingleton<T>();
 
                 return mInstance;
             }
@@ -76,13 +73,9 @@ var gameManager = GameManager.Instance;
         public static void Dispose()
         {
             if (SingletonCreator.IsUnitTestMode)
-            {
-                UnityEngine.Object.DestroyImmediate(mInstance.gameObject);
-            }
+                Object.DestroyImmediate(mInstance.gameObject);
             else
-            {
-                UnityEngine.Object.Destroy(mInstance.gameObject);
-            }
+                Object.Destroy(mInstance.gameObject);
 
             mInstance = null;
         }

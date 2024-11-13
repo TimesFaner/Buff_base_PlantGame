@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -19,19 +19,16 @@ namespace QFramework
 
     internal class IMGUILabelView : IMGUIAbstractView, IMGUILabel
     {
-        public string Content { get; set; }
+        private readonly FluentGUIStyle mFluentGUIStyle;
 
-        private FluentGUIStyle mFluentGUIStyle;
+        private Func<string> mTextGetter;
 
         public IMGUILabelView()
         {
             mFluentGUIStyle = FluentGUIStyle.Label();
         }
 
-        protected override void OnGUI()
-        {
-            GUILayout.Label(mTextGetter == null ? Content : mTextGetter(), mFluentGUIStyle.Value, LayoutStyles);
-        }
+        public string Content { get; set; }
 
         public IMGUILabel Text(string labelText)
         {
@@ -45,33 +42,25 @@ namespace QFramework
             return this;
         }
 
-        private Func<string> mTextGetter;
-
         public T Convert<T>(XmlNode node) where T : class
         {
             var label = EasyIMGUI.Label();
 
             foreach (XmlAttribute childNodeAttribute in node.Attributes)
-            {
                 if (childNodeAttribute.Name == "Id")
-                {
                     label.Id = childNodeAttribute.Value;
-                }
                 else if (childNodeAttribute.Name == "Text")
-                {
                     label.Text(childNodeAttribute.Value);
-                }
                 else if (childNodeAttribute.Name == "FontBold")
-                {
                     label.FontBold();
-                }
-                else if (childNodeAttribute.Name == "FontSize")
-                {
-                    label.FontSize(int.Parse(childNodeAttribute.Value));
-                }
-            }
+                else if (childNodeAttribute.Name == "FontSize") label.FontSize(int.Parse(childNodeAttribute.Value));
 
             return label as T;
+        }
+
+        protected override void OnGUI()
+        {
+            GUILayout.Label(mTextGetter == null ? Content : mTextGetter(), mFluentGUIStyle.Value, LayoutStyles);
         }
     }
 }

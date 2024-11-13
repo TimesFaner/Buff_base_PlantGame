@@ -1,20 +1,20 @@
 /****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,20 +24,20 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using System;
+
 namespace QFramework
 {
-    using System;
-
     public enum BinaryHeapBuildMode
     {
         kNLog = 1,
-        kN = 2,
+        kN = 2
     }
 
     public enum BinaryHeapSortMode
     {
         kMin = 0,
-        kMax = 1,
+        kMax = 1
     }
 
     //优先队列&二叉堆
@@ -59,11 +59,8 @@ namespace QFramework
         public BinaryHeap(T[] dataArray, BinaryHeapSortMode sortMode)
         {
             mSortMode = sortMode;
-            int minSize = 10;
-            if (dataArray != null)
-            {
-                minSize = dataArray.Length + 1;
-            }
+            var minSize = 10;
+            if (dataArray != null) minSize = dataArray.Length + 1;
 
             mArray = new T[minSize];
             mLastChildIndex = 0;
@@ -86,33 +83,21 @@ namespace QFramework
 
         public void Insert(T[] dataArray, BinaryHeapBuildMode buildMode)
         {
-            if (dataArray == null)
-            {
-                throw new NullReferenceException("BinaryHeap Not Support Insert Null Object");
-            }
+            if (dataArray == null) throw new NullReferenceException("BinaryHeap Not Support Insert Null Object");
 
-            int totalLength = mLastChildIndex + dataArray.Length + 1;
-            if (mArray.Length < totalLength)
-            {
-                ResizeArray(totalLength);
-            }
+            var totalLength = mLastChildIndex + dataArray.Length + 1;
+            if (mArray.Length < totalLength) ResizeArray(totalLength);
 
             if (buildMode == BinaryHeapBuildMode.kNLog)
             {
                 //方式1:直接添加，每次添加都会上浮
-                for (int i = 0; i < dataArray.Length; ++i)
-                {
-                    Insert(dataArray[i]);
-                }
+                for (var i = 0; i < dataArray.Length; ++i) Insert(dataArray[i]);
             }
             else
             {
                 //数量比较大的情况下会快一些
                 //方式2:先添加完，然后排序
-                for (int i = 0; i < dataArray.Length; ++i)
-                {
-                    mArray[++mLastChildIndex] = dataArray[i];
-                }
+                for (var i = 0; i < dataArray.Length; ++i) mArray[++mLastChildIndex] = dataArray[i];
 
                 SortAsCurrentMode();
             }
@@ -120,17 +105,11 @@ namespace QFramework
 
         public void Insert(T element)
         {
-            if (element == null)
-            {
-                throw new NullReferenceException("BinaryHeap Not Support Insert Null Object");
-            }
+            if (element == null) throw new NullReferenceException("BinaryHeap Not Support Insert Null Object");
 
-            int index = ++mLastChildIndex;
+            var index = ++mLastChildIndex;
 
-            if (index == mArray.Length)
-            {
-                ResizeArray();
-            }
+            if (index == mArray.Length) ResizeArray();
 
             mArray[index] = element;
 
@@ -143,12 +122,9 @@ namespace QFramework
 
         public T Pop()
         {
-            if (mLastChildIndex < 1)
-            {
-                return default(T);
-            }
+            if (mLastChildIndex < 1) return default;
 
-            T result = mArray[1];
+            var result = mArray[1];
             mArray[1] = mArray[mLastChildIndex--];
             ProcolateDown(1);
             return result;
@@ -156,10 +132,7 @@ namespace QFramework
 
         public T Top()
         {
-            if (mLastChildIndex < 1)
-            {
-                return default(T);
-            }
+            if (mLastChildIndex < 1) return default;
 
             return mArray[1];
         }
@@ -170,48 +143,34 @@ namespace QFramework
 
         public void Sort(BinaryHeapSortMode sortMode)
         {
-            if (mSortMode == sortMode)
-            {
-                return;
-            }
+            if (mSortMode == sortMode) return;
             mSortMode = sortMode;
             SortAsCurrentMode();
         }
 
         public void RebuildAtIndex(int index)
         {
-            if (index > mLastChildIndex)
-            {
-                return;
-            }
+            if (index > mLastChildIndex) return;
 
             //1.首先找父节点，是否比父节点小，如果满足则上浮,不满足下沉
             var element = mArray[index];
 
-            int parentIndex = index >> 1;
+            var parentIndex = index >> 1;
             if (parentIndex > 0)
             {
                 if (mSortMode == BinaryHeapSortMode.kMin)
                 {
                     if (element.SortScore < mArray[parentIndex].SortScore)
-                    {
                         ProcolateUp(index);
-                    }
                     else
-                    {
                         ProcolateDown(index);
-                    }
                 }
                 else
                 {
                     if (element.SortScore > mArray[parentIndex].SortScore)
-                    {
                         ProcolateUp(index);
-                    }
                     else
-                    {
                         ProcolateDown(index);
-                    }
                 }
             }
             else
@@ -222,11 +181,8 @@ namespace QFramework
 
         private void SortAsCurrentMode()
         {
-            int startChild = mLastChildIndex >> 1;
-            for (int i = startChild; i > 0; --i)
-            {
-                ProcolateDown(i);
-            }
+            var startChild = mLastChildIndex >> 1;
+            for (var i = startChild; i > 0; --i) ProcolateDown(i);
         }
 
         #endregion
@@ -235,15 +191,12 @@ namespace QFramework
 
         public void RemoveAt(int index)
         {
-            if (index > mLastChildIndex || index < 1)
-            {
-                return;
-            }
+            if (index > mLastChildIndex || index < 1) return;
 
             if (index == mLastChildIndex)
             {
                 --mLastChildIndex;
-                mArray[index] = default(T);
+                mArray[index] = default;
                 return;
             }
 
@@ -259,10 +212,7 @@ namespace QFramework
         //这个索引和大小排序之间没有任何关系
         public T GetElement(int index)
         {
-            if (index > mLastChildIndex)
-            {
-                return default(T);
-            }
+            if (index > mLastChildIndex) return default;
             return mArray[index];
         }
 
@@ -281,23 +231,15 @@ namespace QFramework
 
         protected void ResizeArray(int newSize = -1)
         {
-            if (newSize < 0)
-            {
-                newSize = System.Math.Max(mArray.Length + 4, (int) System.Math.Round(mArray.Length * mGrowthFactor));
-            }
+            if (newSize < 0) newSize = Math.Max(mArray.Length + 4, (int)Math.Round(mArray.Length * mGrowthFactor));
 
             if (newSize > 1 << 30)
-            {
-                throw new System.Exception(
+                throw new Exception(
                     "Binary Heap Size really large (2^18). A heap size this large is probably the cause of pathfinding running in an infinite loop. " +
                     "\nRemove this check (in BinaryHeap.cs) if you are sure that it is not caused by a bug");
-            }
 
-            T[] tmp = new T[newSize];
-            for (int i = 0; i < mArray.Length; i++)
-            {
-                tmp[i] = mArray[i];
-            }
+            var tmp = new T[newSize];
+            for (var i = 0; i < mArray.Length; i++) tmp[i] = mArray[i];
 
             mArray = tmp;
         }
@@ -306,17 +248,13 @@ namespace QFramework
         protected void ProcolateUp(int index)
         {
             var element = mArray[index];
-            if (element == null)
-            {
-                return;
-            }
+            if (element == null) return;
 
-            float sortScore = element.SortScore;
+            var sortScore = element.SortScore;
 
-            int parentIndex = index >> 1;
+            var parentIndex = index >> 1;
 
             if (mSortMode == BinaryHeapSortMode.kMin)
-            {
                 while (parentIndex >= 1 && sortScore < mArray[parentIndex].SortScore)
                 {
                     mArray[index] = mArray[parentIndex];
@@ -324,9 +262,7 @@ namespace QFramework
                     index = parentIndex;
                     parentIndex = index >> 1;
                 }
-            }
             else
-            {
                 while (parentIndex >= 1 && sortScore > mArray[parentIndex].SortScore)
                 {
                     mArray[index] = mArray[parentIndex];
@@ -334,7 +270,7 @@ namespace QFramework
                     index = parentIndex;
                     parentIndex = index >> 1;
                 }
-            }
+
             mArray[index] = element;
             mArray[index].HeapIndex = index;
         }
@@ -342,24 +278,16 @@ namespace QFramework
         protected void ProcolateDown(int index)
         {
             var element = mArray[index];
-            if (element == null)
-            {
-                return;
-            }
+            if (element == null) return;
 
-            int childIndex = index << 1;
+            var childIndex = index << 1;
 
             if (mSortMode == BinaryHeapSortMode.kMin)
-            {
                 while (childIndex <= mLastChildIndex)
                 {
                     if (childIndex != mLastChildIndex)
-                    {
                         if (mArray[childIndex + 1].SortScore < mArray[childIndex].SortScore)
-                        {
                             childIndex = childIndex + 1;
-                        }
-                    }
 
                     if (mArray[childIndex].SortScore < element.SortScore)
                     {
@@ -374,18 +302,12 @@ namespace QFramework
                     index = childIndex;
                     childIndex = index << 1;
                 }
-            }
             else
-            {
                 while (childIndex <= mLastChildIndex)
                 {
                     if (childIndex != mLastChildIndex)
-                    {
                         if (mArray[childIndex + 1].SortScore > mArray[childIndex].SortScore)
-                        {
                             childIndex = childIndex + 1;
-                        }
-                    }
 
                     if (mArray[childIndex].SortScore > element.SortScore)
                     {
@@ -400,12 +322,13 @@ namespace QFramework
                     index = childIndex;
                     childIndex = index << 1;
                 }
-            }
 
             mArray[index] = element;
             mArray[index].HeapIndex = index;
         }
+
         #endregion
+
         #endregion
     }
 }

@@ -18,7 +18,7 @@ namespace QFramework
     {
         protected override void Write(MDRendererMarkdown renderer, EmphasisInline node)
         {
-            bool prev = false;
+            var prev = false;
 
             if (node.IsDouble)
             {
@@ -34,13 +34,9 @@ namespace QFramework
             renderer.WriteChildren(node);
 
             if (node.IsDouble)
-            {
                 renderer.Style.Bold = prev;
-            }
             else
-            {
                 renderer.Style.Italic = prev;
-            }
         }
     }
 }

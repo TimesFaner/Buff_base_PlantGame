@@ -1,18 +1,18 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
 namespace QFramework
 {
-    using System;
-    using System.Collections.Generic;
-    using UnityEngine;
-    using Object = UnityEngine.Object;
-
 #if UNITY_EDITOR
     [ClassAPI("07.ResKit", "ResLoader Object", 1, "ResLoader Object")]
     [APIDescriptionCN("资源管理方案")]
@@ -20,30 +20,52 @@ namespace QFramework
 #endif
     public class ResLoader : DisposableObject, IResLoader, IPoolType, IPoolable
     {
+        private readonly Dictionary<string, Sprite> mCachedSpriteDict = new();
+
+        private readonly List<IRes> mResList = new();
+        private readonly LinkedList<IRes> mWaitLoadList = new();
+
+        private LinkedList<CallBackWrap> mCallbackRecordList;
+        private Action mListener;
+
+        private int mLoadingCount;
+
+        private List<Object> mObject2Unload;
+
         [Obsolete("请使用 ResLoader.Allocate() 获取 ResLoader 对象", true)]
         public ResLoader()
         {
         }
-        
-#if UNITY_EDITOR
-        [MethodAPI]
-        [APIDescriptionCN("获取 ResLoader")]
-        [APIDescriptionEN("Get ResLoader")]
-        [APIExampleCode(@"
 
-public class MyScript : MonoBehaviour
-{
-    public ResLoader mResLoader = ResLoader.Allocate();
 
-    ...
-}
-")]
-#endif
-        public static ResLoader Allocate()
+        public float Progress
         {
-            return SafeObjectPool<ResLoader>.Instance.Allocate();
+            get
+            {
+                if (mWaitLoadList.Count == 0) return 1;
+
+                var unit = 1.0f / mResList.Count;
+                var currentValue = unit * (mResList.Count - mLoadingCount);
+
+                var currentNode = mWaitLoadList.First;
+
+                while (currentNode != null)
+                {
+                    currentValue += unit * currentNode.Value.Progress;
+                    currentNode = currentNode.Next;
+                }
+
+                return currentValue;
+            }
         }
-        
+
+        bool IPoolable.IsRecycled { get; set; }
+
+        void IPoolable.OnRecycled()
+        {
+            ReleaseAllRes();
+        }
+
 #if UNITY_EDITOR
         [MethodAPI]
         [APIDescriptionCN("归还 ResLoader")]
@@ -67,12 +89,8 @@ public class MyScript : MonoBehaviour
             if (mObject2Unload != null)
             {
                 foreach (var o in mObject2Unload)
-                {
                     if (o)
-                    {
                         ResUnloadHelper.DestroyObject(o);
-                    }
-                }
 
                 mObject2Unload.Clear();
                 mObject2Unload = null;
@@ -81,108 +99,22 @@ public class MyScript : MonoBehaviour
             SafeObjectPool<ResLoader>.Instance.Recycle(this);
         }
 
-        
+
         public IRes LoadResSync(ResSearchKeys resSearchKeys)
         {
             Add2Load(resSearchKeys);
             LoadSync();
 
-            var res = ResMgr.Instance.GetRes(resSearchKeys, false);
+            var res = ResMgr.Instance.GetRes(resSearchKeys);
             if (res == null)
             {
                 Debug.LogError("Failed to Load Res:" + resSearchKeys);
                 return null;
             }
-            
+
             return res;
         }
-        
-        private void LoadSync()
-        {
-            while (mWaitLoadList.Count > 0)
-            {
-                var first = mWaitLoadList.First.Value;
-                --mLoadingCount;
-                mWaitLoadList.RemoveFirst();
 
-                if (first == null)
-                {
-                    return;
-                }
-
-                if (first.LoadSync())
-                {
-                }
-            }
-        }
-        
-        private List<Object> mObject2Unload;
-
-        public void AddObjectForDestroyWhenRecycle2Cache(Object obj)
-        {
-            if (mObject2Unload == null)
-            {
-                mObject2Unload = new List<Object>();
-            }
-
-            mObject2Unload.Add(obj);
-        }
-
-        class CallBackWrap
-        {
-            private readonly Action<bool, IRes> mListener;
-            private readonly IRes mRes;
-
-            public CallBackWrap(IRes r, Action<bool, IRes> l)
-            {
-                mRes = r;
-                mListener = l;
-            }
-
-            public void Release()
-            {
-                mRes.UnRegisteOnResLoadDoneEvent(mListener);
-            }
-
-            public bool IsRes(IRes res)
-            {
-                return res.AssetName == mRes.AssetName;
-            }
-        }
-
-        private readonly List<IRes> mResList = new List<IRes>();
-        private readonly LinkedList<IRes> mWaitLoadList = new LinkedList<IRes>();
-        private System.Action mListener;
-
-        private int mLoadingCount;
-
-        private LinkedList<CallBackWrap> mCallbackRecordList;
-
-
-        public float Progress
-        {
-            get
-            {
-                if (mWaitLoadList.Count == 0)
-                {
-                    return 1;
-                }
-
-                var unit = 1.0f / mResList.Count;
-                var currentValue = unit * (mResList.Count - mLoadingCount);
-
-                var currentNode = mWaitLoadList.First;
-
-                while (currentNode != null)
-                {
-                    currentValue += unit * currentNode.Value.Progress;
-                    currentNode = currentNode.Next;
-                }
-
-                return currentValue;
-            }
-        }
-        
 
         public void Add2Load(ResSearchKeys resSearchKeys, Action<bool, IRes> listener = null,
             bool lastOrder = true)
@@ -201,10 +133,7 @@ public class MyScript : MonoBehaviour
 
             res = ResMgr.Instance.GetRes(resSearchKeys, true);
 
-            if (res == null)
-            {
-                return;
-            }
+            if (res == null) return;
 
             if (listener != null)
             {
@@ -216,7 +145,6 @@ public class MyScript : MonoBehaviour
             var depends = res.GetDependResList();
 
             if (depends != null)
-            {
                 foreach (var depend in depends)
                 {
                     var searchRule = ResSearchKeys.Allocate(depend, null, typeof(AssetBundle));
@@ -224,124 +152,54 @@ public class MyScript : MonoBehaviour
                     Add2Load(searchRule);
                     searchRule.Recycle2Cache();
                 }
-            }
 
             AddRes2Array(res, lastOrder);
         }
-        
-        private readonly Dictionary<string, Sprite> mCachedSpriteDict = new Dictionary<string, Sprite>();
 
-        public void LoadAsync(System.Action listener = null)
+        public void LoadAsync(Action listener = null)
         {
             mListener = listener;
             DoLoadAsync();
         }
-        
-        public UnityEngine.Object LoadAssetSync(ResSearchKeys resSearchKeys)
+
+        public Object LoadAssetSync(ResSearchKeys resSearchKeys)
         {
-            UnityEngine.Object  retAsset = null;
+            Object retAsset = null;
 
             if (resSearchKeys.AssetType == typeof(Sprite))
             {
                 if (AssetBundlePathHelper.SimulationMode)
                 {
                     if (mCachedSpriteDict.ContainsKey(resSearchKeys.AssetName))
-                    {
                         return mCachedSpriteDict[resSearchKeys.AssetName];
-                    }
 
                     resSearchKeys.AssetType = typeof(Texture2D);
-                    var texture = LoadResSync(resSearchKeys).Asset as  Texture2D;
+                    var texture = LoadResSync(resSearchKeys).Asset as Texture2D;
                     resSearchKeys.AssetType = typeof(Sprite);
-                        
+
                     var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
                         Vector2.one * 0.5f);
                     mCachedSpriteDict.Add(resSearchKeys.AssetName, sprite);
                     return mCachedSpriteDict[resSearchKeys.AssetName];
                 }
-                else
-                {
-                    retAsset = LoadResSync(resSearchKeys).Asset;
-                }
+
+                retAsset = LoadResSync(resSearchKeys).Asset;
             }
             else
             {
                 retAsset = LoadResSync(resSearchKeys).Asset;
             }
-            
+
             resSearchKeys.Recycle2Cache();
 
             return retAsset;
-        }
-
-   
-        
-
-        public void ReleaseRes(string resName)
-        {
-            if (string.IsNullOrEmpty(resName))
-            {
-                return;
-            }
-
-            if (AssetBundlePathHelper.SimulationMode)
-            {
-                if (mCachedSpriteDict.ContainsKey(resName))
-                {
-                    var sprite = mCachedSpriteDict[resName];
-                    Object.Destroy(sprite);
-                    mCachedSpriteDict.Remove(resName);
-                }
-            }
-
-            var resSearchRule = ResSearchKeys.Allocate(resName);
-
-            var res = ResMgr.Instance.GetRes(resSearchRule);
-            resSearchRule.Recycle2Cache();
-
-            if (res == null)
-            {
-                return;
-            }
-
-            if (mWaitLoadList.Remove(res))
-            {
-                --mLoadingCount;
-                if (mLoadingCount == 0)
-                {
-                    mListener = null;
-                }
-            }
-
-            if (mResList.Remove(res))
-            {
-                res.UnRegisteOnResLoadDoneEvent(OnResLoadFinish);
-                res.Release();
-                ResMgr.Instance.ClearOnUpdate();
-            }
-        }
-
-        public void ReleaseRes(params string[] names)
-        {
-            if (names == null || names.Length == 0)
-            {
-                return;
-            }
-
-            for (var i = names.Length - 1; i >= 0; --i)
-            {
-                ReleaseRes(names[i]);
-            }
         }
 
         public void ReleaseAllRes()
         {
             if (AssetBundlePathHelper.SimulationMode)
             {
-                foreach (var spritePair in mCachedSpriteDict)
-                {
-                    Object.Destroy(spritePair.Value);
-                }
+                foreach (var spritePair in mCachedSpriteDict) Object.Destroy(spritePair.Value);
 
                 mCachedSpriteDict.Clear();
             }
@@ -363,10 +221,7 @@ public class MyScript : MonoBehaviour
 
                 mResList.Clear();
 
-                if (!ResMgr.IsApplicationQuit)
-                {
-                    ResMgr.Instance.ClearOnUpdate();
-                }
+                if (!ResMgr.IsApplicationQuit) ResMgr.Instance.ClearOnUpdate();
             }
 
             RemoveAllCallbacks(true);
@@ -377,13 +232,9 @@ public class MyScript : MonoBehaviour
             if (mResList.Count > 0)
             {
                 for (var i = mResList.Count - 1; i >= 0; --i)
-                {
                     if (mResList[i].UnloadImage(flag))
                     {
-                        if (mWaitLoadList.Remove(mResList[i]))
-                        {
-                            --mLoadingCount;
-                        }
+                        if (mWaitLoadList.Remove(mResList[i])) --mLoadingCount;
 
                         RemoveCallback(mResList[i], true);
 
@@ -391,10 +242,92 @@ public class MyScript : MonoBehaviour
                         mResList[i].Release();
                         mResList.RemoveAt(i);
                     }
-                }
 
                 ResMgr.Instance.ClearOnUpdate();
             }
+        }
+
+#if UNITY_EDITOR
+        [MethodAPI]
+        [APIDescriptionCN("获取 ResLoader")]
+        [APIDescriptionEN("Get ResLoader")]
+        [APIExampleCode(@"
+
+public class MyScript : MonoBehaviour
+{
+    public ResLoader mResLoader = ResLoader.Allocate();
+
+    ...
+}
+")]
+#endif
+        public static ResLoader Allocate()
+        {
+            return SafeObjectPool<ResLoader>.Instance.Allocate();
+        }
+
+        private void LoadSync()
+        {
+            while (mWaitLoadList.Count > 0)
+            {
+                var first = mWaitLoadList.First.Value;
+                --mLoadingCount;
+                mWaitLoadList.RemoveFirst();
+
+                if (first == null) return;
+
+                if (first.LoadSync())
+                {
+                }
+            }
+        }
+
+        public void AddObjectForDestroyWhenRecycle2Cache(Object obj)
+        {
+            if (mObject2Unload == null) mObject2Unload = new List<Object>();
+
+            mObject2Unload.Add(obj);
+        }
+
+
+        public void ReleaseRes(string resName)
+        {
+            if (string.IsNullOrEmpty(resName)) return;
+
+            if (AssetBundlePathHelper.SimulationMode)
+                if (mCachedSpriteDict.ContainsKey(resName))
+                {
+                    var sprite = mCachedSpriteDict[resName];
+                    Object.Destroy(sprite);
+                    mCachedSpriteDict.Remove(resName);
+                }
+
+            var resSearchRule = ResSearchKeys.Allocate(resName);
+
+            var res = ResMgr.Instance.GetRes(resSearchRule);
+            resSearchRule.Recycle2Cache();
+
+            if (res == null) return;
+
+            if (mWaitLoadList.Remove(res))
+            {
+                --mLoadingCount;
+                if (mLoadingCount == 0) mListener = null;
+            }
+
+            if (mResList.Remove(res))
+            {
+                res.UnRegisteOnResLoadDoneEvent(OnResLoadFinish);
+                res.Release();
+                ResMgr.Instance.ClearOnUpdate();
+            }
+        }
+
+        public void ReleaseRes(params string[] names)
+        {
+            if (names == null || names.Length == 0) return;
+
+            for (var i = names.Length - 1; i >= 0; --i) ReleaseRes(names[i]);
         }
 
         public override void Dispose()
@@ -405,10 +338,7 @@ public class MyScript : MonoBehaviour
 
         public void Dump()
         {
-            foreach (var res in mResList)
-            {
-                Debug.Log(res.AssetName);
-            }
+            foreach (var res in mResList) Debug.Log(res.AssetName);
         }
 
 
@@ -461,10 +391,7 @@ public class MyScript : MonoBehaviour
                     next = current.Next;
                     if (current.Value.IsRes(res))
                     {
-                        if (release)
-                        {
-                            current.Value.Release();
-                        }
+                        if (release) current.Value.Release();
 
                         mCallbackRecordList.Remove(current);
                     }
@@ -482,10 +409,7 @@ public class MyScript : MonoBehaviour
                 while (count > 0)
                 {
                     --count;
-                    if (release)
-                    {
-                        mCallbackRecordList.Last.Value.Release();
-                    }
+                    if (release) mCallbackRecordList.Last.Value.Release();
 
                     mCallbackRecordList.RemoveLast();
                 }
@@ -501,10 +425,7 @@ public class MyScript : MonoBehaviour
             {
                 RemoveAllCallbacks(false);
 
-                if (mListener != null)
-                {
-                    mListener();
-                }
+                if (mListener != null) mListener();
             }
         }
 
@@ -517,10 +438,7 @@ public class MyScript : MonoBehaviour
 
             searchRule.Recycle2Cache();
 
-            if (oldRes != null)
-            {
-                return;
-            }
+            if (oldRes != null) return;
 
             res.Retain();
             mResList.Add(res);
@@ -529,49 +447,50 @@ public class MyScript : MonoBehaviour
             {
                 ++mLoadingCount;
                 if (lastOrder)
-                {
                     mWaitLoadList.AddLast(res);
-                }
                 else
-                {
                     mWaitLoadList.AddFirst(res);
-                }
             }
         }
 
         private static IRes FindResInArray(List<IRes> list, ResSearchKeys resSearchKeys)
         {
-            if (list == null)
-            {
-                return null;
-            }
+            if (list == null) return null;
 
             for (var i = list.Count - 1; i >= 0; --i)
-            {
                 if (resSearchKeys.Match(list[i]))
-                {
                     return list[i];
-                }
-            }
 
             return null;
         }
 
         private void AddResListenerRecord(IRes res, Action<bool, IRes> listener)
         {
-            if (mCallbackRecordList == null)
-            {
-                mCallbackRecordList = new LinkedList<CallBackWrap>();
-            }
+            if (mCallbackRecordList == null) mCallbackRecordList = new LinkedList<CallBackWrap>();
 
             mCallbackRecordList.AddLast(new CallBackWrap(res, listener));
         }
 
-        bool IPoolable.IsRecycled { get; set; }
-
-        void IPoolable.OnRecycled()
+        private class CallBackWrap
         {
-            ReleaseAllRes();
+            private readonly Action<bool, IRes> mListener;
+            private readonly IRes mRes;
+
+            public CallBackWrap(IRes r, Action<bool, IRes> l)
+            {
+                mRes = r;
+                mListener = l;
+            }
+
+            public void Release()
+            {
+                mRes.UnRegisteOnResLoadDoneEvent(mListener);
+            }
+
+            public bool IsRes(IRes res)
+            {
+                return res.AssetName == mRes.AssetName;
+            }
         }
     }
 }

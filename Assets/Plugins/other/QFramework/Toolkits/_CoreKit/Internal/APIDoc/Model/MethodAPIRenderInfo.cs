@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -15,13 +15,14 @@ namespace QFramework
     public class MethodAPIRenderInfo
     {
         private readonly MethodInfo mMethodInfo;
-        public string MethodCode { get; private set; }
 
         public MethodAPIRenderInfo(MethodInfo methodInfo)
         {
             mMethodInfo = methodInfo;
             MethodCode = methodInfo.Name;
         }
+
+        public string MethodCode { get; private set; }
 
         public void BuildString(StringBuilder builder)
         {
@@ -30,13 +31,9 @@ namespace QFramework
             var description = string.Empty;
 
             if (LocaleKitEditor.IsCN.Value)
-            {
                 description = mMethodInfo.GetAttribute<APIDescriptionCNAttribute>().Description;
-            }
             else
-            {
-                description = mMethodInfo.GetAttribute<APIDescriptionENAttribute>(false).Description;
-            }
+                description = mMethodInfo.GetAttribute<APIDescriptionENAttribute>().Description;
 
             builder
                 .Append("|").Append(mMethodInfo.Name).Append("|").Append(description).AppendLine("|")

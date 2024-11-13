@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -147,10 +147,7 @@ myScript.DestroyGameObjGracefully();
 #endif
         public static void DestroyGameObjGracefully<T>(this T selfBehaviour) where T : Component
         {
-            if (selfBehaviour && selfBehaviour.gameObject)
-            {
-                selfBehaviour.gameObject.DestroySelfGracefully();
-            }
+            if (selfBehaviour && selfBehaviour.gameObject) selfBehaviour.gameObject.DestroySelfGracefully();
         }
 
 #if UNITY_EDITOR
@@ -179,10 +176,7 @@ myScript.DestroyGameObjAfterDelayGracefully(5);
 #endif
         public static T DestroyGameObjAfterDelayGracefully<T>(this T selfBehaviour, float delay) where T : Component
         {
-            if (selfBehaviour && selfBehaviour.gameObject)
-            {
-                selfBehaviour.gameObject.DestroySelfAfterDelay(delay);
-            }
+            if (selfBehaviour && selfBehaviour.gameObject) selfBehaviour.gameObject.DestroySelfAfterDelay(delay);
 
             return selfBehaviour;
         }

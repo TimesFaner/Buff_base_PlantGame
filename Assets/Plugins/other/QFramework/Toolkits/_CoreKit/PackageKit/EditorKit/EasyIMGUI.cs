@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -15,11 +15,17 @@ namespace QFramework
     [InitializeOnLoad]
     public sealed class EasyIMGUI
     {
+        static EasyIMGUI()
+        {
+            XMLKit.Get.SystemLayer.Get<IXMLToObjectConvertSystem>()
+                .AddModule("EasyIMGUI", new EasyIMGUIXMLModule());
+        }
+
         public static IMGUILabel Label()
         {
             return new IMGUILabelView();
         }
-        
+
         public static IMGUIButton Button()
         {
             return new IMGUIButtonView();
@@ -104,12 +110,6 @@ namespace QFramework
         public static IMGUIEnumPopup EnumPopup(Enum initValue)
         {
             return new IMGUIEnumPopupView(initValue);
-        }
-
-        static EasyIMGUI()
-        {
-            XMLKit.Get.SystemLayer.Get<IXMLToObjectConvertSystem>()
-                .AddModule("EasyIMGUI", new EasyIMGUIXMLModule());
         }
     }
 }

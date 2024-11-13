@@ -1,20 +1,20 @@
 /****************************************************************************
  * Copyright (c) 2017 magicbell
  * Copyright (c) 2018.3 ~ 2021.1 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,56 +26,51 @@
 
 using System;
 using System.IO;
-
+using UnityEditor;
 using UnityEngine;
 
 namespace QFramework
 {
-	using UnityEditor;
+    [Serializable]
+    public class UIKitSettingData
+    {
+        private const string mConfigSavedFileName = "ProjectConfig.json";
 
-	[Serializable]
-	public class UIKitSettingData
-	{
-		static string mConfigSavedDir => (Application.dataPath + "/QFrameworkData/").CreateDirIfNotExists() + "ProjectConfig/";
+        public string Namespace;
 
-		private const string mConfigSavedFileName = "ProjectConfig.json";
+        public string UIScriptDir = "/Scripts/UI";
 
-		public string Namespace;
+        public string UIPrefabDir = "/Art/UIPrefab";
 
-		public string UIScriptDir = "/Scripts/UI";
+        private static string mConfigSavedDir =>
+            (Application.dataPath + "/QFrameworkData/").CreateDirIfNotExists() + "ProjectConfig/";
 
-		public string UIPrefabDir = "/Art/UIPrefab";
-
-		public bool IsDefaultNamespace => Namespace == "QFramework.Example";
+        public bool IsDefaultNamespace => Namespace == "QFramework.Example";
 
 
-		public static UIKitSettingData Load()
-		{
-			mConfigSavedDir.CreateDirIfNotExists();
+        public static UIKitSettingData Load()
+        {
+            mConfigSavedDir.CreateDirIfNotExists();
 
-			if (!File.Exists(mConfigSavedDir + mConfigSavedFileName))
-			{
-				using (var fileStream = File.Create(mConfigSavedDir + mConfigSavedFileName))
-				{
-					fileStream.Close();
-				}
-			}
+            if (!File.Exists(mConfigSavedDir + mConfigSavedFileName))
+                using (var fileStream = File.Create(mConfigSavedDir + mConfigSavedFileName))
+                {
+                    fileStream.Close();
+                }
 
-			var frameworkConfigData =
-				JsonUtility.FromJson<UIKitSettingData>(File.ReadAllText(mConfigSavedDir + mConfigSavedFileName));
+            var frameworkConfigData =
+                JsonUtility.FromJson<UIKitSettingData>(File.ReadAllText(mConfigSavedDir + mConfigSavedFileName));
 
-			if (frameworkConfigData == null || string.IsNullOrEmpty(frameworkConfigData.Namespace))
-			{
-				frameworkConfigData = new UIKitSettingData {Namespace = "QFramework.Example"};
-			}
+            if (frameworkConfigData == null || string.IsNullOrEmpty(frameworkConfigData.Namespace))
+                frameworkConfigData = new UIKitSettingData { Namespace = "QFramework.Example" };
 
-			return frameworkConfigData;
-		}
+            return frameworkConfigData;
+        }
 
-		public void Save()
-		{
-			File.WriteAllText(mConfigSavedDir + mConfigSavedFileName,JsonUtility.ToJson(this));
-			AssetDatabase.Refresh();
-		}
-	}
+        public void Save()
+        {
+            File.WriteAllText(mConfigSavedDir + mConfigSavedFileName, JsonUtility.ToJson(this));
+            AssetDatabase.Refresh();
+        }
+    }
 }

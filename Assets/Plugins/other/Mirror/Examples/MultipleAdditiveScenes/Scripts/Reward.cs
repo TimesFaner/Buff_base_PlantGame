@@ -8,19 +8,19 @@ namespace Mirror.Examples.MultipleAdditiveScenes
         public bool available = true;
         public RandomColor randomColor;
 
+        [ServerCallback]
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.gameObject.CompareTag("Player"))
+                ClaimPrize(other.gameObject);
+        }
+
         protected override void OnValidate()
         {
             base.OnValidate();
 
             if (randomColor == null)
                 randomColor = GetComponent<RandomColor>();
-        }
-
-        [ServerCallback]
-        void OnTriggerEnter(Collider other)
-        {
-            if (other.gameObject.CompareTag("Player"))
-                ClaimPrize(other.gameObject);
         }
 
         // This is called from PlayerController.CmdClaimPrize which is invoked by PlayerController.OnControllerColliderHit
@@ -34,11 +34,11 @@ namespace Mirror.Examples.MultipleAdditiveScenes
                 // First hit turns it off, pending the object being destroyed a few frames later.
                 available = false;
 
-                Color32 color = randomColor.color;
+                var color = randomColor.color;
 
                 // calculate the points from the color ... lighter scores higher as the average approaches 255
                 // UnityEngine.Color RGB values are float fractions of 255
-                uint points = (uint)(((color.r) + (color.g) + (color.b)) / 3);
+                var points = (uint)((color.r + color.g + color.b) / 3);
 
                 // award the points via SyncVar on the PlayerController
                 player.GetComponent<PlayerScore>().score += points;

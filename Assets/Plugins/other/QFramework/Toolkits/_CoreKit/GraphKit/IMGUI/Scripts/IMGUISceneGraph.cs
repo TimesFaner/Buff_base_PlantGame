@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -17,10 +17,10 @@ namespace QFramework
 
     /// <summary> Derive from this class to create a SceneGraph with a specific graph type. </summary>
     /// <example>
-    /// <code>
-    /// public class MySceneGraph : GUISceneGraph<MyGraph> {
-    /// 	
-    /// }
+    ///     <code>
+    /// public class MySceneGraph : GUISceneGraph<MyGraph>
+    ///             {
+    ///             }
     /// </code>
     /// </example>
     public class GUISceneGraph<T> : GUISceneGraph where T : GUIGraph

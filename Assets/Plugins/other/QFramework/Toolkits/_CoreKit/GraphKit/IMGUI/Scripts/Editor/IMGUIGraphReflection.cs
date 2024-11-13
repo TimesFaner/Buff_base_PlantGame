@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace QFramework
 {
@@ -21,20 +22,20 @@ namespace QFramework
         [NonSerialized] private static Dictionary<Type, Color> nodeTint;
         [NonSerialized] private static Dictionary<Type, int> nodeWidth;
 
+        [NonSerialized] private static Type[] _nodeTypes;
+
         /// <summary> All available node types </summary>
-        public static Type[] nodeTypes
-        {
-            get { return _nodeTypes != null ? _nodeTypes : _nodeTypes = GetNodeTypes(); }
-        }
+        public static Type[] nodeTypes => _nodeTypes != null ? _nodeTypes : _nodeTypes = GetNodeTypes();
 
-        [NonSerialized] private static Type[] _nodeTypes = null;
-
-        /// <summary> Return a delegate used to determine whether window is docked or not. It is faster to cache this delegate than run the reflection required each time. </summary>
+        /// <summary>
+        ///     Return a delegate used to determine whether window is docked or not. It is faster to cache this delegate than
+        ///     run the reflection required each time.
+        /// </summary>
         public static Func<bool> GetIsDockedDelegate(this EditorWindow window)
         {
-            BindingFlags fullBinding = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
-                                       BindingFlags.Static;
-            MethodInfo isDockedMethod = typeof(EditorWindow).GetProperty("docked", fullBinding).GetGetMethod(true);
+            var fullBinding = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
+                              BindingFlags.Static;
+            var isDockedMethod = typeof(EditorWindow).GetProperty("docked", fullBinding).GetGetMethod(true);
             return (Func<bool>)Delegate.CreateDelegate(typeof(Func<bool>), window, isDockedMethod);
         }
 
@@ -47,10 +48,7 @@ namespace QFramework
         /// <summary> Custom node tint colors defined with [NodeColor(r, g, b)] </summary>
         public static bool TryGetAttributeTint(this Type nodeType, out Color tint)
         {
-            if (nodeTint == null)
-            {
-                CacheAttributes<Color, GUIGraphNode.NodeTintAttribute>(ref nodeTint, x => x.color);
-            }
+            if (nodeTint == null) CacheAttributes<Color, GUIGraphNode.NodeTintAttribute>(ref nodeTint, x => x.color);
 
             return nodeTint.TryGetValue(nodeType, out tint);
         }
@@ -58,10 +56,7 @@ namespace QFramework
         /// <summary> Get custom node widths defined with [NodeWidth(width)] </summary>
         public static bool TryGetAttributeWidth(this Type nodeType, out int width)
         {
-            if (nodeWidth == null)
-            {
-                CacheAttributes<int, GUIGraphNode.NodeWidthAttribute>(ref nodeWidth, x => x.width);
-            }
+            if (nodeWidth == null) CacheAttributes<int, GUIGraphNode.NodeWidthAttribute>(ref nodeWidth, x => x.width);
 
             return nodeWidth.TryGetValue(nodeType, out width);
         }
@@ -69,11 +64,11 @@ namespace QFramework
         private static void CacheAttributes<V, A>(ref Dictionary<Type, V> dict, Func<A, V> getter) where A : Attribute
         {
             dict = new Dictionary<Type, V>();
-            for (int i = 0; i < nodeTypes.Length; i++)
+            for (var i = 0; i < nodeTypes.Length; i++)
             {
-                object[] attribs = nodeTypes[i].GetCustomAttributes(typeof(A), true);
+                var attribs = nodeTypes[i].GetCustomAttributes(typeof(A), true);
                 if (attribs == null || attribs.Length == 0) continue;
-                A attrib = attribs[0] as A;
+                var attrib = attribs[0] as A;
                 dict.Add(nodeTypes[i], getter(attrib));
             }
         }
@@ -82,7 +77,7 @@ namespace QFramework
         public static FieldInfo GetFieldInfo(this Type type, string fieldName)
         {
             // If we can't find field in the first run, it's probably a private field in a base class.
-            FieldInfo field = type.GetField(fieldName,
+            var field = type.GetField(fieldName,
                 BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             // Search base classes for private fields only. Public fields are found above
             while (field == null && (type = type.BaseType) != typeof(GUIGraphNode))
@@ -93,10 +88,9 @@ namespace QFramework
         /// <summary> Get all classes deriving from baseType via reflection </summary>
         public static Type[] GetDerivedTypes(this Type baseType)
         {
-            List<System.Type> types = new List<System.Type>();
-            System.Reflection.Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-            foreach (Assembly assembly in assemblies)
-            {
+            var types = new List<Type>();
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var assembly in assemblies)
                 try
                 {
                     types.AddRange(assembly.GetTypes().Where(t => !t.IsAbstract && baseType.IsAssignableFrom(t))
@@ -105,7 +99,6 @@ namespace QFramework
                 catch (ReflectionTypeLoadException)
                 {
                 }
-            }
 
             return types.ToArray();
         }
@@ -113,38 +106,30 @@ namespace QFramework
         /// <summary> Find methods marked with the [ContextMenu] attribute and add them to the context menu </summary>
         public static void AddCustomContextMenuItems(this GenericMenu contextMenu, object obj)
         {
-            KeyValuePair<ContextMenu, MethodInfo>[] items = GetContextMenuMethods(obj);
+            var items = GetContextMenuMethods(obj);
             if (items.Length != 0)
             {
                 contextMenu.AddSeparator("");
-                List<string> invalidatedEntries = new List<string>();
-                foreach (KeyValuePair<ContextMenu, MethodInfo> checkValidate in items)
-                {
+                var invalidatedEntries = new List<string>();
+                foreach (var checkValidate in items)
                     if (checkValidate.Key.validate && !(bool)checkValidate.Value.Invoke(obj, null))
-                    {
                         invalidatedEntries.Add(checkValidate.Key.menuItem);
-                    }
-                }
 
-                for (int i = 0; i < items.Length; i++)
+                for (var i = 0; i < items.Length; i++)
                 {
-                    KeyValuePair<ContextMenu, MethodInfo> kvp = items[i];
+                    var kvp = items[i];
                     if (invalidatedEntries.Contains(kvp.Key.menuItem))
-                    {
                         contextMenu.AddDisabledItem(new GUIContent(kvp.Key.menuItem));
-                    }
                     else
-                    {
                         contextMenu.AddItem(new GUIContent(kvp.Key.menuItem), false, () => kvp.Value.Invoke(obj, null));
-                    }
                 }
             }
         }
 
         /// <summary> Call OnValidate on target </summary>
-        public static void TriggerOnValidate(this UnityEngine.Object target)
+        public static void TriggerOnValidate(this Object target)
         {
-            System.Reflection.MethodInfo onValidate = null;
+            MethodInfo onValidate = null;
             if (target != null)
             {
                 onValidate = target.GetType().GetMethod("OnValidate",
@@ -155,13 +140,13 @@ namespace QFramework
 
         public static KeyValuePair<ContextMenu, MethodInfo>[] GetContextMenuMethods(object obj)
         {
-            Type type = obj.GetType();
-            MethodInfo[] methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
-                                                   BindingFlags.NonPublic);
-            List<KeyValuePair<ContextMenu, MethodInfo>> kvp = new List<KeyValuePair<ContextMenu, MethodInfo>>();
-            for (int i = 0; i < methods.Length; i++)
+            var type = obj.GetType();
+            var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
+                                          BindingFlags.NonPublic);
+            var kvp = new List<KeyValuePair<ContextMenu, MethodInfo>>();
+            for (var i = 0; i < methods.Length; i++)
             {
-                ContextMenu[] attribs = methods[i].GetCustomAttributes(typeof(ContextMenu), true)
+                var attribs = methods[i].GetCustomAttributes(typeof(ContextMenu), true)
                     .Select(x => x as ContextMenu).ToArray();
                 if (attribs == null || attribs.Length == 0) continue;
                 if (methods[i].GetParameters().Length != 0)
@@ -178,10 +163,8 @@ namespace QFramework
                     continue;
                 }
 
-                for (int k = 0; k < attribs.Length; k++)
-                {
+                for (var k = 0; k < attribs.Length; k++)
                     kvp.Add(new KeyValuePair<ContextMenu, MethodInfo>(attribs[k], methods[i]));
-                }
             }
 #if UNITY_5_5_OR_NEWER
             //Sort menu items

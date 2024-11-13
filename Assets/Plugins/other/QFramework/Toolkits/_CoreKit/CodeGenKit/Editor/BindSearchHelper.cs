@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -38,21 +38,19 @@ namespace QFramework
 
 
             foreach (var bind in binds)
-            {
                 if (bindGroupTransforms.Any(g => bind.Transform.IsChildOf(g) && bind.Transform != g))
                 {
                 }
                 else
                 {
-                    task.BindInfos.Add(new BindInfo()
+                    task.BindInfos.Add(new BindInfo
                     {
                         TypeName = bind.TypeName,
                         MemberName = bind.Transform.gameObject.name,
                         BindScript = bind,
-                        PathToRoot = PathToParent(bind.Transform, task.GameObject.name),
+                        PathToRoot = PathToParent(bind.Transform, task.GameObject.name)
                     });
                 }
-            }
         }
 
         public static string PathToParent(Transform trans, string parentName)
@@ -61,10 +59,7 @@ namespace QFramework
 
             while (trans.parent != null)
             {
-                if (trans.parent.name.Equals(parentName))
-                {
-                    break;
-                }
+                if (trans.parent.name.Equals(parentName)) break;
 
                 retValue.AddPrefix("/").AddPrefix(trans.parent.name);
 

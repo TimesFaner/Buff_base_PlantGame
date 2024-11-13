@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -26,14 +26,8 @@ namespace QFramework
         private string mLabelText = string.Empty;
         private Action mOnClick = () => { };
 
-        protected override void OnGUI()
-        {
-            if (GUILayout.Button(mTextGetter == null ? mLabelText : mTextGetter(), GUI.skin.button, LayoutStyles))
-            {
-                mOnClick.Invoke();
-                // GUIUtility.ExitGUI();
-            }
-        }
+
+        private Func<string> mTextGetter;
 
         public IMGUIButton Text(string labelText)
         {
@@ -53,31 +47,26 @@ namespace QFramework
             var button = EasyIMGUI.Button();
 
             foreach (XmlAttribute childNodeAttribute in node.Attributes)
-            {
                 if (childNodeAttribute.Name == "Id")
-                {
                     button.Id = childNodeAttribute.Value;
-                }
                 else if (childNodeAttribute.Name == "Text")
-                {
                     button.Text(childNodeAttribute.Value);
-                }
-                else if (childNodeAttribute.Name == "Width")
-                {
-                    button.Width(int.Parse(childNodeAttribute.Value));
-                }
-            }
+                else if (childNodeAttribute.Name == "Width") button.Width(int.Parse(childNodeAttribute.Value));
 
             return button as T;
         }
-
-
-        private Func<string> mTextGetter;
 
         public IMGUIButton Text(Func<string> textGetter)
         {
             mTextGetter = textGetter;
             return this;
+        }
+
+        protected override void OnGUI()
+        {
+            if (GUILayout.Button(mTextGetter == null ? mLabelText : mTextGetter(), GUI.skin.button, LayoutStyles))
+                mOnClick.Invoke();
+            // GUIUtility.ExitGUI();
         }
     }
 }

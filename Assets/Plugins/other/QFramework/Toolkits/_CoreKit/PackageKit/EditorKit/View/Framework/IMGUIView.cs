@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -18,13 +18,13 @@ namespace QFramework
 
         Func<bool> VisibleCondition { get; set; }
 
-        void DrawGUI();
-
         IMGUILayout Parent { get; set; }
 
         FluentGUIStyle Style { get; }
 
         Color BackgroundColor { get; set; }
+
+        void DrawGUI();
 
         void RefreshNextFrame();
 
@@ -37,9 +37,9 @@ namespace QFramework
         void Hide();
         void Show();
     }
-    
-    
-     public static class ViewExtension
+
+
+    public static class ViewExtension
     {
         public static T Width<T>(this T view, float width) where T : IMGUIView
         {
@@ -109,7 +109,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// SetFontColor Before Build
+        ///     SetFontColor Before Build
         /// </summary>
         /// <param name="view"></param>
         /// <param name="color"></param>
@@ -122,7 +122,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Change Font Color After Build Any Time
+        ///     Change Font Color After Build Any Time
         /// </summary>
         /// <param name="view"></param>
         /// <param name="color"></param>

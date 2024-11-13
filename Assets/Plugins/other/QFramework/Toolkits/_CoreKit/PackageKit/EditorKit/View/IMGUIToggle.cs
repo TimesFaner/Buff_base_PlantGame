@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -23,16 +23,17 @@ namespace QFramework
     internal class IMGUIIMGUIToggleView : IMGUIAbstractView, IMGUIToggle
     {
         private Func<bool> mIsOnGetter;
-        private string mText { get; set; }
 
         public IMGUIIMGUIToggleView()
         {
-            ValueProperty = new BindableProperty<bool>(false);
+            ValueProperty = new BindableProperty<bool>();
 
             Style = new FluentGUIStyle(() => GUI.skin.toggle);
         }
 
-        public BindableProperty<bool> ValueProperty { get; private set; }
+        private string mText { get; set; }
+
+        public BindableProperty<bool> ValueProperty { get; }
 
         public IMGUIToggle IsOn(bool isOn)
         {
@@ -46,17 +47,17 @@ namespace QFramework
             return this;
         }
 
+        public IMGUIToggle Text(string text)
+        {
+            mText = text;
+            return this;
+        }
+
         protected override void OnGUI()
         {
             ValueProperty.Value =
                 GUILayout.Toggle(mIsOnGetter?.Invoke() ?? ValueProperty.Value, mText ?? string.Empty, Style.Value,
                     LayoutStyles);
-        }
-
-        public IMGUIToggle Text(string text)
-        {
-            mText = text;
-            return this;
         }
     }
 }

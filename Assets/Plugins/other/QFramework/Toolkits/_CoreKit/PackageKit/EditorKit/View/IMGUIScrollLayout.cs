@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -18,7 +18,18 @@ namespace QFramework
 
     internal class IMGUIScrollLayoutView : IMGUIAbstractLayout, IMGUIScrollLayout
     {
-        Vector2 mScrollPos = Vector2.zero;
+        private Vector2 mScrollPos = Vector2.zero;
+
+        public T Convert<T>(XmlNode node) where T : class
+        {
+            var scroll = EasyIMGUI.Scroll();
+
+            foreach (XmlAttribute childNodeAttribute in node.Attributes)
+                if (childNodeAttribute.Name == "Id")
+                    scroll.Id = childNodeAttribute.Value;
+
+            return scroll as T;
+        }
 
         protected override void OnGUIBegin()
         {
@@ -28,21 +39,6 @@ namespace QFramework
         protected override void OnGUIEnd()
         {
             GUILayout.EndScrollView();
-        }
-
-        public T Convert<T>(XmlNode node) where T : class
-        {
-            var scroll = EasyIMGUI.Scroll();
-
-            foreach (XmlAttribute childNodeAttribute in node.Attributes)
-            {
-                if (childNodeAttribute.Name == "Id")
-                {
-                    scroll.Id = childNodeAttribute.Value;
-                }
-            }
-
-            return scroll as T;
         }
     }
 }

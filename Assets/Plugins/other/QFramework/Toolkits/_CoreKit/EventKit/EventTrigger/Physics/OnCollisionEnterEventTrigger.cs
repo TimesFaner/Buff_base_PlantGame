@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -13,10 +13,11 @@ namespace QFramework
 {
     public class OnCollisionEnterEventTrigger : MonoBehaviour
     {
-        public readonly EasyEvent<Collision> OnCollisionEnterEvent = new EasyEvent<Collision>();
+        public readonly EasyEvent<Collision> OnCollisionEnterEvent = new();
+
         private void OnCollisionEnter(Collision col)
         {
-            OnCollisionEnterEvent.Trigger(col);         
+            OnCollisionEnterEvent.Trigger(col);
         }
     }
 
@@ -28,7 +29,7 @@ namespace QFramework
             return self.GetOrAddComponent<OnCollisionEnterEventTrigger>().OnCollisionEnterEvent
                 .Register(onCollisionEnter);
         }
-        
+
         public static IUnRegister OnCollisionEnterEvent(this GameObject self, Action<Collision> onCollisionEnter)
         {
             return self.GetOrAddComponent<OnCollisionEnterEventTrigger>().OnCollisionEnterEvent

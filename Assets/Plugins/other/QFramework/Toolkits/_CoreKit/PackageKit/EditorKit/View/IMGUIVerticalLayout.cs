@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -23,29 +23,12 @@ namespace QFramework
         {
         }
 
-        public string VerticalStyle { get; set; }
-
         public VerticalLayout(string verticalStyle = null)
         {
             VerticalStyle = verticalStyle;
         }
 
-        protected override void OnGUIBegin()
-        {
-            if (string.IsNullOrEmpty(VerticalStyle))
-            {
-                GUILayout.BeginVertical(LayoutStyles);
-            }
-            else
-            {
-                GUILayout.BeginVertical(VerticalStyle, LayoutStyles);
-            }
-        }
-
-        protected override void OnGUIEnd()
-        {
-            GUILayout.EndVertical();
-        }
+        public string VerticalStyle { get; set; }
 
         public IMGUIVerticalLayout Box()
         {
@@ -59,14 +42,23 @@ namespace QFramework
             var scroll = EasyIMGUI.Vertical();
 
             foreach (XmlAttribute childNodeAttribute in node.Attributes)
-            {
                 if (childNodeAttribute.Name == "Id")
-                {
                     scroll.Id = childNodeAttribute.Value;
-                }
-            }
 
             return scroll as T;
+        }
+
+        protected override void OnGUIBegin()
+        {
+            if (string.IsNullOrEmpty(VerticalStyle))
+                GUILayout.BeginVertical(LayoutStyles);
+            else
+                GUILayout.BeginVertical(VerticalStyle, LayoutStyles);
+        }
+
+        protected override void OnGUIEnd()
+        {
+            GUILayout.EndVertical();
         }
     }
 }

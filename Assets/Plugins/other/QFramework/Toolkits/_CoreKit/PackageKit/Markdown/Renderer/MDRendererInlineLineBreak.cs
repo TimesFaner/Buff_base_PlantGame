@@ -19,13 +19,9 @@ namespace QFramework
         protected override void Write(MDRendererMarkdown renderer, LineBreakInline node)
         {
             if (node.IsHard)
-            {
                 renderer.FinishBlock();
-            }
             else
-            {
                 renderer.Text(" ");
-            }
         }
     }
 }

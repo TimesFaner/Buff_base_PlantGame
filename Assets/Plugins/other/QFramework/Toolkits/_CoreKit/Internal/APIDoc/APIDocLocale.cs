@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -11,7 +11,7 @@ namespace QFramework
 {
     public class APIDocLocale
     {
-        static bool IsCN => LocaleKitEditor.IsCN.Value;
+        private static bool IsCN => LocaleKitEditor.IsCN.Value;
 
         public static string Description => IsCN ? "描述" : "Description";
 
@@ -20,8 +20,6 @@ namespace QFramework
         public static string Properties => IsCN ? "属性" : "Properties";
 
         public static string Name => IsCN ? "名称" : "Name";
-        
-        
     }
 }
 #endif

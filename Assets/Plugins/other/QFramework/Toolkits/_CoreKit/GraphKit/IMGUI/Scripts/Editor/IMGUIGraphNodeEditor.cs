@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -15,18 +15,20 @@ using UnityEngine;
 
 namespace QFramework
 {
-    /// <summary> Base class to derive custom Node editors from. Use this to create your own custom inspectors and editors for your nodes. </summary>
+    /// <summary>
+    ///     Base class to derive custom Node editors from. Use this to create your own custom inspectors and editors for
+    ///     your nodes.
+    /// </summary>
     [CustomNodeEditor(typeof(GUIGraphNode))]
     public class GUIGraphNodeEditor : GUIGraphEditorBase<GUIGraphNodeEditor,
         GUIGraphNodeEditor.CustomNodeEditorAttribute, GUIGraphNode>
     {
-        private readonly Color DEFAULTCOLOR = new Color32(57, 58, 64, byte.MaxValue);
-
         /// <summary> Fires every whenever a node was modified through the editor </summary>
         public static Action<GUIGraphNode> onUpdateNode;
 
-        public readonly static Dictionary<GUIGraphNodePort, Vector2> portPositions =
-            new Dictionary<GUIGraphNodePort, Vector2>();
+        public static readonly Dictionary<GUIGraphNodePort, Vector2> portPositions = new();
+
+        private readonly Color DEFAULTCOLOR = new Color32(57, 58, 64, byte.MaxValue);
 
         public virtual void OnHeaderGUI()
         {
@@ -44,17 +46,17 @@ namespace QFramework
 
 
             // Iterate through serialized properties and draw them like the Inspector (But with ports)
-            SerializedProperty iterator = serializedObject.GetIterator();
-            bool enterChildren = true;
+            var iterator = serializedObject.GetIterator();
+            var enterChildren = true;
             while (iterator.NextVisible(enterChildren))
             {
                 enterChildren = false;
                 if (excludes.Contains(iterator.name)) continue;
-                GUIGraphGUILayout.PropertyField(iterator, true);
+                GUIGraphGUILayout.PropertyField(iterator);
             }
 
             // Iterate through dynamic ports and draw them in the order in which they are serialized
-            foreach (GUIGraphNodePort dynamicPort in target.DynamicPorts)
+            foreach (var dynamicPort in target.DynamicPorts)
             {
                 if (GUIGraphGUILayout.IsDynamicPortListPort(dynamicPort)) continue;
                 GUIGraphGUILayout.PortField(dynamicPort);
@@ -65,21 +67,21 @@ namespace QFramework
 
         public virtual int GetWidth()
         {
-            Type type = target.GetType();
+            var type = target.GetType();
             int width;
             if (type.TryGetAttributeWidth(out width)) return width;
-            else return 208;
+            return 208;
         }
 
         /// <summary> Returns color for target node </summary>
         public virtual Color GetTint()
         {
             // Try get color from [NodeTint] attribute
-            Type type = target.GetType();
+            var type = target.GetType();
             Color color;
             if (type.TryGetAttributeTint(out color)) return color;
             // Return default color (grey)
-            else return DEFAULTCOLOR;
+            return DEFAULTCOLOR;
         }
 
         public virtual GUIStyle GetBodyStyle()
@@ -95,11 +97,11 @@ namespace QFramework
         /// <summary> Add items for the context menu when right-clicking this node. Override to add custom menu items. </summary>
         public virtual void AddContextMenuItems(GenericMenu menu)
         {
-            bool canRemove = true;
+            var canRemove = true;
             // Actions if only one node is selected
             if (Selection.objects.Length == 1 && Selection.activeObject is GUIGraphNode)
             {
-                GUIGraphNode node = Selection.activeObject as GUIGraphNode;
+                var node = Selection.activeObject as GUIGraphNode;
                 menu.AddItem(new GUIContent("Move To Top"), false,
                     () => GUIGraphWindow.current.MoveNodeToTop(node));
                 menu.AddItem(new GUIContent("Rename"), false, GUIGraphWindow.current.RenameSelectedNode);
@@ -118,7 +120,7 @@ namespace QFramework
             // Custom sctions if only one node is selected
             if (Selection.objects.Length == 1 && Selection.activeObject is GUIGraphNode)
             {
-                GUIGraphNode node = Selection.activeObject as GUIGraphNode;
+                var node = Selection.activeObject as GUIGraphNode;
                 menu.AddCustomContextMenuItems(node);
             }
         }
@@ -140,10 +142,9 @@ namespace QFramework
 
         [AttributeUsage(AttributeTargets.Class)]
         public class CustomNodeEditorAttribute : Attribute,
-            GUIGraphEditorBase<GUIGraphNodeEditor, GUIGraphNodeEditor.CustomNodeEditorAttribute,
-                GUIGraphNode>.INodeEditorAttrib
+            INodeEditorAttrib
         {
-            private Type inspectedType;
+            private readonly Type inspectedType;
 
             /// <summary> Tells a NodeEditor which Node type it is an editor for </summary>
             /// <param name="inspectedType">Type that this editor can edit</param>

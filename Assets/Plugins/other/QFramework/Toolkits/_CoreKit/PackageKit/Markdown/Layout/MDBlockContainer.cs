@@ -17,13 +17,12 @@ namespace QFramework
 {
     internal class MDBlockContainer : MDBlock
     {
-        public bool Quoted = false;
+        private readonly List<MDBlock> mBlocks = new();
         public bool Highlight = false;
         public bool Horizontal = false;
-        public bool IsTableRow = false;
         public bool IsTableHeader = false;
-
-        List<MDBlock> mBlocks = new List<MDBlock>();
+        public bool IsTableRow = false;
+        public bool Quoted = false;
 
         public MDBlockContainer(float indent) : base(indent)
         {
@@ -38,19 +37,13 @@ namespace QFramework
 
         public override MDBlock Find(string id)
         {
-            if (id.Equals(ID, StringComparison.Ordinal))
-            {
-                return this;
-            }
+            if (id.Equals(ID, StringComparison.Ordinal)) return this;
 
             foreach (var block in mBlocks)
             {
                 var match = block.Find(id);
 
-                if (match != null)
-                {
-                    return match;
-                }
+                if (match != null) return match;
             }
 
             return null;
@@ -69,13 +62,9 @@ namespace QFramework
                 GUIStyle style;
 
                 if (Highlight)
-                {
                     style = GUI.skin.GetStyle(Quoted ? "blockquote" : "blockcode");
-                }
                 else
-                {
                     style = GUI.skin.GetStyle(IsTableHeader ? "th" : "tr");
-                }
 
                 pos.x += style.padding.left;
                 pos.y += style.padding.top;
@@ -137,18 +126,12 @@ namespace QFramework
 
             mBlocks.ForEach(block => block.Draw(context));
 
-            if (Highlight && Quoted)
-            {
-                GUI.Box(Rect, string.Empty, GUI.skin.GetStyle("blockquote"));
-            }
+            if (Highlight && Quoted) GUI.Box(Rect, string.Empty, GUI.skin.GetStyle("blockquote"));
         }
 
         public void RemoveTrailingSpace()
         {
-            if (mBlocks.Count > 0 && mBlocks[mBlocks.Count - 1] is MDBlockSpace)
-            {
-                mBlocks.RemoveAt(mBlocks.Count - 1);
-            }
+            if (mBlocks.Count > 0 && mBlocks[mBlocks.Count - 1] is MDBlockSpace) mBlocks.RemoveAt(mBlocks.Count - 1);
         }
     }
 }

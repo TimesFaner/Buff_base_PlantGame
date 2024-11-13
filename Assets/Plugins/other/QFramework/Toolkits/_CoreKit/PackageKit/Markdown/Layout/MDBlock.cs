@@ -17,17 +17,17 @@ namespace QFramework
     internal abstract class MDBlock
     {
         public string ID = null;
-        public Rect Rect = new Rect();
+        public float Indent;
         public MDBlock Parent = null;
-        public float Indent = 0.0f;
-
-        public abstract void Arrange(MDContext context, Vector2 anchor, float maxWidth);
-        public abstract void Draw(MDContext context);
+        public Rect Rect = new();
 
         public MDBlock(float indent)
         {
             Indent = indent;
         }
+
+        public abstract void Arrange(MDContext context, Vector2 anchor, float maxWidth);
+        public abstract void Draw(MDContext context);
 
         public virtual MDBlock Find(string id)
         {

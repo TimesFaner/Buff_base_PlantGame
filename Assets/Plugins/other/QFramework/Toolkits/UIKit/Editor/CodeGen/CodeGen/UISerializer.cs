@@ -10,161 +10,143 @@ namespace QFramework
 {
     public class UISerializer
     {
-	    public static void StartAddComponent2PrefabAfterCompile(GameObject uiPrefab)
-	    {
-		    var prefabPath = AssetDatabase.GetAssetPath(uiPrefab);
-		    if (string.IsNullOrEmpty(prefabPath))
-			    return;
+        public static void StartAddComponent2PrefabAfterCompile(GameObject uiPrefab)
+        {
+            var prefabPath = AssetDatabase.GetAssetPath(uiPrefab);
+            if (string.IsNullOrEmpty(prefabPath))
+                return;
 
-		    var pathStr = EditorPrefs.GetString("AutoGenUIPrefabPath");
-		    if (string.IsNullOrEmpty(pathStr))
-		    {
-			    pathStr = prefabPath;
-		    }
-		    else
-		    {
-			    pathStr += ";" + prefabPath;
-		    }
+            var pathStr = EditorPrefs.GetString("AutoGenUIPrefabPath");
+            if (string.IsNullOrEmpty(pathStr))
+                pathStr = prefabPath;
+            else
+                pathStr += ";" + prefabPath;
 
-		    EditorPrefs.SetString("AutoGenUIPrefabPath", pathStr);
-	    }
-	    
-	    [DidReloadScripts]
-	    private static void DoAddComponent2Prefab()
-	    {
-		    var pathStr = EditorPrefs.GetString("AutoGenUIPrefabPath");
-		    if (string.IsNullOrEmpty(pathStr))
-			    return;
+            EditorPrefs.SetString("AutoGenUIPrefabPath", pathStr);
+        }
 
-		    EditorPrefs.DeleteKey("AutoGenUIPrefabPath");
-		    Debug.Log(">>>>>>>SerializeUIPrefab: " + pathStr);
+        [DidReloadScripts]
+        private static void DoAddComponent2Prefab()
+        {
+            var pathStr = EditorPrefs.GetString("AutoGenUIPrefabPath");
+            if (string.IsNullOrEmpty(pathStr))
+                return;
 
-		    var assembly = GetAssemblyCSharp();
+            EditorPrefs.DeleteKey("AutoGenUIPrefabPath");
+            Debug.Log(">>>>>>>SerializeUIPrefab: " + pathStr);
 
-		    var paths = pathStr.Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries);
-		    var displayProgress = paths.Length > 3;
-		    if (displayProgress) EditorUtility.DisplayProgressBar("", "Serialize UIPrefab...", 0);
-			
-		    for (var i = 0; i < paths.Length; i++)
-		    {
-			    var uiPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(paths[i]);
-			    SetObjectRef2Property(uiPrefab, uiPrefab.name, assembly);
+            var assembly = GetAssemblyCSharp();
 
-			    // uibehaviour
-			    if (displayProgress)
-				    EditorUtility.DisplayProgressBar("", "Serialize UIPrefab..." + uiPrefab.name, (float) (i + 1) / paths.Length);
-			    Debug.Log(">>>>>>>Success Serialize UIPrefab: " + uiPrefab.name);
-		    }
+            var paths = pathStr.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var displayProgress = paths.Length > 3;
+            if (displayProgress) EditorUtility.DisplayProgressBar("", "Serialize UIPrefab...", 0);
 
-		    AssetDatabase.SaveAssets();
-		    AssetDatabase.Refresh();
-			
-		    for (var i = 0; i < paths.Length; i++)
-		    {
-			    var uiPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(paths[i]);
-			    SetObjectRef2Property(uiPrefab, uiPrefab.name, assembly);
+            for (var i = 0; i < paths.Length; i++)
+            {
+                var uiPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(paths[i]);
+                SetObjectRef2Property(uiPrefab, uiPrefab.name, assembly);
 
-			    // uibehaviour
-			    if (displayProgress)
-				    EditorUtility.DisplayProgressBar("", "Serialize UIPrefab..." + uiPrefab.name, (float) (i + 1) / paths.Length);
-			    Debug.Log(">>>>>>>Success Serialize UIPrefab: " + uiPrefab.name);
-		    }
+                // uibehaviour
+                if (displayProgress)
+                    EditorUtility.DisplayProgressBar("", "Serialize UIPrefab..." + uiPrefab.name,
+                        (float)(i + 1) / paths.Length);
+                Debug.Log(">>>>>>>Success Serialize UIPrefab: " + uiPrefab.name);
+            }
 
-		    AssetDatabase.SaveAssets();
-		    AssetDatabase.Refresh();
-			
-		    if (displayProgress) EditorUtility.ClearProgressBar();
-	    }
-	    
-	    public static void SetObjectRef2Property(GameObject obj, string behaviourName, Assembly assembly,
-			List<IBindOld> processedMarks = null)
-		{
-			if (null == processedMarks)
-			{
-				processedMarks = new List<IBindOld>();
-			}
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
 
-			var iBind = obj.GetComponent<IBindOld>();
-			var className = string.Empty;
+            for (var i = 0; i < paths.Length; i++)
+            {
+                var uiPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(paths[i]);
+                SetObjectRef2Property(uiPrefab, uiPrefab.name, assembly);
 
-			if (iBind != null)
-			{
-				className = UIKitSettingData.Load().Namespace + "." + iBind.TypeName;
+                // uibehaviour
+                if (displayProgress)
+                    EditorUtility.DisplayProgressBar("", "Serialize UIPrefab..." + uiPrefab.name,
+                        (float)(i + 1) / paths.Length);
+                Debug.Log(">>>>>>>Success Serialize UIPrefab: " + uiPrefab.name);
+            }
 
-				// 这部分
-				if (iBind.GetBindType() != BindType.DefaultUnityElement)
-				{
-					var bind = obj.GetComponent<AbstractBind>();
-					if (bind != null)
-					{
-						Object.DestroyImmediate(bind, true);
-					}
-				}
-			}
-			else
-			{
-				className = UIKitSettingData.Load().Namespace + "." + behaviourName;
-			}
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
 
-			var t = assembly.GetType(className);
+            if (displayProgress) EditorUtility.ClearProgressBar();
+        }
 
-			var com = obj.GetComponent(t) ?? obj.AddComponent(t);
-			var sObj = new SerializedObject(com);
-			var bindScripts = obj.GetComponentsInChildren<IBindOld>(true);
+        public static void SetObjectRef2Property(GameObject obj, string behaviourName, Assembly assembly,
+            List<IBindOld> processedMarks = null)
+        {
+            if (null == processedMarks) processedMarks = new List<IBindOld>();
 
-			foreach (var elementMark in bindScripts)
-			{
-				if (processedMarks.Contains(elementMark) || elementMark.GetBindType() == BindType.DefaultUnityElement)
-				{
-					continue;
-				}
+            var iBind = obj.GetComponent<IBindOld>();
+            var className = string.Empty;
 
-				processedMarks.Add(elementMark);
+            if (iBind != null)
+            {
+                className = UIKitSettingData.Load().Namespace + "." + iBind.TypeName;
 
-				var uiType = elementMark.TypeName;
-				var propertyName = string.Format("{0}", elementMark.Transform.gameObject.name);
+                // 这部分
+                if (iBind.GetBindType() != BindType.DefaultUnityElement)
+                {
+                    var bind = obj.GetComponent<AbstractBind>();
+                    if (bind != null) Object.DestroyImmediate(bind, true);
+                }
+            }
+            else
+            {
+                className = UIKitSettingData.Load().Namespace + "." + behaviourName;
+            }
 
-				if (sObj.FindProperty(propertyName) == null)
-				{
-					Debug.LogFormat("sObj is Null:{0} {1} {2}", propertyName, uiType,sObj);
-					continue;
-				}
+            var t = assembly.GetType(className);
 
-				sObj.FindProperty(propertyName).objectReferenceValue = elementMark.Transform.gameObject;
-				SetObjectRef2Property(elementMark.Transform.gameObject, elementMark.TypeName, assembly, processedMarks);
-			}
+            var com = obj.GetComponent(t) ?? obj.AddComponent(t);
+            var sObj = new SerializedObject(com);
+            var bindScripts = obj.GetComponentsInChildren<IBindOld>(true);
 
-			var marks = obj.GetComponentsInChildren<IBindOld>(true);
-			foreach (var elementMark in marks)
-			{
-				if (processedMarks.Contains(elementMark))
-				{
-					continue;
-				}
+            foreach (var elementMark in bindScripts)
+            {
+                if (processedMarks.Contains(elementMark) ||
+                    elementMark.GetBindType() == BindType.DefaultUnityElement) continue;
 
-				processedMarks.Add(elementMark);
+                processedMarks.Add(elementMark);
 
-				var propertyName = elementMark.Transform.name;
-				sObj.FindProperty(propertyName).objectReferenceValue = elementMark.Transform.gameObject;
-			}
+                var uiType = elementMark.TypeName;
+                var propertyName = string.Format("{0}", elementMark.Transform.gameObject.name);
 
-			sObj.ApplyModifiedPropertiesWithoutUndo();
-		}
-	    public static Assembly GetAssemblyCSharp()
-	    {
-		    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-		    foreach (var a in assemblies)
-		    {
-			    if (a.FullName.StartsWith("Assembly-CSharp,"))
-			    {
-				    return a;
-			    }
-		    }
+                if (sObj.FindProperty(propertyName) == null)
+                {
+                    Debug.LogFormat("sObj is Null:{0} {1} {2}", propertyName, uiType, sObj);
+                    continue;
+                }
 
-//            Log.E(">>>>>>>Error: Can\'t find Assembly-CSharp.dll");
-		    return null;
-	    }
+                sObj.FindProperty(propertyName).objectReferenceValue = elementMark.Transform.gameObject;
+                SetObjectRef2Property(elementMark.Transform.gameObject, elementMark.TypeName, assembly, processedMarks);
+            }
+
+            var marks = obj.GetComponentsInChildren<IBindOld>(true);
+            foreach (var elementMark in marks)
+            {
+                if (processedMarks.Contains(elementMark)) continue;
+
+                processedMarks.Add(elementMark);
+
+                var propertyName = elementMark.Transform.name;
+                sObj.FindProperty(propertyName).objectReferenceValue = elementMark.Transform.gameObject;
+            }
+
+            sObj.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        public static Assembly GetAssemblyCSharp()
+        {
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var a in assemblies)
+                if (a.FullName.StartsWith("Assembly-CSharp,"))
+                    return a;
+
+            //            Log.E(">>>>>>>Error: Can\'t find Assembly-CSharp.dll");
+            return null;
+        }
     }
-    
-    
 }

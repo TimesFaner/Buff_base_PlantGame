@@ -10,36 +10,31 @@ namespace QFramework
     {
         /// <summary>
         /// </summary>
-        public static int GetUniquePropertyId(this SerializedProperty property) 
-            => property.serializedObject.targetObject.GetType().GetHashCode() 
-               + property.propertyPath.GetHashCode();
-        
-        
+        public static int GetUniquePropertyId(this SerializedProperty property)
+        {
+            return property.serializedObject.targetObject.GetType().GetHashCode()
+                   + property.propertyPath.GetHashCode();
+        }
+
+
         public static void DrawProperties(this SerializedObject serializedObject, bool drawScript = true,
             int indent = 0,
             params string[] ignorePropertyNames)
         {
-            SerializedProperty iterator = serializedObject.GetIterator();
-            for (bool enterChildren = true; iterator.NextVisible(enterChildren); enterChildren = false)
-            {
+            var iterator = serializedObject.GetIterator();
+            for (var enterChildren = true; iterator.NextVisible(enterChildren); enterChildren = false)
                 if (drawScript)
                 {
                     using (new EditorGUI.DisabledScope("m_Script" == iterator.propertyPath))
                     {
-                        if (!ignorePropertyNames.Contains(iterator.propertyPath))
-                        {
-                            iterator.DrawProperty(indent);
-                        }
+                        if (!ignorePropertyNames.Contains(iterator.propertyPath)) iterator.DrawProperty(indent);
                     }
                 }
                 else
                 {
                     if (iterator.propertyPath != "m_Script" && !ignorePropertyNames.Contains(iterator.propertyPath))
-                    {
                         iterator.DrawProperty(indent);
-                    }
                 }
-            }
         }
 
         public static void DrawProperty(this SerializedProperty property, int indent = 0)

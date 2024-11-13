@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -50,18 +50,14 @@ namespace QFramework
             GUILayout.Label(mOutputFilepathProperty.stringValue);
 
             if (GUILayout.Button("..."))
-            {
                 mOutputFilepathProperty.stringValue =
                     EditorUtility.OpenFolderPanel("Select Folder", mOutputFilepathProperty.stringValue, "");
-            }
-            
+
 
             GUILayout.EndHorizontal();
 
             if (GUILayout.Button("Open Output Folder"))
-            {
                 EditorUtility.RevealInFinder(mOutputFilepathProperty.stringValue);
-            }
 
             if (GUILayout.Button("Create"))
             {
@@ -69,7 +65,7 @@ namespace QFramework
                 var singleFileCreator = target.As<SingleFileCreator>();
                 var codeFilePath = folderPath.CombinePath(singleFileCreator.FileName);
 
-                var namespaces = new HashSet<string>()
+                var namespaces = new HashSet<string>
                 {
                     $"using QFramework.{singleFileCreator.FileName.GetFileNameWithoutExtend()}SingleFile.Dependency.Internal;"
                 };
@@ -77,59 +73,55 @@ namespace QFramework
                 var codeLines = new List<string>();
 
                 foreach (var monoScript in singleFileCreator.Scripts)
+                foreach (var codeLine in monoScript.text.Split('\n'))
                 {
-                    foreach (var codeLine in monoScript.text.Split('\n'))
-                    {
-                        var codeLineTrim = codeLine.Trim();
+                    var codeLineTrim = codeLine.Trim();
 
-                        if (codeLineTrim.StartsWith("using "))
-                        {
-                            namespaces.Add(codeLineTrim);
-                        }
-                        else if (codeLineTrim.StartsWith("/***") || codeLineTrim.StartsWith("*") ||
-                                 codeLineTrim.StartsWith("****"))
-                        {
-                            // continue
-                        }
-                        else
-                        {
-                            codeLines.Add(codeLine);
-                        }
+                    if (codeLineTrim.StartsWith("using "))
+                    {
+                        namespaces.Add(codeLineTrim);
+                    }
+                    else if (codeLineTrim.StartsWith("/***") || codeLineTrim.StartsWith("*") ||
+                             codeLineTrim.StartsWith("****"))
+                    {
+                        // continue
+                    }
+                    else
+                    {
+                        codeLines.Add(codeLine);
                     }
                 }
 
                 foreach (var monoScript in singleFileCreator.DependencyScripts)
+                foreach (var codeLine in monoScript.text.Split('\n'))
                 {
-                    foreach (var codeLine in monoScript.text.Split('\n'))
-                    {
-                        var codeLineTrim = codeLine.Trim();
+                    var codeLineTrim = codeLine.Trim();
 
-                        if (codeLineTrim.StartsWith("using "))
-                        {
-                            namespaces.Add(codeLineTrim);
-                        }
-                        else if (codeLineTrim.StartsWith("/***") || codeLineTrim.StartsWith("*") ||
-                                 codeLineTrim.StartsWith("****"))
-                        {
-                            // continue
-                        }
-                        else if (codeLineTrim.StartsWith("namespace QFramework"))
-                        {
-                            codeLines.Add(
-                                $"namespace QFramework.{singleFileCreator.FileName.GetFileNameWithoutExtend()}SingleFile.Dependency.Internal");
-                        }
-                        else if ((codeLineTrim.StartsWith("public class") ||
-                                  codeLineTrim.StartsWith("public static class"))
-                                 && !codeLineTrim.Contains("EasyEvent")
-                                 && !codeLineTrim.Contains("TableIndex")
-                                )
-                        {
-                            codeLines.Add(codeLine.Replace("public", "internal"));
-                        }
-                        else
-                        {
-                            codeLines.Add(codeLine);
-                        }
+                    if (codeLineTrim.StartsWith("using "))
+                    {
+                        namespaces.Add(codeLineTrim);
+                    }
+                    else if (codeLineTrim.StartsWith("/***") || codeLineTrim.StartsWith("*") ||
+                             codeLineTrim.StartsWith("****"))
+                    {
+                        // continue
+                    }
+                    else if (codeLineTrim.StartsWith("namespace QFramework"))
+                    {
+                        codeLines.Add(
+                            $"namespace QFramework.{singleFileCreator.FileName.GetFileNameWithoutExtend()}SingleFile.Dependency.Internal");
+                    }
+                    else if ((codeLineTrim.StartsWith("public class") ||
+                              codeLineTrim.StartsWith("public static class"))
+                             && !codeLineTrim.Contains("EasyEvent")
+                             && !codeLineTrim.Contains("TableIndex")
+                            )
+                    {
+                        codeLines.Add(codeLine.Replace("public", "internal"));
+                    }
+                    else
+                    {
+                        codeLines.Add(codeLine);
                     }
                 }
 

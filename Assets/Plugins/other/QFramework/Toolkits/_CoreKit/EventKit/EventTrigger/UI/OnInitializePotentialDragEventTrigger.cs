@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,10 +12,10 @@ using UnityEngine.EventSystems;
 
 namespace QFramework
 {
-    public class OnInitializePotentialDragEventTrigger: MonoBehaviour, IInitializePotentialDragHandler
+    public class OnInitializePotentialDragEventTrigger : MonoBehaviour, IInitializePotentialDragHandler
     {
-        public readonly EasyEvent<PointerEventData> OnInitializePotentialDragEvent = new EasyEvent<PointerEventData>();
-        
+        public readonly EasyEvent<PointerEventData> OnInitializePotentialDragEvent = new();
+
 
         public void OnInitializePotentialDrag(PointerEventData eventData)
         {
@@ -25,15 +25,19 @@ namespace QFramework
 
     public static class OnInitializePotentialDragEventTriggerExtension
     {
-        public static IUnRegister OnInitializePotentialDragEvent<T>(this T self, Action<PointerEventData> onInitializePotentialDrag)
+        public static IUnRegister OnInitializePotentialDragEvent<T>(this T self,
+            Action<PointerEventData> onInitializePotentialDrag)
             where T : Component
         {
-            return self.GetOrAddComponent<OnInitializePotentialDragEventTrigger>().OnInitializePotentialDragEvent.Register(onInitializePotentialDrag);
+            return self.GetOrAddComponent<OnInitializePotentialDragEventTrigger>().OnInitializePotentialDragEvent
+                .Register(onInitializePotentialDrag);
         }
-        
-        public static IUnRegister OnInitializePotentialDragEvent(this GameObject self, Action<PointerEventData> onInitializePotentialDrag)
+
+        public static IUnRegister OnInitializePotentialDragEvent(this GameObject self,
+            Action<PointerEventData> onInitializePotentialDrag)
         {
-            return self.GetOrAddComponent<OnInitializePotentialDragEventTrigger>().OnInitializePotentialDragEvent.Register(onInitializePotentialDrag);
+            return self.GetOrAddComponent<OnInitializePotentialDragEventTrigger>().OnInitializePotentialDragEvent
+                .Register(onInitializePotentialDrag);
         }
     }
 }

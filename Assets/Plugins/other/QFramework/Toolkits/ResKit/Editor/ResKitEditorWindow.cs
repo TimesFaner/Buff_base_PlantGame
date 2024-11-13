@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 ~ 2023 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -8,58 +8,22 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
+using System.Text;
 using UnityEditor;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace QFramework
 {
-    using UnityEngine;
-
     public class ResKitEditorWindow : EditorWindow
     {
-        private static EncryptConfig mConfigInstance = null;
+        private static EncryptConfig mConfigInstance;
 
-        static EncryptConfig GetConfig()
-        {
-            if (mConfigInstance == null)
-            {
-                TextAsset text = Resources.Load<TextAsset>("EncryptConfig");
-                if (text)
-                {
-                    mConfigInstance = JsonUtility.FromJson<EncryptConfig>(text.text);
+        private ResKitView mResKitView;
 
-                    if (mConfigInstance == null)
-                    {
-                        mConfigInstance = new EncryptConfig();
-                    }
-                }
-                else
-                {
-                    mConfigInstance = new EncryptConfig();
-
-                    string savePath = Application.dataPath + "QFrameworkData/Resources/EncryptConfig.Json";
-                    using (FileStream fs = new FileStream(savePath, FileMode.OpenOrCreate))
-                    {
-                        using (StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8))
-                        {
-                            sw.WriteLine(JsonUtility.ToJson(mConfigInstance));
-                        }
-                    }
-                }
-            }
-
-            return mConfigInstance;
-        }
-
-        [MenuItem("QFramework/Toolkits/Res Kit %#r")]
-        public static void OpenWindow()
-        {
-            var window = (ResKitEditorWindow)GetWindow(typeof(ResKitEditorWindow), true);
-            Debug.Log(Screen.width + " screen width*****");
-            window.position = new Rect(100, 100, 600, 400);
-            window.Show();
-        }
+        public static bool EnableGenerateClass => EditorPrefs.GetBool(ResKitView.KEY_AUTOGENERATE_CLASS, false);
 
 
         private void OnEnable()
@@ -67,13 +31,6 @@ namespace QFramework
             mResKitView = new ResKitView();
             mResKitView.EditorWindow = this;
             mResKitView.Init();
-        }
-
-        ResKitView mResKitView = null;
-
-        public static bool EnableGenerateClass
-        {
-            get { return EditorPrefs.GetBool(ResKitView.KEY_AUTOGENERATE_CLASS, false); }
         }
 
         public void OnDisable()
@@ -106,12 +63,83 @@ namespace QFramework
 
             // RenderEndCommandExecuter.ExecuteCommand();
         }
+
+        private static EncryptConfig GetConfig()
+        {
+            if (mConfigInstance == null)
+            {
+                var text = Resources.Load<TextAsset>("EncryptConfig");
+                if (text)
+                {
+                    mConfigInstance = JsonUtility.FromJson<EncryptConfig>(text.text);
+
+                    if (mConfigInstance == null) mConfigInstance = new EncryptConfig();
+                }
+                else
+                {
+                    mConfigInstance = new EncryptConfig();
+
+                    var savePath = Application.dataPath + "QFrameworkData/Resources/EncryptConfig.Json";
+                    using (var fs = new FileStream(savePath, FileMode.OpenOrCreate))
+                    {
+                        using (var sw = new StreamWriter(fs, Encoding.UTF8))
+                        {
+                            sw.WriteLine(JsonUtility.ToJson(mConfigInstance));
+                        }
+                    }
+                }
+            }
+
+            return mConfigInstance;
+        }
+
+        [MenuItem("QFramework/Toolkits/Res Kit %#r")]
+        public static void OpenWindow()
+        {
+            var window = (ResKitEditorWindow)GetWindow(typeof(ResKitEditorWindow), true);
+            Debug.Log(Screen.width + " screen width*****");
+            window.position = new Rect(100, 100, 600, 400);
+            window.Show();
+        }
     }
 
 
     public class ResKitView
     {
+        private const string KEY_QAssetBundleBuilder_RESVERSION = "KEY_QAssetBundleBuilder_RESVERSION";
+        public const string KEY_AUTOGENERATE_CLASS = "KEY_AUTOGENERATE_CLASS";
+        public const string KEY_GENERATE_CLASS_NAME_STYLE = "KEY_GENERATE_CLASS_NAME_STYLE";
+
+
+        public const int GENERATE_NAME_STYLE_UPPERCASE = 0;
+        public const int GENERATE_NAME_STYLE_KeepOriginal = 1;
+
+        private readonly string[] mBuildTargets =
+        {
+            "Windows/MacOS",
+            "iOS",
+            "Android",
+            "WebGL",
+            "WSAPlayer"
+        };
+
+        private readonly Lazy<GUIStyle> mMarkABStyle = new(() => new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 15,
+            fontStyle = FontStyle.Bold
+        });
+
+        private readonly Lazy<GUIStyle> mResKitNameStyle = new(() => new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 12
+        });
+
+        private int mBuildTargetIndex;
+
         private string mResVersion = "100";
+
+
+        private Vector2 mScrollViewPosition;
 
         private bool mEnableGenerateClass
         {
@@ -119,17 +147,13 @@ namespace QFramework
             set => EditorPrefs.SetBool(KEY_AUTOGENERATE_CLASS, value);
         }
 
-        private int mBuildTargetIndex = 0;
-
         public static int GenerateClassNameStyle
         {
             get => EditorPrefs.GetInt(KEY_GENERATE_CLASS_NAME_STYLE, 0);
             set => EditorPrefs.SetInt(KEY_GENERATE_CLASS_NAME_STYLE, value);
         }
 
-        private const string KEY_QAssetBundleBuilder_RESVERSION = "KEY_QAssetBundleBuilder_RESVERSION";
-        public const string KEY_AUTOGENERATE_CLASS = "KEY_AUTOGENERATE_CLASS";
-        public const string KEY_GENERATE_CLASS_NAME_STYLE = "KEY_GENERATE_CLASS_NAME_STYLE";
+        public EditorWindow EditorWindow { get; set; }
 
 
         public void Init()
@@ -156,35 +180,6 @@ namespace QFramework
             }
         }
 
-
-        private Vector2 mScrollViewPosition;
-
-        private readonly Lazy<GUIStyle> mMarkABStyle = new Lazy<GUIStyle>(() => new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 15,
-            fontStyle = FontStyle.Bold
-        });
-
-        private string[] mBuildTargets = new string[]
-        {
-            "Windows/MacOS",
-            "iOS",
-            "Android",
-            "WebGL",
-            "WSAPlayer"
-        };
-
-        private readonly Lazy<GUIStyle> mResKitNameStyle = new Lazy<GUIStyle>(() => new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 12
-        });
-
-        public EditorWindow EditorWindow { get; set; }
-
-
-        public const int GENERATE_NAME_STYLE_UPPERCASE = 0;
-        public const int GENERATE_NAME_STYLE_KeepOriginal = 1;
-
         public void OnGUI()
         {
             GUILayout.Label(LocaleText.ResKit, mResKitNameStyle.Value);
@@ -199,9 +194,7 @@ namespace QFramework
 
 
             if (GUILayout.Button(LocaleText.GoToPersistent))
-            {
                 EditorUtility.RevealInFinder(Application.persistentDataPath);
-            }
 
             mBuildTargetIndex = GUILayout.Toolbar(mBuildTargetIndex, mBuildTargets);
 
@@ -220,19 +213,12 @@ namespace QFramework
             GUILayout.BeginHorizontal();
             var index = ResKitEditorAPI.SimulationMode ? 0 : 1;
             index = EditorGUILayout.Popup(index, LocaleText.ModeMenu, GUILayout.Width(100));
-            if (index != (ResKitEditorAPI.SimulationMode ? 0 : 1))
-            {
-                ResKitEditorAPI.SimulationMode = (index == 0);
-            }
+            if (index != (ResKitEditorAPI.SimulationMode ? 0 : 1)) ResKitEditorAPI.SimulationMode = index == 0;
 
             if (ResKitEditorAPI.SimulationMode)
-            {
                 GUILayout.Label(LocaleText.SimulationModeDescription);
-            }
             else
-            {
                 GUILayout.Label(LocaleText.DeviceModeDescription);
-            }
 
             GUILayout.EndHorizontal();
 
@@ -265,13 +251,9 @@ namespace QFramework
             }
 
             if (GUILayout.Button(LocaleText.Build))
-            {
                 EditorLifecycle.PushCommand(() =>
                 {
-                    if (EditorWindow)
-                    {
-                        EditorWindow.Close();
-                    }
+                    if (EditorWindow) EditorWindow.Close();
 
                     ResKitEditorAPI.BuildAssetBundles();
                     //if (GetConfig().EncryptAB)
@@ -280,12 +262,8 @@ namespace QFramework
                     //    BundleHotFix.EncryptAB(key);
                     //}
                 });
-            }
 
-            if (GUILayout.Button(LocaleText.ForceClear))
-            {
-                ResKitEditorAPI.ForceClearAssetBundles();
-            }
+            if (GUILayout.Button(LocaleText.ForceClear)) ResKitEditorAPI.ForceClearAssetBundles();
 
             GUILayout.Space(10);
 
@@ -302,15 +280,9 @@ namespace QFramework
 
                                      return result.Select(r =>
                                          {
-                                             if (ResKitAssetsMenu.Marked(r))
-                                             {
-                                                 return r;
-                                             }
+                                             if (ResKitAssetsMenu.Marked(r)) return r;
 
-                                             if (ResKitAssetsMenu.Marked(r.GetFolderPath()))
-                                             {
-                                                 return r.GetFolderPath();
-                                             }
+                                             if (ResKitAssetsMenu.Marked(r.GetFolderPath())) return r.GetFolderPath();
 
                                              return null;
                                          }).Where(r => r != null)
@@ -322,19 +294,14 @@ namespace QFramework
                             GUILayout.Label(n);
 
                             if (GUILayout.Button(LocaleText.Select, GUILayout.Width(50)))
-                            {
                                 Selection.objects = new[]
                                 {
                                     AssetDatabase.LoadAssetAtPath<Object>(n)
                                 };
-                            }
 
                             if (GUILayout.Button(LocaleText.CancelMark, GUILayout.Width(75)))
-                            {
                                 ResKitAssetsMenu.MarkAB(n);
-
-                                // EditorLifecycle.PushCommand(() => { ReloadMarkedList(); });
-                            }
+                            // EditorLifecycle.PushCommand(() => { ReloadMarkedList(); });
                         }
                         GUILayout.EndHorizontal();
                     }
@@ -352,6 +319,30 @@ namespace QFramework
 
         public class LocaleText
         {
+            private static readonly string[] mGenerateClassNameStyleItemsCN =
+            {
+                "全大写（UILoginPanel=>UILOGINPANEL）",
+                "保持原名（UILoginPanel=>UILoginPanel）"
+            };
+
+            private static readonly string[] mGenerateClassNameStyleItemsEN =
+            {
+                "UPPERCASE(UILoginPanel=>UILOGINPANEL)",
+                "KeepOriginal(UILoginPanel=>UILoginPanel)"
+            };
+
+            private static readonly string[] mModeMenuCN =
+            {
+                "模拟模式",
+                "真机模式"
+            };
+
+            private static readonly string[] mModeMenuEN =
+            {
+                "SimulationMode",
+                "DeviceMode"
+            };
+
             public static bool IsCN => LocaleKitEditor.IsCN.Value;
             public static string ResKit => IsCN ? "Res Kit 设置" : "Res Kit Setting";
 
@@ -365,32 +356,8 @@ namespace QFramework
 
             public static string AutoGenerateClass => IsCN ? "打 AB 包时，自动生成资源名常量代码" : "auto generate class when build";
 
-            private static string[] mGenerateClassNameStyleItemsCN = new string[]
-            {
-                "全大写（UILoginPanel=>UILOGINPANEL）",
-                "保持原名（UILoginPanel=>UILoginPanel）"
-            };
-
-            private static string[] mGenerateClassNameStyleItemsEN = new[]
-            {
-                "UPPERCASE(UILoginPanel=>UILOGINPANEL)",
-                "KeepOriginal(UILoginPanel=>UILoginPanel)"
-            };
-
             public static string[] GenerateClassNameStyleItems =>
                 IsCN ? mGenerateClassNameStyleItemsCN : mGenerateClassNameStyleItemsEN;
-
-            private static string[] mModeMenuCN = new[]
-            {
-                "模拟模式",
-                "真机模式"
-            };
-
-            private static string[] mModeMenuEN = new[]
-            {
-                "SimulationMode",
-                "DeviceMode"
-            };
 
             public static string[] ModeMenu => IsCN ? mModeMenuCN : mModeMenuEN;
 
@@ -449,29 +416,21 @@ namespace QFramework
             EditorApplication.update += Update;
         }
 
-        static void Update()
+        private static Queue<Action> mCommands { get; } = new();
+
+        private static void Update()
         {
             ExecuteCommand();
         }
 
-        private static Queue<System.Action> mPrivateCommands = new Queue<System.Action>();
-
-        private static Queue<System.Action> mCommands
-        {
-            get { return mPrivateCommands; }
-        }
-
-        public static void PushCommand(System.Action command)
+        public static void PushCommand(Action command)
         {
             mCommands.Enqueue(command);
         }
 
         public static void ExecuteCommand()
         {
-            while (mCommands.Count > 0)
-            {
-                mCommands.Dequeue().Invoke();
-            }
+            while (mCommands.Count > 0) mCommands.Dequeue().Invoke();
         }
     }
 }

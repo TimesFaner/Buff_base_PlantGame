@@ -1,5 +1,6 @@
 // kcp client logic abstracted into a class.
 // for use in Mirror, DOTSNET, testing, etc.
+
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -8,24 +9,8 @@ namespace kcp2k
 {
     public class KcpClient
     {
-        // kcp
-        // public so that bandwidth statistics can be accessed from the outside
-        public KcpPeer peer;
-
-        // IO
-        protected Socket socket;
-        public EndPoint remoteEndPoint;
-
         // config
         protected readonly KcpConfig config;
-
-        // raw receive buffer always needs to be of 'MTU' size, even if
-        // MaxMessageSize is larger. kcp always sends in MTU segments and having
-        // a buffer smaller than MTU would silently drop excess data.
-        // => we need the MTU to fit channel + message!
-        // => protected because someone may overwrite RawReceive but still wants
-        //    to reuse the buffer.
-        protected readonly byte[] rawReceiveBuffer;
 
         // callbacks
         // even for errors, to allow liraries to show popups etc.
@@ -40,14 +25,30 @@ namespace kcp2k
         protected readonly Action OnDisconnected;
         protected readonly Action<ErrorCode, string> OnError;
 
+        // raw receive buffer always needs to be of 'MTU' size, even if
+        // MaxMessageSize is larger. kcp always sends in MTU segments and having
+        // a buffer smaller than MTU would silently drop excess data.
+        // => we need the MTU to fit channel + message!
+        // => protected because someone may overwrite RawReceive but still wants
+        //    to reuse the buffer.
+        protected readonly byte[] rawReceiveBuffer;
+
         // state
         public bool connected;
 
+        // kcp
+        // public so that bandwidth statistics can be accessed from the outside
+        public KcpPeer peer;
+        public EndPoint remoteEndPoint;
+
+        // IO
+        protected Socket socket;
+
         public KcpClient(Action OnConnected,
-                         Action<ArraySegment<byte>, KcpChannel> OnData,
-                         Action OnDisconnected,
-                         Action<ErrorCode, string> OnError,
-                         KcpConfig config)
+            Action<ArraySegment<byte>, KcpChannel> OnData,
+            Action OnDisconnected,
+            Action<ErrorCode, string> OnError,
+            KcpConfig config)
         {
             // initialize callbacks first to ensure they can be used safely.
             this.OnConnected = OnConnected;
@@ -70,7 +71,7 @@ namespace kcp2k
 
             // resolve host name before creating peer.
             // fixes: https://github.com/MirrorNetworking/Mirror/issues/3361
-            if (!Common.ResolveHostname(address, out IPAddress[] addresses))
+            if (!Common.ResolveHostname(address, out var addresses))
             {
                 // pass error to user callback. no need to log it manually.
                 OnError(ErrorCode.DnsResolve, $"Failed to resolve host: {address}");
@@ -85,13 +86,14 @@ namespace kcp2k
             // some callbacks need to wrapped with some extra logic
             void OnAuthenticatedWrap()
             {
-                Log.Info($"KcpClient: OnConnected");
+                Log.Info("KcpClient: OnConnected");
                 connected = true;
                 OnConnected();
             }
+
             void OnDisconnectedWrap()
             {
-                Log.Info($"KcpClient: OnDisconnected");
+                Log.Info("KcpClient: OnDisconnected");
                 connected = false;
                 peer = null;
                 socket?.Close();
@@ -195,11 +197,8 @@ namespace kcp2k
             // (even if we didn't receive anything. need to tick ping etc.)
             // (connection is null if not active)
             if (peer != null)
-            {
-
-                while (RawReceive(out ArraySegment<byte> segment))
+                while (RawReceive(out var segment))
                     peer.RawInput(segment);
-            }
 
             // RawReceive may have disconnected peer. null check again.
             peer?.TickIncoming();

@@ -26,14 +26,31 @@ namespace QFramework
             Action = default;
         }
     }
-    
+
     [MonoSingletonPath("QFramework/ActionKit/Queue")]
     internal class ActionQueue : MonoBehaviour, ISingleton
     {
-        private List<IDeprecateAction> mActions = new List<IDeprecateAction>();
+        private readonly List<IActionQueueCallback> mActionQueueCallbacks = new();
+        private readonly List<IDeprecateAction> mActions = new();
 
+        private static ActionQueue mInstance => MonoSingletonProperty<ActionQueue>.Instance;
 
-        private List<IActionQueueCallback> mActionQueueCallbacks = new List<IActionQueueCallback>();
+        // Update is called once per frame
+        private void Update()
+        {
+            if (mActions.Count != 0 && mActions[0].Execute(Time.deltaTime)) mActions.RemoveAt(0);
+
+            if (mActionQueueCallbacks.Count > 0)
+            {
+                foreach (var actionQueueCallback in mActionQueueCallbacks) actionQueueCallback.Call();
+
+                mActionQueueCallbacks.Clear();
+            }
+        }
+
+        void ISingleton.OnSingletonInit()
+        {
+        }
 
         public static void AddCallback(IActionQueueCallback actionQueueCallback)
         {
@@ -43,34 +60,6 @@ namespace QFramework
         public static void Append(IDeprecateAction action)
         {
             mInstance.mActions.Add(action);
-        }
-
-        // Update is called once per frame
-        private void Update()
-        {
-            if (mActions.Count != 0 && mActions[0].Execute(Time.deltaTime))
-            {
-                mActions.RemoveAt(0);
-            }
-
-            if (mActionQueueCallbacks.Count > 0)
-            {
-                foreach (var actionQueueCallback in mActionQueueCallbacks)
-                {
-                    actionQueueCallback.Call();
-                }
-                
-                mActionQueueCallbacks.Clear();
-            }
-        }
-
-        void ISingleton.OnSingletonInit()
-        {
-        }
-
-        private static ActionQueue mInstance
-        {
-            get { return MonoSingletonProperty<ActionQueue>.Instance; }
         }
     }
 }

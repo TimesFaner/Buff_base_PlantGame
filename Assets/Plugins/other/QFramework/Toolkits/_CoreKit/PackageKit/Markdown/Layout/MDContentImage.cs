@@ -15,8 +15,8 @@ namespace QFramework
 {
     internal class MDContentImage : MDContent
     {
-        public string URL;
         public string Alt;
+        public string URL;
 
         public MDContentImage(GUIContent payload, MDStyle style, string link)
             : base(payload, style, link)
@@ -39,7 +39,7 @@ namespace QFramework
             var size = context.CalcSize(Payload);
 
             var offset = 40;
-            if ((leftWidth - offset) < size.x)
+            if (leftWidth - offset < size.x)
             {
                 var aspect = size.y / size.x;
                 Location.size = new Vector2(leftWidth - offset, (leftWidth - offset) * aspect);

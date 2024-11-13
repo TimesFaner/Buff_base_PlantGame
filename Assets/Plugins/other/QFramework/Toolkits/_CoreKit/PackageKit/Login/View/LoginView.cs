@@ -1,9 +1,8 @@
 #if UNITY_EDITOR
 namespace QFramework
 {
-    internal class LoginView : VerticalLayout,IController
+    internal class LoginView : VerticalLayout, IController
     {
-
         public LoginView()
         {
             var usernameLine = EasyIMGUI.Horizontal().Parent(this);
@@ -25,14 +24,13 @@ namespace QFramework
                 .Parent(this);
         }
 
-        protected override void OnDisposed()
-        {
-
-        }
-
         public IArchitecture GetArchitecture()
         {
             return PackageKitLoginApp.Interface;
+        }
+
+        protected override void OnDisposed()
+        {
         }
     }
 }

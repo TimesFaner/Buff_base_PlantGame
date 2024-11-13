@@ -8,13 +8,18 @@ namespace QFramework
 
         public virtual Action OnDrawGUI { get; set; }
 
-        public virtual void OnInit(){}
+        public virtual void OnInit()
+        {
+        }
+
         public virtual void DrawGUI()
         {
             OnDrawGUI?.Invoke();
         }
-        
-        public virtual void OnDestroy(){}
+
+        public virtual void OnDestroy()
+        {
+        }
     }
 
     public static class ConsoleModuleExtensions
@@ -24,7 +29,7 @@ namespace QFramework
             self.Title = title;
             return self;
         }
-        
+
         public static T OnGUI<T>(this T self, Action onGUI) where T : ConsoleModule
         {
             self.OnDrawGUI = onGUI;

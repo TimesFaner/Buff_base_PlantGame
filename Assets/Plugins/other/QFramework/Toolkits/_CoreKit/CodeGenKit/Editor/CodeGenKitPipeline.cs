@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2023 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -13,15 +13,19 @@ using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEditor.Callbacks;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace QFramework
 {
     public class CodeGenKitPipeline : ScriptableObject
     {
+        private const string FileName = "Pipeline.asset";
         private static CodeGenKitPipeline mInstance;
+
+        private static readonly Lazy<string>
+            Dir = new(() => "Assets/QFrameworkData/CodeGenKit/".CreateDirIfNotExists());
+
+        [SerializeField] public CodeGenTask CurrentTask;
 
         public static CodeGenKitPipeline Default
         {
@@ -32,9 +36,7 @@ namespace QFramework
                 var filePath = Dir.Value + FileName;
 
                 if (File.Exists(filePath))
-                {
                     return mInstance = AssetDatabase.LoadAssetAtPath<CodeGenKitPipeline>(filePath);
-                }
 
                 return mInstance = CreateInstance<CodeGenKitPipeline>();
             }
@@ -44,22 +46,12 @@ namespace QFramework
         {
             var filePath = Dir.Value + FileName;
 
-            if (!File.Exists(filePath))
-            {
-                AssetDatabase.CreateAsset(this, Dir.Value + FileName);
-            }
+            if (!File.Exists(filePath)) AssetDatabase.CreateAsset(this, Dir.Value + FileName);
 
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
-
-        private static readonly Lazy<string> Dir =
-            new Lazy<string>(() => "Assets/QFrameworkData/CodeGenKit/".CreateDirIfNotExists());
-
-        private const string FileName = "Pipeline.asset";
-
-        [SerializeField] public CodeGenTask CurrentTask;
 
         public void Generate(CodeGenTask task)
         {
@@ -84,7 +76,7 @@ namespace QFramework
             }
 
             writer.AppendLine(
-                $"namespace {((string.IsNullOrWhiteSpace(task.Namespace)) ? CodeGenKit.Setting.Namespace : task.Namespace)}");
+                $"namespace {(string.IsNullOrWhiteSpace(task.Namespace) ? CodeGenKit.Setting.Namespace : task.Namespace)}");
             writer.AppendLine("{");
             writer.AppendLine($"\tpublic partial class {task.ClassName} : ViewController");
             writer.AppendLine("\t{");
@@ -121,9 +113,7 @@ namespace QFramework
                 {
                     writer.AppendLine("\t\t/// <summary>");
                     foreach (var comment in bindData.BindScript.Comment.Split('\n'))
-                    {
                         writer.AppendLine($"\t\t/// {comment}");
-                    }
 
                     writer.AppendLine("\t\t/// </summary>");
                 }
@@ -137,7 +127,8 @@ namespace QFramework
                 foreach (var referenceBind in referenceBinds.Binds)
                 {
                     writer.AppendLine();
-                    writer.AppendLine($"\t\tpublic {referenceBind.Object.GetType().FullName} {referenceBind.MemberName};");
+                    writer.AppendLine(
+                        $"\t\tpublic {referenceBind.Object.GetType().FullName} {referenceBind.MemberName};");
                 }
             }
 
@@ -148,7 +139,7 @@ namespace QFramework
             writer.Clear();
 
 
-            var scriptFile = string.Format(task.ScriptsFolder + "/{0}.cs", (task.ClassName));
+            var scriptFile = string.Format(task.ScriptsFolder + "/{0}.cs", task.ClassName);
 
             if (!File.Exists(scriptFile))
             {
@@ -175,8 +166,8 @@ namespace QFramework
 
                 var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly =>
                     !assembly.FullName.StartsWith("Unity"));
-                
-                var typeName =  generateNamespace + "." + generateClassName;
+
+                var typeName = generateNamespace + "." + generateClassName;
 
                 var type = assemblies.Where(a => a.GetType(typeName) != null)
                     .Select(a => a.GetType(typeName)).FirstOrDefault();
@@ -190,16 +181,13 @@ namespace QFramework
                 Debug.Log(type);
 
                 var gameObject = CurrentTask.GameObject;
-                
+
                 var scriptComponent = gameObject.GetComponent(type);
 
-                if (!scriptComponent)
-                {
-                    scriptComponent = gameObject.AddComponent(type);
-                }
+                if (!scriptComponent) scriptComponent = gameObject.AddComponent(type);
 
                 var serializedObject = new SerializedObject(scriptComponent);
-                
+
                 foreach (var bindInfo in CurrentTask.BindInfos)
                 {
                     var componentName = bindInfo.TypeName.Split('.').Last();
@@ -207,22 +195,18 @@ namespace QFramework
                     var component = gameObject.transform.Find(bindInfo.PathToRoot).GetComponent(componentName);
 
                     if (!component)
-                    {
                         component = gameObject.transform.Find(bindInfo.PathToRoot).GetComponent(bindInfo.TypeName);
-                    }
 
                     serializedProperty.objectReferenceValue = component;
                 }
 
                 var referenceBinds = gameObject.GetComponent<OtherBinds>();
                 if (referenceBinds)
-                {
                     foreach (var bind in referenceBinds.Binds)
                     {
                         var serializedProperty = serializedObject.FindProperty(bind.MemberName);
                         serializedProperty.objectReferenceValue = bind.Object;
                     }
-                }
 
                 var codeGenerateInfo = gameObject.GetComponent<ViewController>();
 
@@ -237,10 +221,7 @@ namespace QFramework
                     var generatePrefab = codeGenerateInfo.GeneratePrefab;
                     var prefabFolder = codeGenerateInfo.PrefabFolder;
 
-                    if (codeGenerateInfo.GetType() != type)
-                    {
-                        DestroyImmediate(codeGenerateInfo, true);
-                    }
+                    if (codeGenerateInfo.GetType() != type) DestroyImmediate(codeGenerateInfo, true);
 
                     serializedObject.ApplyModifiedProperties();
                     serializedObject.UpdateIfRequiredOrScript();
@@ -252,7 +233,7 @@ namespace QFramework
                         var generatePrefabPath = prefabFolder + "/" + gameObject.name + ".prefab";
 
                         if (File.Exists(generatePrefabPath))
-                        { 
+                        {
                             // PrefabUtility.SavePrefabAsset(gameObject);
                         }
                         else
@@ -267,18 +248,18 @@ namespace QFramework
                     serializedObject.ApplyModifiedProperties();
                     serializedObject.UpdateIfRequiredOrScript();
                 }
-                
+
                 EditorUtility.SetDirty(gameObject);
 
                 // EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-                
+
                 CurrentTask.Status = CodeGenTaskStatus.Complete;
                 CurrentTask = null;
             }
         }
 
         [DidReloadScripts]
-        static void Compile()
+        private static void Compile()
         {
             Default.OnCompile();
         }

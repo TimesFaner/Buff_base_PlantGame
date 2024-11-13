@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,23 +12,12 @@ namespace QFramework
 {
     internal class Callback : IAction
     {
-        private Callback()
-        {
-        }
+        private static readonly SimpleObjectPool<Callback> mSimpleObjectPool = new(() => new Callback(), null, 10);
 
         private Action mCallback;
 
-        private static SimpleObjectPool<Callback> mSimpleObjectPool =
-            new SimpleObjectPool<Callback>(() => new Callback(), null, 10);
-
-        public static Callback Allocate(Action callback)
+        private Callback()
         {
-            var callbackAction = mSimpleObjectPool.Allocate();
-            callbackAction.ActionID = ActionKit.ID_GENERATOR++;
-            callbackAction.Reset();
-            callbackAction.Deinited = false;
-            callbackAction.mCallback = callback;
-            return callbackAction;
         }
 
         public bool Paused { get; set; }
@@ -56,7 +45,7 @@ namespace QFramework
             {
                 Deinited = true;
                 mCallback = null;
-                ActionQueue.AddCallback(new ActionQueueRecycleCallback<Callback>(mSimpleObjectPool,this));
+                ActionQueue.AddCallback(new ActionQueueRecycleCallback<Callback>(mSimpleObjectPool, this));
             }
         }
 
@@ -64,6 +53,16 @@ namespace QFramework
         {
             Paused = false;
             Status = ActionStatus.NotStart;
+        }
+
+        public static Callback Allocate(Action callback)
+        {
+            var callbackAction = mSimpleObjectPool.Allocate();
+            callbackAction.ActionID = ActionKit.ID_GENERATOR++;
+            callbackAction.Reset();
+            callbackAction.Deinited = false;
+            callbackAction.mCallback = callback;
+            return callbackAction;
         }
     }
 

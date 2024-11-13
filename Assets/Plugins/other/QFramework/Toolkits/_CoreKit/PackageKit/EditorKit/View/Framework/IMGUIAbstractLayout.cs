@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,7 +12,7 @@ namespace QFramework
 {
     public abstract class IMGUIAbstractLayout : IMGUIAbstractView, IMGUILayout
     {
-        protected List<IMGUIView> Children = new List<IMGUIView>();
+        protected List<IMGUIView> Children = new();
 
         public IMGUILayout AddChild(IMGUIView view)
         {
@@ -23,7 +23,7 @@ namespace QFramework
 
         public void RemoveChild(IMGUIView view)
         {
-            this.PushCommand(() =>
+            PushCommand(() =>
             {
                 Children.Remove(view);
                 view.Parent = null;
@@ -34,13 +34,13 @@ namespace QFramework
 
         public void Clear()
         {
-            this.Children.ForEach(view =>
+            Children.ForEach(view =>
             {
                 view.Parent = null;
                 view.Dispose();
             });
 
-            this.Children.Clear();
+            Children.Clear();
         }
 
         public override void Refresh()
@@ -53,10 +53,7 @@ namespace QFramework
         {
             OnGUIBegin();
 
-            foreach (var child in Children)
-            {
-                child.DrawGUI();
-            }
+            foreach (var child in Children) child.DrawGUI();
 
             OnGUIEnd();
         }
@@ -69,6 +66,4 @@ namespace QFramework
         {
         }
     }
-    
-
 }

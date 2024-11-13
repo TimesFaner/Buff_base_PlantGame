@@ -1,7 +1,7 @@
 /****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 liangxie
-****************************************************************************/
+ ****************************************************************************/
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,8 +10,8 @@ namespace QFramework
 {
     public class TimerHelper
     {
-        protected List<TimeItem>    m_TimeItemList;
-        protected bool              m_IsUseAble = true;
+        protected bool m_IsUseAble = true;
+        protected List<TimeItem> m_TimeItemList;
 
         public void Add(TimeItem item)
         {
@@ -21,10 +21,7 @@ namespace QFramework
                 return;
             }
 
-            if (m_TimeItemList == null)
-            {
-                m_TimeItemList = new List<TimeItem>(2);
-            }
+            if (m_TimeItemList == null) m_TimeItemList = new List<TimeItem>(2);
             m_TimeItemList.Add(item);
         }
 
@@ -32,11 +29,8 @@ namespace QFramework
         {
             if (m_TimeItemList != null)
             {
-                for (int i = m_TimeItemList.Count - 1; i >= 0; --i)
-                {
-                    m_TimeItemList[i].Cancel();
-                }
-                
+                for (var i = m_TimeItemList.Count - 1; i >= 0; --i) m_TimeItemList[i].Cancel();
+
                 m_TimeItemList.Clear();
             }
         }

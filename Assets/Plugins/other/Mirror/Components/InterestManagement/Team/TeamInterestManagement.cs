@@ -6,9 +6,47 @@ namespace Mirror
     [AddComponentMenu("Network/ Interest Management/ Team/Team Interest Management")]
     public class TeamInterestManagement : InterestManagement
     {
-        readonly Dictionary<string, HashSet<NetworkIdentity>> teamObjects = new Dictionary<string, HashSet<NetworkIdentity>>();
-        readonly Dictionary<NetworkIdentity, string> lastObjectTeam = new Dictionary<NetworkIdentity, string>();
-        readonly HashSet<string> dirtyTeams = new HashSet<string>();
+        private readonly HashSet<string> dirtyTeams = new();
+        private readonly Dictionary<NetworkIdentity, string> lastObjectTeam = new();
+        private readonly Dictionary<string, HashSet<NetworkIdentity>> teamObjects = new();
+
+        // internal so we can update from tests
+        [ServerCallback]
+        internal void Update()
+        {
+            // for each spawned:
+            //   if team changed:
+            //     add previous to dirty
+            //     add new to dirty
+            foreach (var netIdentity in NetworkServer.spawned.Values)
+            {
+                // Ignore objects that don't have a NetworkTeam component
+                if (!netIdentity.TryGetComponent(out NetworkTeam identityNetworkTeam))
+                    continue;
+
+                var networkTeamId = identityNetworkTeam.teamId;
+                if (!lastObjectTeam.TryGetValue(netIdentity, out var currentTeam))
+                    continue;
+
+                // Null / Empty string is never a valid teamId
+                // Nothing to do if teamId hasn't changed
+                if (string.IsNullOrWhiteSpace(networkTeamId) || networkTeamId == currentTeam)
+                    continue;
+
+                // Mark new/old Teams as dirty so they get rebuilt
+                UpdateDirtyTeams(networkTeamId, currentTeam);
+
+                // This object is in a new team so observers in the prior team
+                // and the new team need to rebuild their respective observers lists.
+                UpdateTeamObjects(netIdentity, networkTeamId, currentTeam);
+            }
+
+            // rebuild all dirty teams
+            foreach (var dirtyTeam in dirtyTeams)
+                RebuildTeamObservers(dirtyTeam);
+
+            dirtyTeams.Clear();
+        }
 
         [ServerCallback]
         public override void OnSpawned(NetworkIdentity identity)
@@ -16,7 +54,7 @@ namespace Mirror
             if (!identity.TryGetComponent(out NetworkTeam identityNetworkTeam))
                 return;
 
-            string networkTeamId = identityNetworkTeam.teamId;
+            var networkTeamId = identityNetworkTeam.teamId;
             lastObjectTeam[identity] = networkTeamId;
 
             // Null / Empty string is never a valid teamId...do not add to teamObjects collection
@@ -25,7 +63,7 @@ namespace Mirror
 
             //Debug.Log($"TeamInterestManagement.OnSpawned {identity.name} {networkTeamId}");
 
-            if (!teamObjects.TryGetValue(networkTeamId, out HashSet<NetworkIdentity> objects))
+            if (!teamObjects.TryGetValue(networkTeamId, out var objects))
             {
                 objects = new HashSet<NetworkIdentity>();
                 teamObjects.Add(networkTeamId, objects);
@@ -46,53 +84,16 @@ namespace Mirror
             // Multiple objects could be destroyed in same frame and we don't
             // want to rebuild for each one...let Update do it once.
             // We must add the current team to dirtyTeams for Update to rebuild it.
-            if (lastObjectTeam.TryGetValue(identity, out string currentTeam))
+            if (lastObjectTeam.TryGetValue(identity, out var currentTeam))
             {
                 lastObjectTeam.Remove(identity);
-                if (!string.IsNullOrWhiteSpace(currentTeam) && teamObjects.TryGetValue(currentTeam, out HashSet<NetworkIdentity> objects) && objects.Remove(identity))
+                if (!string.IsNullOrWhiteSpace(currentTeam) && teamObjects.TryGetValue(currentTeam, out var objects) &&
+                    objects.Remove(identity))
                     dirtyTeams.Add(currentTeam);
             }
         }
 
-        // internal so we can update from tests
-        [ServerCallback]
-        internal void Update()
-        {
-            // for each spawned:
-            //   if team changed:
-            //     add previous to dirty
-            //     add new to dirty
-            foreach (NetworkIdentity netIdentity in NetworkServer.spawned.Values)
-            {
-                // Ignore objects that don't have a NetworkTeam component
-                if (!netIdentity.TryGetComponent(out NetworkTeam identityNetworkTeam))
-                    continue;
-
-                string networkTeamId = identityNetworkTeam.teamId;
-                if (!lastObjectTeam.TryGetValue(netIdentity, out string currentTeam))
-                    continue;
-
-                // Null / Empty string is never a valid teamId
-                // Nothing to do if teamId hasn't changed
-                if (string.IsNullOrWhiteSpace(networkTeamId) || networkTeamId == currentTeam)
-                    continue;
-
-                // Mark new/old Teams as dirty so they get rebuilt
-                UpdateDirtyTeams(networkTeamId, currentTeam);
-
-                // This object is in a new team so observers in the prior team
-                // and the new team need to rebuild their respective observers lists.
-                UpdateTeamObjects(netIdentity, networkTeamId, currentTeam);
-            }
-
-            // rebuild all dirty teams
-            foreach (string dirtyTeam in dirtyTeams)
-                RebuildTeamObservers(dirtyTeam);
-
-            dirtyTeams.Clear();
-        }
-
-        void UpdateDirtyTeams(string newTeam, string currentTeam)
+        private void UpdateDirtyTeams(string newTeam, string currentTeam)
         {
             // Null / Empty string is never a valid teamId
             if (!string.IsNullOrWhiteSpace(currentTeam))
@@ -101,7 +102,7 @@ namespace Mirror
             dirtyTeams.Add(newTeam);
         }
 
-        void UpdateTeamObjects(NetworkIdentity netIdentity, string newTeam, string currentTeam)
+        private void UpdateTeamObjects(NetworkIdentity netIdentity, string newTeam, string currentTeam)
         {
             // Remove this object from the hashset of the team it just left
             // string.Empty is never a valid teamId
@@ -119,9 +120,9 @@ namespace Mirror
             teamObjects[newTeam].Add(netIdentity);
         }
 
-        void RebuildTeamObservers(string teamId)
+        private void RebuildTeamObservers(string teamId)
         {
-            foreach (NetworkIdentity netIdentity in teamObjects[teamId])
+            foreach (var netIdentity in teamObjects[teamId])
                 if (netIdentity != null)
                     NetworkServer.RebuildObservers(netIdentity, false);
         }
@@ -153,7 +154,8 @@ namespace Mirror
             return identityNetworkTeam.teamId == newObserverNetworkTeam.teamId;
         }
 
-        public override void OnRebuildObservers(NetworkIdentity identity, HashSet<NetworkConnectionToClient> newObservers)
+        public override void OnRebuildObservers(NetworkIdentity identity,
+            HashSet<NetworkConnectionToClient> newObservers)
         {
             // If this object doesn't have a NetworkTeam then it's visible to all clients
             if (!identity.TryGetComponent(out NetworkTeam networkTeam))
@@ -174,23 +176,21 @@ namespace Mirror
                 return;
 
             // Abort if this team hasn't been created yet by OnSpawned or UpdateTeamObjects
-            if (!teamObjects.TryGetValue(networkTeam.teamId, out HashSet<NetworkIdentity> objects))
+            if (!teamObjects.TryGetValue(networkTeam.teamId, out var objects))
                 return;
 
             // Add everything in the hashset for this object's current team
-            foreach (NetworkIdentity networkIdentity in objects)
+            foreach (var networkIdentity in objects)
                 if (networkIdentity != null && networkIdentity.connectionToClient != null)
                     newObservers.Add(networkIdentity.connectionToClient);
         }
 
-        void AddAllConnections(HashSet<NetworkConnectionToClient> newObservers)
+        private void AddAllConnections(HashSet<NetworkConnectionToClient> newObservers)
         {
-            foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
-            {
+            foreach (var conn in NetworkServer.connections.Values)
                 // authenticated and joined world with a player?
                 if (conn != null && conn.isAuthenticated && conn.identity != null)
                     newObservers.Add(conn);
-            }
         }
     }
 }

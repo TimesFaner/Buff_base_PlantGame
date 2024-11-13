@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -25,12 +25,7 @@ namespace QFramework
             mStyle = new FluentGUIStyle(() => GUI.skin.textArea);
         }
 
-        public BindableProperty<string> Content { get; private set; }
-
-        protected override void OnGUI()
-        {
-            Content.Value = CrossPlatformGUILayout.TextArea(Content.Value, mStyle.Value, LayoutStyles);
-        }
+        public BindableProperty<string> Content { get; }
 
         public IMGUITextArea Text(string labelText)
         {
@@ -44,18 +39,16 @@ namespace QFramework
             var textArea = EasyIMGUI.TextArea();
 
             foreach (XmlAttribute nodeAttribute in node.Attributes)
-            {
                 if (nodeAttribute.Name == "Id")
-                {
                     textArea.Id = nodeAttribute.Value;
-                }
-                else if (nodeAttribute.Name == "Text")
-                {
-                    textArea.Text(nodeAttribute.Value);
-                }
-            }
+                else if (nodeAttribute.Name == "Text") textArea.Text(nodeAttribute.Value);
 
             return textArea as T;
+        }
+
+        protected override void OnGUI()
+        {
+            Content.Value = CrossPlatformGUILayout.TextArea(Content.Value, mStyle.Value, LayoutStyles);
         }
     }
 }

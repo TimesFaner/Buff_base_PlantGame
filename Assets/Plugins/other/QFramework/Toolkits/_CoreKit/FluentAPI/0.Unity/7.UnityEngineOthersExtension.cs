@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -29,9 +29,9 @@ new List<int>(){ 1,2,3 }.GetRandomItem();
 #endif
         public static T GetRandomItem<T>(this List<T> list)
         {
-            return list[UnityEngine.Random.Range(0, list.Count)];
+            return list[Random.Range(0, list.Count)];
         }
-        
+
 #if UNITY_EDITOR
         // v1.0.34
         [MethodAPI]
@@ -43,7 +43,7 @@ new List<int>(){ 1,2,3 }.GetAndRemoveRandomItem();
 #endif
         public static T GetAndRemoveRandomItem<T>(this List<T> list)
         {
-            var randomIndex = UnityEngine.Random.Range(0, list.Count);
+            var randomIndex = Random.Range(0, list.Count);
             var randomItem = list[randomIndex];
             list.RemoveAt(randomIndex);
             return randomItem;
@@ -95,7 +95,7 @@ var absValue = -1.0f.Abs();
         {
             return Mathf.Abs(self);
         }
-        
+
         public static float Abs(this int self)
         {
             return Mathf.Abs(self);
@@ -115,12 +115,12 @@ var sign = -5.0f.Sign();
         {
             return Mathf.Sign(self);
         }
-        
+
         public static float Sign(this int self)
         {
             return Mathf.Sign(self);
         }
-        
+
 #if UNITY_EDITOR
         // Added in v1.0.32
         [MethodAPI]
@@ -135,12 +135,12 @@ var cos = (90.0f * Mathf.Deg2Rad).Cos();
         {
             return Mathf.Cos(self);
         }
-        
+
         public static float Cos(this int self)
         {
             return Mathf.Cos(self);
         }
-        
+
 #if UNITY_EDITOR
         // Added in v1.0.32
         [MethodAPI]
@@ -155,7 +155,7 @@ var sin = (90.0f * Mathf.Deg2Rad).Sin();
         {
             return Mathf.Sin(self);
         }
-        
+
         public static float Sin(this int self)
         {
             return Mathf.Sin(self);
@@ -175,7 +175,7 @@ var cos = 90.0f.CosAngle();
         {
             return Mathf.Cos(self * Mathf.Deg2Rad);
         }
-        
+
         public static float CosAngle(this int self)
         {
             return Mathf.Cos(self * Mathf.Deg2Rad);
@@ -195,7 +195,7 @@ var sin = 90.0f.SinAngle();
         {
             return Mathf.Sin(self * Mathf.Deg2Rad);
         }
-        
+
         public static float SinAngle(this int self)
         {
             return Mathf.Sin(self * Mathf.Deg2Rad);
@@ -220,8 +220,8 @@ var radius = 90.0f.Deg2Rad();
         {
             return self * Mathf.Deg2Rad;
         }
-        
-        
+
+
 #if UNITY_EDITOR
         // Added in v1.0.32
         [MethodAPI]
@@ -236,7 +236,7 @@ var degree = 1.57f.Rad2Deg();
         {
             return self * Mathf.Rad2Deg;
         }
-        
+
         public static float Rad2Deg(this int self)
         {
             return self * Mathf.Rad2Deg;
@@ -266,7 +266,7 @@ if (result == 3)
 #endif
         public static T Choose<T>(params T[] args)
         {
-            return args[UnityEngine.Random.Range(0, args.Length)];
+            return args[Random.Range(0, args.Length)];
         }
     }
 }

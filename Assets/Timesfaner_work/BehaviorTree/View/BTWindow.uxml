@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Timesfaner_work/BehaviorTree/View/BTWindow.uss?fileID=7433441132597879392&amp;guid=12ac3eadbe9a7c64fbb579b9e9cd6e26&amp;type=3#BTWindow" />
+    <Timesfaner_work.BehaviorTree.View.SplitView fixed-pane-initial-dimension="300">
+        <ui:VisualElement name="left" style="flex-grow: 0; flex-shrink: 0;">
+            <ui:Label text="Inspector" display-tooltip-when-elided="true" name="Inspetor" style="-unity-background-scale-mode: stretch-to-fill; -unity-text-align: upper-left; -unity-font-style: bold-and-italic; font-size: 15px;" />
+            <Timesfaner_work.BehaviorTree.View.InspectorView style="flex-grow: 1;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="right">
+            <Timesfaner_work.BehaviorTree.View.TreeView focusable="true" style="flex-grow: 1;" />
+        </ui:VisualElement>
+    </Timesfaner_work.BehaviorTree.View.SplitView>
+</ui:UXML>

@@ -1,24 +1,31 @@
 ﻿/****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 ~ 2022 liangxie UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
+using System;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.Networking;
+
 namespace QFramework
 {
-    using UnityEngine;
-    using System.Collections;
-    using UnityEngine.Networking;
-
     public class AssetBundleRes : Res
     {
-        private bool                     mUnloadFlag = true;
-        private string[]                 mDependResList;
-        private AsyncOperation mAssetBundleCreateRequest;
         public string AESKey = string.Empty;
+        private AsyncOperation mAssetBundleCreateRequest;
+        private string[] mDependResList;
+        private bool mUnloadFlag = true;
+
+        public AssetBundle AssetBundle
+        {
+            get => (AssetBundle)mAsset;
+            private set => mAsset = value;
+        }
 
 
         public static AssetBundleRes Allocate(string name)
@@ -28,39 +35,29 @@ namespace QFramework
             res.AssetName = name;
             res.AssetType = typeof(AssetBundle);
             res.InitAssetBundleName();
-            
+
             return res;
         }
 
         private void InitAssetBundleName()
         {
-            mDependResList =  AssetBundleSettings.AssetBundleConfigFile.GetAllDependenciesByUrl(AssetName);
+            mDependResList = AssetBundleSettings.AssetBundleConfigFile.GetAllDependenciesByUrl(AssetName);
         }
 
-        public AssetBundle AssetBundle
-        {
-            get { return (AssetBundle) mAsset; }
-            private set { mAsset = value; }
-        }
-        
         public override bool LoadSync()
         {
-            if (!CheckLoadAble())
-            {
-                return false;
-            }
+            if (!CheckLoadAble()) return false;
 
             State = ResState.Loading;
 
 
             if (AssetBundlePathHelper.SimulationMode)
             {
-                
             }
             else
             {
                 var url = AssetBundleSettings.AssetBundleName2Url(mAssetName);
-                AssetBundle bundle; 
+                AssetBundle bundle;
                 // var zipFileHelper = ResKit.Architecture.Interface.GetUtility<IZipFileHelper>();
 
                 // if (File.ReadAllText(url).Contains(AES.AESHead))
@@ -97,17 +94,14 @@ namespace QFramework
 
         public override void LoadAsync()
         {
-            if (!CheckLoadAble())
-            {
-                return;
-            }
+            if (!CheckLoadAble()) return;
 
             State = ResState.Loading;
 
             ResMgr.Instance.PushIEnumeratorTask(this);
         }
 
-        public override IEnumerator DoLoadAsync(System.Action finishCallback)
+        public override IEnumerator DoLoadAsync(Action finishCallback)
         {
             //开启的时候已经结束了
             if (RefCount <= 0)
@@ -129,7 +123,7 @@ namespace QFramework
                 {
                     var abcR = UnityWebRequestAssetBundle.GetAssetBundle(url);
                     var request = abcR.SendWebRequest();
-                    
+
                     mAssetBundleCreateRequest = request;
                     yield return request;
                     mAssetBundleCreateRequest = null;
@@ -141,11 +135,11 @@ namespace QFramework
                         finishCallback();
                         yield break;
                     }
-                    
+
                     var ab = DownloadHandlerAssetBundle.GetContent(abcR);
 
                     AssetBundle = ab;
-                    
+
                     // 销毁
                     abcR.Dispose();
                 }
@@ -180,10 +174,7 @@ namespace QFramework
 
         public override bool UnloadImage(bool flag)
         {
-            if (AssetBundle != null)
-            {
-                mUnloadFlag = flag;
-            }
+            if (AssetBundle != null) mUnloadFlag = flag;
 
             return true;
         }
@@ -202,10 +193,7 @@ namespace QFramework
 
         protected override float CalculateProgress()
         {
-            if (mAssetBundleCreateRequest == null)
-            {
-                return 0;
-            }
+            if (mAssetBundleCreateRequest == null) return 0;
 
             return mAssetBundleCreateRequest.progress;
         }

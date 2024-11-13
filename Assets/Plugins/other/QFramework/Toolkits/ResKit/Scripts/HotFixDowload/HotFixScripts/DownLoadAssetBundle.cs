@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -8,11 +7,10 @@ namespace QFramework
 {
     public class DownLoadAssetBundle : DownLoadItem
     {
-        UnityWebRequest m_WebRequest;
+        private UnityWebRequest m_WebRequest;
 
         public DownLoadAssetBundle(string url, string path) : base(url, path)
         {
-
         }
 
         public override IEnumerator Download(Action callback = null)
@@ -29,12 +27,9 @@ namespace QFramework
             }
             else
             {
-                byte[] bytes = m_WebRequest.downloadHandler.data;
+                var bytes = m_WebRequest.downloadHandler.data;
                 FileTool.CreateFile(m_SaveFilePath, bytes);
-                if (callback != null)
-                {
-                    callback();
-                }
+                if (callback != null) callback();
             }
         }
 
@@ -49,10 +44,7 @@ namespace QFramework
 
         public override long GetCurLength()
         {
-            if (m_WebRequest != null)
-            {
-                return (long)m_WebRequest.downloadedBytes;
-            }
+            if (m_WebRequest != null) return (long)m_WebRequest.downloadedBytes;
             return 0;
         }
 
@@ -63,12 +55,8 @@ namespace QFramework
 
         public override float GetProcess()
         {
-            if (m_WebRequest != null)
-            {
-                return (long)m_WebRequest.downloadProgress;
-            }
+            if (m_WebRequest != null) return (long)m_WebRequest.downloadProgress;
             return 0;
         }
     }
-
 }

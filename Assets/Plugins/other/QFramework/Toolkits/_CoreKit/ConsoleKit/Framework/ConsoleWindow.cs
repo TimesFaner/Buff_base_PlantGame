@@ -1,21 +1,21 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using System.Linq;
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-using System.IO;
-using System.Linq;
 
 namespace QFramework
 {
     public class ConsoleWindow : MonoBehaviour
     {
         /// <summary>
-        /// Update回调
+        ///     Update回调
         /// </summary>
         public delegate void OnUpdateCallback();
 
         /// <summary>
-        /// OnGUI回调
+        ///     OnGUI回调
         /// </summary>
         public delegate void OnGUICallback();
 
@@ -23,41 +23,36 @@ namespace QFramework
 
         public OnGUICallback onGUICallback = null;
 
-        public bool ShowGUI
-        {
-            get => showGUI;
-            set => showGUI = value;
-        }
-        private bool showGUI = true;
+        public bool ShowGUI { get; set; } = true;
 
 #if UNITY_IOS
         bool                 mTouching = false;
 #endif
 
-        const int margin = 20;
+        private const int margin = 20;
 
-        Rect windowRect = new Rect(margin + 960 * 0.5f, margin, 960 * 0.5f - (2 * margin),
-            540 - (2 * margin));
+        private Rect windowRect = new(margin + 960 * 0.5f, margin, 960 * 0.5f - 2 * margin,
+            540 - 2 * margin);
 
-        public bool OpenInAwake = false;
+        public bool OpenInAwake;
 
-        void Awake()
+        private void Awake()
         {
             ConsoleKit.InitModules();
-            this.showGUI = OpenInAwake;
+            ShowGUI = OpenInAwake;
             DontDestroyOnLoad(this);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             ConsoleKit.DestroyModules();
         }
 
-        void Update()
+        private void Update()
         {
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
             if (Input.GetKeyUp(KeyCode.F1))
-                this.showGUI = !this.showGUI;
+                ShowGUI = !ShowGUI;
 #elif UNITY_ANDROID
             if (Input.GetKeyUp (KeyCode.Escape))
                 this.showGUI = !this.showGUI;
@@ -70,19 +65,19 @@ namespace QFramework
             }
 #endif
 
-            if (this.onUpdateCallback != null)
-                this.onUpdateCallback();
+            if (onUpdateCallback != null)
+                onUpdateCallback();
         }
 
-        private int mIndex = 0;
+        private int mIndex;
 
-        void OnGUI()
+        private void OnGUI()
         {
-            if (!this.showGUI)
+            if (!ShowGUI)
                 return;
 
-            if (this.onGUICallback != null)
-                this.onGUICallback();
+            if (onGUICallback != null)
+                onGUICallback();
 
             var cachedMatrix = GUI.matrix;
             IMGUIHelper.SetDesignResolution(960, 540);
@@ -105,9 +100,9 @@ namespace QFramework
 
 
         /// <summary>
-        /// A window displaying the logged messages.
+        ///     A window displaying the logged messages.
         /// </summary>
-        void DrawConsoleWindow(int windowID)
+        private void DrawConsoleWindow(int windowID)
         {
             mIndex = GUILayout.Toolbar(mIndex, ConsoleKit.Modules.Select(m => m.Title).ToArray());
             ConsoleKit.Modules[mIndex].DrawGUI();

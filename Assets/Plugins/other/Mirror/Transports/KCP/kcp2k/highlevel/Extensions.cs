@@ -7,8 +7,10 @@ namespace kcp2k
     public static class Extensions
     {
         // ArraySegment as HexString for convenience
-        public static string ToHexString(this ArraySegment<byte> segment) =>
-            BitConverter.ToString(segment.Array, segment.Offset, segment.Count);
+        public static string ToHexString(this ArraySegment<byte> segment)
+        {
+            return BitConverter.ToString(segment.Array, segment.Offset, segment.Count);
+        }
 
         // non-blocking UDP send.
         // allows for reuse when overwriting KcpServer/Client (i.e. for relays).
@@ -83,7 +85,8 @@ namespace kcp2k
         // => wrapped with Poll to avoid WouldBlock allocating new SocketException.
         // => wrapped with try-catch to ignore WouldBlock exception.
         // make sure to set socket.Blocking = false before using this!
-        public static bool ReceiveFromNonBlocking(this Socket socket, byte[] recvBuffer, out ArraySegment<byte> data, ref EndPoint remoteEP)
+        public static bool ReceiveFromNonBlocking(this Socket socket, byte[] recvBuffer, out ArraySegment<byte> data,
+            ref EndPoint remoteEP)
         {
             data = default;
 
@@ -106,7 +109,7 @@ namespace kcp2k
                 //
                 // throws SocketException if datagram was larger than buffer.
                 // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
-                int size = socket.ReceiveFrom(recvBuffer, 0, recvBuffer.Length, SocketFlags.None, ref remoteEP);
+                var size = socket.ReceiveFrom(recvBuffer, 0, recvBuffer.Length, SocketFlags.None, ref remoteEP);
                 data = new ArraySegment<byte>(recvBuffer, 0, size);
                 return true;
             }
@@ -148,7 +151,7 @@ namespace kcp2k
                 //
                 // throws SocketException if datagram was larger than buffer.
                 // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
-                int size = socket.Receive(recvBuffer, 0, recvBuffer.Length, SocketFlags.None);
+                var size = socket.Receive(recvBuffer, 0, recvBuffer.Length, SocketFlags.None);
                 data = new ArraySegment<byte>(recvBuffer, 0, size);
                 return true;
             }

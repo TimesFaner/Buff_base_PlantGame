@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2018 ~ 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  ****************************************************************************/
@@ -13,7 +13,7 @@ using System.Reflection;
 namespace QFramework
 {
     /// <summary>
-    /// Used by the injection container to determine if a property or field should be injected.
+    ///     Used by the injection container to determine if a property or field should be injected.
     /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class InjectAttribute : Attribute
@@ -23,33 +23,37 @@ namespace QFramework
             Name = name;
         }
 
-        public string Name { get; set; }
-
         public InjectAttribute()
         {
         }
+
+        public string Name { get; set; }
     }
-    
+
     public interface IQFrameworkContainer
     {
+        TypeMappingCollection Mappings { get; set; }
+        TypeInstanceCollection Instances { get; set; }
+        TypeRelationCollection RelationshipMappings { get; set; }
+
         /// <summary>
-        /// Clears all type mappings and instances.
+        ///     Clears all type mappings and instances.
         /// </summary>
         void Clear();
 
         /// <summary>
-        /// Injects registered types/mappings into an object
+        ///     Injects registered types/mappings into an object
         /// </summary>
         /// <param name="obj"></param>
         void Inject(object obj);
 
         /// <summary>
-        /// Injects everything that is registered at once
+        ///     Injects everything that is registered at once
         /// </summary>
         void InjectAll();
 
         /// <summary>
-        /// Register a type mapping
+        ///     Register a type mapping
         /// </summary>
         /// <typeparam name="TSource">The base type.</typeparam>
         /// <typeparam name="TTarget">The concrete type</typeparam>
@@ -58,7 +62,7 @@ namespace QFramework
         void RegisterRelation<TFor, TBase, TConcrete>();
 
         /// <summary>
-        /// Register an instance of a type.
+        ///     Register an instance of a type.
         /// </summary>
         /// <typeparam name="TBase"></typeparam>
         /// <param name="default"></param>
@@ -67,7 +71,7 @@ namespace QFramework
         void RegisterInstance<TBase>(TBase @default, bool injectNow) where TBase : class;
 
         /// <summary>
-        /// Register an instance of a type.
+        ///     Register an instance of a type.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="default"></param>
@@ -76,7 +80,7 @@ namespace QFramework
         void RegisterInstance(Type type, object @default, bool injectNow);
 
         /// <summary>
-        /// Register a named instance
+        ///     Register a named instance
         /// </summary>
         /// <param name="baseType">The type to register the instance for.</param>
         /// <param name="name">The name for the instance to be resolved.</param>
@@ -89,7 +93,7 @@ namespace QFramework
         void RegisterInstance<TBase>(TBase instance) where TBase : class;
 
         /// <summary>
-        ///  If an instance of T exist then it will return that instance otherwise it will create a new one based off mappings.
+        ///     If an instance of T exist then it will return that instance otherwise it will create a new one based off mappings.
         /// </summary>
         /// <typeparam name="T">The type of instance to resolve</typeparam>
         /// <returns>The/An instance of 'instanceType'</returns>
@@ -100,7 +104,7 @@ namespace QFramework
         TBase ResolveRelation<TFor, TBase>(params object[] arg);
 
         /// <summary>
-        /// Resolves all instances of TType or subclasses of TType.  Either named or not.
+        ///     Resolves all instances of TType or subclasses of TType.  Either named or not.
         /// </summary>
         /// <typeparam name="TType">The Type to resolve</typeparam>
         /// <returns>List of objects.</returns>
@@ -110,18 +114,15 @@ namespace QFramework
         void Register(Type source, Type target, string name = null);
 
         /// <summary>
-        /// Resolves all instances of TType or subclasses of TType.  Either named or not.
+        ///     Resolves all instances of TType or subclasses of TType.  Either named or not.
         /// </summary>
         /// <typeparam name="TType">The Type to resolve</typeparam>
         /// <returns>List of objects.</returns>
         IEnumerable<object> ResolveAll(Type type);
 
-        TypeMappingCollection  Mappings             { get; set; }
-        TypeInstanceCollection Instances            { get; set; }
-        TypeRelationCollection RelationshipMappings { get; set; }
-
         /// <summary>
-        /// If an instance of instanceType exist then it will return that instance otherwise it will create a new one based off mappings.
+        ///     If an instance of instanceType exist then it will return that instance otherwise it will create a new one based off
+        ///     mappings.
         /// </summary>
         /// <param name="baseType">The type of instance to resolve</param>
         /// <param name="name">The type of instance to resolve</param>
@@ -136,56 +137,45 @@ namespace QFramework
     }
 
     /// <summary>
-    /// A ViewModel Container and a factory for Controllers and commands.
+    ///     A ViewModel Container and a factory for Controllers and commands.
     /// </summary>
-
     public class QFrameworkContainer : IQFrameworkContainer
     {
         private TypeInstanceCollection _instances;
-        private TypeMappingCollection  _mappings;
+        private TypeMappingCollection _mappings;
 
 
         public TypeMappingCollection Mappings
         {
-            get { return _mappings ?? (_mappings = new TypeMappingCollection()); }
-            set { _mappings = value; }
+            get => _mappings ?? (_mappings = new TypeMappingCollection());
+            set => _mappings = value;
         }
 
         public TypeInstanceCollection Instances
         {
-            get { return _instances ?? (_instances = new TypeInstanceCollection()); }
-            set { _instances = value; }
+            get => _instances ?? (_instances = new TypeInstanceCollection());
+            set => _instances = value;
         }
 
-        public TypeRelationCollection RelationshipMappings
-        {
-            get { return _relationshipMappings; }
-            set { _relationshipMappings = value; }
-        }
+        public TypeRelationCollection RelationshipMappings { get; set; } = new();
 
         public IEnumerable<TType> ResolveAll<TType>()
         {
-            foreach (var obj in ResolveAll(typeof(TType)))
-            {
-                yield return (TType) obj;
-            }
+            foreach (var obj in ResolveAll(typeof(TType))) yield return (TType)obj;
         }
 
         /// <summary>
-        /// Resolves all instances of TType or subclasses of TType.  Either named or not.
+        ///     Resolves all instances of TType or subclasses of TType.  Either named or not.
         /// </summary>
         /// <typeparam name="TType">The Type to resolve</typeparam>
         /// <returns>List of objects.</returns>
         public IEnumerable<object> ResolveAll(Type type)
         {
-            foreach (KeyValuePair<Tuple<Type, string>, object> kv in Instances)
-            {
+            foreach (var kv in Instances)
                 if (kv.Key.Item1 == type && !string.IsNullOrEmpty(kv.Key.Item2))
                     yield return kv.Value;
-            }
 
-            foreach (KeyValuePair<Tuple<Type, string>, Type> kv in Mappings)
-            {
+            foreach (var kv in Mappings)
                 if (!string.IsNullOrEmpty(kv.Key.Item2))
                 {
 #if NETFX_CORE
@@ -200,11 +190,10 @@ namespace QFramework
                         yield return item;
                     }
                 }
-            }
         }
 
         /// <summary>
-        /// Clears all type-mappings and instances.
+        ///     Clears all type-mappings and instances.
         /// </summary>
         public void Clear()
         {
@@ -214,7 +203,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Injects registered types/mappings into an object
+        ///     Injects registered types/mappings into an object
         /// </summary>
         /// <param name="obj"></param>
         public void Inject(object obj)
@@ -245,19 +234,9 @@ namespace QFramework
             }
         }
 
-        /// <summary>
-        /// Register a type mapping
-        /// </summary>
-        /// <typeparam name="TSource">The base type.</typeparam>
-        /// <typeparam name="TTarget">The concrete type</typeparam>
-        public void Register<TSource>(string name = null)
-        {
-            Mappings[typeof(TSource), name] = typeof(TSource);
-        }
-
 
         /// <summary>
-        /// Register a type mapping
+        ///     Register a type mapping
         /// </summary>
         /// <typeparam name="TSource">The base type.</typeparam>
         /// <typeparam name="TTarget">The concrete type</typeparam>
@@ -272,9 +251,9 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Register a named instance
+        ///     Register a named instance
         /// </summary>
-        /// <param name="baseType">The type to register the instance for.</param>        
+        /// <param name="baseType">The type to register the instance for.</param>
         /// <param name="instance">The instance that will be resolved be the name</param>
         /// <param name="injectNow">Perform the injection immediately</param>
         public void RegisterInstance(Type baseType, object instance = null, bool injectNow = true)
@@ -283,7 +262,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Register a named instance
+        ///     Register a named instance
         /// </summary>
         /// <param name="baseType">The type to register the instance for.</param>
         /// <param name="name">The name for the instance to be resolved.</param>
@@ -293,20 +272,17 @@ namespace QFramework
             bool injectNow = true)
         {
             Instances[baseType, name] = instance;
-            if (injectNow)
-            {
-                Inject(instance);
-            }
+            if (injectNow) Inject(instance);
         }
 
         public void RegisterInstance<TBase>(TBase instance) where TBase : class
         {
-            RegisterInstance<TBase>(instance, true);
+            RegisterInstance(instance, true);
         }
 
         public void RegisterInstance<TBase>(TBase instance, bool injectNow) where TBase : class
         {
-            RegisterInstance<TBase>(instance, null, injectNow);
+            RegisterInstance(instance, null, injectNow);
         }
 
         public void RegisterInstance<TBase>(TBase instance, string name, bool injectNow = true) where TBase : class
@@ -315,17 +291,18 @@ namespace QFramework
         }
 
         /// <summary>
-        ///  If an instance of T exist then it will return that instance otherwise it will create a new one based off mappings.
+        ///     If an instance of T exist then it will return that instance otherwise it will create a new one based off mappings.
         /// </summary>
         /// <typeparam name="T">The type of instance to resolve</typeparam>
         /// <returns>The/An instance of 'instanceType'</returns>
         public T Resolve<T>(string name = null, bool requireInstance = false, params object[] args) where T : class
         {
-            return (T) Resolve(typeof(T), name, requireInstance, args);
+            return (T)Resolve(typeof(T), name, requireInstance, args);
         }
 
         /// <summary>
-        /// If an instance of instanceType exist then it will return that instance otherwise it will create a new one based off mappings.
+        ///     If an instance of instanceType exist then it will return that instance otherwise it will create a new one based off
+        ///     mappings.
         /// </summary>
         /// <param name="baseType">The type of instance to resolve</param>
         /// <param name="name">The type of instance to resolve</param>
@@ -337,10 +314,7 @@ namespace QFramework
         {
             // Look for an instance first
             var item = Instances[baseType, name];
-            if (item != null)
-            {
-                return item;
-            }
+            if (item != null) return item;
 
             if (requireInstance)
                 return null;
@@ -366,7 +340,7 @@ namespace QFramework
                 return obj2;
             }
 #if !NETFX_CORE
-            ConstructorInfo[] constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+            var constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
 #else
         ConstructorInfo[] constructor = type.GetTypeInfo().DeclaredConstructors.ToArray();
 #endif
@@ -383,19 +357,12 @@ namespace QFramework
             foreach (var c in constructor)
             {
                 var parameters = c.GetParameters();
-                if (parameters.Length > maxParameters.Length)
-                {
-                    maxParameters = parameters;
-                }
-
+                if (parameters.Length > maxParameters.Length) maxParameters = parameters;
             }
 
             var args = maxParameters.Select(p =>
             {
-                if (p.ParameterType.IsArray)
-                {
-                    return ResolveAll(p.ParameterType);
-                }
+                if (p.ParameterType.IsArray) return ResolveAll(p.ParameterType);
 
                 return Resolve(p.ParameterType) ?? Resolve(p.ParameterType, p.Name);
             }).ToArray();
@@ -409,7 +376,7 @@ namespace QFramework
         {
             try
             {
-                return (TBase) ResolveRelation(tfor, typeof(TBase), args);
+                return (TBase)ResolveRelation(tfor, typeof(TBase), args);
             }
             catch (InvalidCastException castIssue)
             {
@@ -421,13 +388,8 @@ namespace QFramework
 
         public void InjectAll()
         {
-            foreach (object instance in Instances.Values)
-            {
-                Inject(instance);
-            }
+            foreach (var instance in Instances.Values) Inject(instance);
         }
-
-        private TypeRelationCollection _relationshipMappings = new TypeRelationCollection();
 
         public void RegisterRelation<TFor, TBase, TConcrete>()
         {
@@ -443,10 +405,7 @@ namespace QFramework
         {
             var concreteType = RelationshipMappings[tfor, tbase];
 
-            if (concreteType == null)
-            {
-                return null;
-            }
+            if (concreteType == null) return null;
 
             var result = CreateInstance(concreteType, args);
             //Inject(result);
@@ -455,7 +414,17 @@ namespace QFramework
 
         public TBase ResolveRelation<TFor, TBase>(params object[] arg)
         {
-            return (TBase) ResolveRelation(typeof(TFor), typeof(TBase), arg);
+            return (TBase)ResolveRelation(typeof(TFor), typeof(TBase), arg);
+        }
+
+        /// <summary>
+        ///     Register a type mapping
+        /// </summary>
+        /// <typeparam name="TSource">The base type.</typeparam>
+        /// <typeparam name="TTarget">The concrete type</typeparam>
+        public void Register<TSource>(string name = null)
+        {
+            Mappings[typeof(TSource), name] = typeof(TSource);
         }
     }
 
@@ -471,9 +440,9 @@ namespace QFramework
             Item2 = item2;
         }
 
-        public override bool Equals(Object obj)
+        public override bool Equals(object obj)
         {
-            Tuple<T1, T2> p = obj as Tuple<T1, T2>;
+            var p = obj as Tuple<T1, T2>;
             if (obj == null) return false;
 
             if (Item1 == null)
@@ -499,7 +468,7 @@ namespace QFramework
 
         public override int GetHashCode()
         {
-            int hash = 0;
+            var hash = 0;
             if (Item1 != null)
                 hash ^= Item1.GetHashCode();
             if (Item2 != null)
@@ -515,18 +484,15 @@ namespace QFramework
         {
             get
             {
-                Tuple<Type, string> key = new Tuple<Type, string>(from, name);
+                var key = new Tuple<Type, string>(from, name);
                 Type mapping = null;
-                if (this.TryGetValue(key, out mapping))
-                {
-                    return mapping;
-                }
+                if (TryGetValue(key, out mapping)) return mapping;
 
                 return null;
             }
             set
             {
-                Tuple<Type, string> key = new Tuple<Type, string>(from, name);
+                var key = new Tuple<Type, string>(from, name);
                 this[key] = value;
             }
         }
@@ -534,23 +500,19 @@ namespace QFramework
 
     public class TypeInstanceCollection : Dictionary<Tuple<Type, string>, object>
     {
-
         public object this[Type from, string name = null]
         {
             get
             {
-                Tuple<Type, string> key = new Tuple<Type, string>(from, name);
+                var key = new Tuple<Type, string>(from, name);
                 object mapping = null;
-                if (this.TryGetValue(key, out mapping))
-                {
-                    return mapping;
-                }
+                if (TryGetValue(key, out mapping)) return mapping;
 
                 return null;
             }
             set
             {
-                Tuple<Type, string> key = new Tuple<Type, string>(from, name);
+                var key = new Tuple<Type, string>(from, name);
                 this[key] = value;
             }
         }
@@ -558,23 +520,19 @@ namespace QFramework
 
     public class TypeRelationCollection : Dictionary<Tuple<Type, Type>, Type>
     {
-
         public Type this[Type from, Type to]
         {
             get
             {
-                Tuple<Type, Type> key = new Tuple<Type, Type>(from, to);
+                var key = new Tuple<Type, Type>(from, to);
                 Type mapping = null;
-                if (this.TryGetValue(key, out mapping))
-                {
-                    return mapping;
-                }
+                if (TryGetValue(key, out mapping)) return mapping;
 
                 return null;
             }
             set
             {
-                Tuple<Type, Type> key = new Tuple<Type, Type>(from, to);
+                var key = new Tuple<Type, Type>(from, to);
                 this[key] = value;
             }
         }

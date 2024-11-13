@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -19,22 +19,19 @@ namespace QFramework
             mWriter = writer;
         }
 
-        public int IndentCount { get; set; }
-
         private string Indent
         {
             get
             {
                 var builder = new StringBuilder();
 
-                for (var i = 0; i < IndentCount; i++)
-                {
-                    builder.Append("\t");
-                }
+                for (var i = 0; i < IndentCount; i++) builder.Append("\t");
 
                 return builder.ToString();
             }
         }
+
+        public int IndentCount { get; set; }
 
         public void WriteFormatLine(string format, params object[] args)
         {

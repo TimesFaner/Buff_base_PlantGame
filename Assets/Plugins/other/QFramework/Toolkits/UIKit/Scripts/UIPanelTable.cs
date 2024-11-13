@@ -7,35 +7,27 @@ namespace QFramework
 {
     public class UIPanelTable : UIKitTable<IPanel>
     {
-        public UIKitTableIndex<string, IPanel> GameObjectNameIndex =
-            new UIKitTableIndex<string, IPanel>(panel => panel.Transform.name);
+        public UIKitTableIndex<string, IPanel> GameObjectNameIndex = new(panel => panel.Transform.name);
 
-        public UIKitTableIndex<Type, IPanel> TypeIndex = new UIKitTableIndex<Type, IPanel>(panel => panel.GetType());
+        public UIKitTableIndex<Type, IPanel> TypeIndex = new(panel => panel.GetType());
 
 
         public IEnumerable<IPanel> GetPanelsByPanelSearchKeys(PanelSearchKeys panelSearchKeys)
         {
-            if (panelSearchKeys.PanelType != null && (!string.IsNullOrEmpty(panelSearchKeys.GameObjName) || panelSearchKeys.Panel != null ))
-            {
+            if (panelSearchKeys.PanelType != null &&
+                (!string.IsNullOrEmpty(panelSearchKeys.GameObjName) || panelSearchKeys.Panel != null))
                 return TypeIndex.Get(panelSearchKeys.PanelType)
                     .Where(p => p.Transform.name == panelSearchKeys.GameObjName || p == panelSearchKeys.Panel);
-            }
 
-            if (panelSearchKeys.PanelType != null)
-            {
-                return TypeIndex.Get(panelSearchKeys.PanelType);
-            }
-            
+            if (panelSearchKeys.PanelType != null) return TypeIndex.Get(panelSearchKeys.PanelType);
+
             if (panelSearchKeys.Panel != null)
-            {
-                return GameObjectNameIndex.Get(panelSearchKeys.Panel.Transform.gameObject.name).Where(p => p == panelSearchKeys.Panel);
-            }
+                return GameObjectNameIndex.Get(panelSearchKeys.Panel.Transform.gameObject.name)
+                    .Where(p => p == panelSearchKeys.Panel);
 
             // 感谢 QF 群友 王某人 提供bug反馈
             if (panelSearchKeys.GameObjName.IsNotNullAndEmpty())
-            {
                 return GameObjectNameIndex.Get(panelSearchKeys.GameObjName);
-            }
 
             return Enumerable.Empty<IPanel>();
         }
@@ -50,7 +42,6 @@ namespace QFramework
         {
             GameObjectNameIndex.Remove(item);
             TypeIndex.Remove(item);
-            
         }
 
         protected override void OnClear()
@@ -74,9 +65,22 @@ namespace QFramework
             TypeIndex = null;
         }
     }
-    
-     public abstract class UIKitTable<TDataItem> : IEnumerable<TDataItem>, IDisposable
+
+    public abstract class UIKitTable<TDataItem> : IEnumerable<TDataItem>, IDisposable
     {
+        public void Dispose()
+        {
+            OnDispose();
+        }
+
+
+        public abstract IEnumerator<TDataItem> GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
         public void Add(TDataItem item)
         {
             OnAdd(item);
@@ -102,36 +106,29 @@ namespace QFramework
 
         protected abstract void OnClear();
 
-
-        public abstract IEnumerator<TDataItem> GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        public void Dispose()
-        {
-            OnDispose();
-        }
-
         protected abstract void OnDispose();
     }
 
     public class UIKitTableIndex<TKeyType, TDataItem> : IDisposable
     {
-        private Dictionary<TKeyType, List<TDataItem>> mIndex = new Dictionary<TKeyType, List<TDataItem>>();
-
-        private Func<TDataItem, TKeyType> mGetKeyByDataItem = null;
+        private readonly Func<TDataItem, TKeyType> mGetKeyByDataItem;
+        private Dictionary<TKeyType, List<TDataItem>> mIndex = new();
 
         public UIKitTableIndex(Func<TDataItem, TKeyType> keyGetter)
         {
             mGetKeyByDataItem = keyGetter;
         }
 
-        public IDictionary<TKeyType, List<TDataItem>> Dictionary
+        public IDictionary<TKeyType, List<TDataItem>> Dictionary => mIndex;
+
+
+        public void Dispose()
         {
-            get { return mIndex; }
+            foreach (var value in mIndex.Values) value.Release2Pool();
+
+            mIndex.Release2Pool();
+
+            mIndex = null;
         }
 
         public void Add(TDataItem dataItem)
@@ -163,10 +160,7 @@ namespace QFramework
         {
             List<TDataItem> retList = null;
 
-            if (mIndex.TryGetValue(key, out retList))
-            {
-                return retList;
-            }
+            if (mIndex.TryGetValue(key, out retList)) return retList;
 
             // 返回一个空的集合
             return Enumerable.Empty<TDataItem>();
@@ -174,25 +168,9 @@ namespace QFramework
 
         public void Clear()
         {
-            foreach (var value in mIndex.Values)
-            {
-                value.Clear();
-            }
+            foreach (var value in mIndex.Values) value.Clear();
 
             mIndex.Clear();
-        }
-
-
-        public void Dispose()
-        {
-            foreach (var value in mIndex.Values)
-            {
-                value.Release2Pool();
-            }
-
-            mIndex.Release2Pool();
-
-            mIndex = null;
         }
     }
 }

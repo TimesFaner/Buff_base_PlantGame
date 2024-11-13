@@ -12,7 +12,7 @@ namespace Mirror.SimpleWeb
             error = 1,
             warn = 2,
             info = 3,
-            verbose = 4,
+            verbose = 4
         }
 
         public static ILogger logger = Debug.unityLogger;
@@ -28,7 +28,8 @@ namespace Mirror.SimpleWeb
             if (level < Levels.verbose)
                 return;
 
-            logger.Log(LogType.Log, $"[SimpleWebTransport] VERBOSE: <color=cyan>{label}: {BufferToString(buffer, offset, length)}</color>");
+            logger.Log(LogType.Log,
+                $"[SimpleWebTransport] VERBOSE: <color=cyan>{label}: {BufferToString(buffer, offset, length)}</color>");
         }
 
         public static void DumpBuffer(string label, ArrayBuffer arrayBuffer)
@@ -36,7 +37,8 @@ namespace Mirror.SimpleWeb
             if (level < Levels.verbose)
                 return;
 
-            logger.Log(LogType.Log, $"[SimpleWebTransport] VERBOSE: <color=cyan>{label}: {BufferToString(arrayBuffer.array, 0, arrayBuffer.count)}</color>");
+            logger.Log(LogType.Log,
+                $"[SimpleWebTransport] VERBOSE: <color=cyan>{label}: {BufferToString(arrayBuffer.array, 0, arrayBuffer.count)}</color>");
         }
 
         public static void Verbose(string msg, bool showColor = true)
@@ -69,7 +71,8 @@ namespace Mirror.SimpleWeb
 #if UNITY_SERVER
             logger.Log(LogType.Log, $"[SimpleWebTransport] INFO_EXCEPTION: {e.GetType().Name} Message: {e.Message}\n{e.StackTrace}\n\n");
 #else
-            logger.Log(LogType.Log, $"[SimpleWebTransport] INFO_EXCEPTION: <color=cyan>{e.GetType().Name}</color> Message: {e.Message}\n{e.StackTrace}\n\n");
+            logger.Log(LogType.Log,
+                $"[SimpleWebTransport] INFO_EXCEPTION: <color=cyan>{e.GetType().Name}</color> Message: {e.Message}\n{e.StackTrace}\n\n");
 #endif
         }
 
@@ -101,7 +104,8 @@ namespace Mirror.SimpleWeb
 #if UNITY_SERVER
             logger.Log(LogType.Error, $"[SimpleWebTransport] EXCEPTION: {e.GetType().Name} Message: {e.Message}\n{e.StackTrace}\n\n");
 #else
-            logger.Log(LogType.Error, $"[SimpleWebTransport] EXCEPTION: <color=red>{e.GetType().Name}</color> Message: {e.Message}\n{e.StackTrace}\n\n");
+            logger.Log(LogType.Error,
+                $"[SimpleWebTransport] EXCEPTION: <color=red>{e.GetType().Name}</color> Message: {e.Message}\n{e.StackTrace}\n\n");
 #endif
         }
     }

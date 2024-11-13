@@ -1,15 +1,15 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
+using System.Collections.Generic;
+
 namespace QFramework
 {
-    using System.Collections.Generic;
-
     public abstract class CodeScope : ICodeScope
     {
         public bool Semicolon { get; set; }
@@ -22,24 +22,15 @@ namespace QFramework
 
             writer.IndentCount++;
 
-            foreach (var code in Codes)
-            {
-                code.Gen(writer);
-            }
+            foreach (var code in Codes) code.Gen(writer);
 
             writer.IndentCount--;
 
             new CloseBraceCode(Semicolon).Gen(writer);
         }
 
+        public List<ICode> Codes { get; set; } = new();
+
         protected abstract void GenFirstLine(ICodeWriter codeWriter);
-
-        private List<ICode> mCodes = new List<ICode>();
-
-        public List<ICode> Codes
-        {
-            get { return mCodes; }
-            set { mCodes = value; }
-        }
     }
 }

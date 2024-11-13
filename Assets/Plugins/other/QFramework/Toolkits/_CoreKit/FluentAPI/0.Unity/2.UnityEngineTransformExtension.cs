@@ -1435,10 +1435,7 @@ rootTransform.DestroyChildren();
         {
             var childCount = selfComponent.transform.childCount;
 
-            for (var i = 0; i < childCount; i++)
-            {
-                selfComponent.transform.GetChild(i).DestroyGameObjGracefully();
-            }
+            for (var i = 0; i < childCount; i++) selfComponent.transform.GetChild(i).DestroyGameObjGracefully();
 
             return selfComponent;
         }
@@ -1460,10 +1457,7 @@ rootTransform.DestroyChildrenWithCondition(child=>child != other);
             for (var i = 0; i < childCount; i++)
             {
                 var child = selfComponent.transform.GetChild(i);
-                if (condition(child))
-                {
-                    child.DestroyGameObjGracefully();
-                }
+                if (condition(child)) child.DestroyGameObjGracefully();
             }
 
             return selfComponent;
@@ -1482,10 +1476,7 @@ rootGameObj.DestroyChildren();
         {
             var childCount = selfGameObj.transform.childCount;
 
-            for (var i = 0; i < childCount; i++)
-            {
-                selfGameObj.transform.GetChild(i).DestroyGameObjGracefully();
-            }
+            for (var i = 0; i < childCount; i++) selfGameObj.transform.GetChild(i).DestroyGameObjGracefully();
 
             return selfGameObj;
         }
@@ -1640,17 +1631,25 @@ gameObj.SiblingIndex(10);
             return self.Position(from.Position());
         }
 
-        public static GameObject SyncPosition2DFrom(this GameObject self, GameObject from) =>
-            self.Position2D(from.Position2D());
+        public static GameObject SyncPosition2DFrom(this GameObject self, GameObject from)
+        {
+            return self.Position2D(from.Position2D());
+        }
 
-        public static T SyncPosition2DFrom<T>(this T self, GameObject from) where T : Component =>
-            self.Position2D(from.Position2D());
+        public static T SyncPosition2DFrom<T>(this T self, GameObject from) where T : Component
+        {
+            return self.Position2D(from.Position2D());
+        }
 
-        public static GameObject SyncPosition2DFrom(this GameObject self, Component from) =>
-            self.Position2D(from.Position2D());
+        public static GameObject SyncPosition2DFrom(this GameObject self, Component from)
+        {
+            return self.Position2D(from.Position2D());
+        }
 
-        public static T SyncPosition2DFrom<T>(this T self, Component from) where T : Component =>
-            self.Position2D(from.Position2D());
+        public static T SyncPosition2DFrom<T>(this T self, Component from) where T : Component
+        {
+            return self.Position2D(from.Position2D());
+        }
 
 
         public static GameObject SyncPositionTo(this GameObject self, GameObject to)
@@ -1756,9 +1755,20 @@ gameObj.SiblingIndex(10);
             return self.transform.localPosition.z;
         }
 
-        public static float LocalPositionZ(this Component self) => self.transform.localPosition.z;
-        public static Vector3 LocalEulerAngles(this GameObject self) => self.transform.localEulerAngles;
-        public static Vector3 LocalEulerAngles(this Component self) => self.transform.localEulerAngles;
+        public static float LocalPositionZ(this Component self)
+        {
+            return self.transform.localPosition.z;
+        }
+
+        public static Vector3 LocalEulerAngles(this GameObject self)
+        {
+            return self.transform.localEulerAngles;
+        }
+
+        public static Vector3 LocalEulerAngles(this Component self)
+        {
+            return self.transform.localEulerAngles;
+        }
 
         public static GameObject LocalEulerAngles(this GameObject self, Vector3 localEulerAngles)
         {
@@ -1783,10 +1793,17 @@ gameObj.SiblingIndex(10);
             self.LocalEulerAngles(self.LocalEulerAngles().Z(z));
             return self;
         }
-        
-        
-        public static Vector3 EulerAngles(this GameObject self) => self.transform.eulerAngles;
-        public static Vector3 EulerAngles(this Component self) => self.transform.eulerAngles;
+
+
+        public static Vector3 EulerAngles(this GameObject self)
+        {
+            return self.transform.eulerAngles;
+        }
+
+        public static Vector3 EulerAngles(this Component self)
+        {
+            return self.transform.eulerAngles;
+        }
 
         public static GameObject EulerAngles(this GameObject self, Vector3 eulerAngles)
         {

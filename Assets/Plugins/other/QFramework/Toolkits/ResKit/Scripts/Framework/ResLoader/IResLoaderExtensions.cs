@@ -1,12 +1,14 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
 using System;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -20,9 +22,9 @@ namespace QFramework
 #endif
     public static class IResLoaderExtensions
     {
-        private static Type ComponentType = typeof(Component);
-        private static Type GameObjectType = typeof(GameObject);
-        
+        private static readonly Type ComponentType = typeof(Component);
+        private static readonly Type GameObjectType = typeof(GameObject);
+
 #if UNITY_EDITOR
         [MethodAPI]
         [APIDescriptionCN("同步加载资源")]
@@ -52,8 +54,8 @@ texture = mResLoader.LoadSync<Texture2D>(""MyBundle"",""MyAsset"");
                 return retAsset;
             }
         }
-        
-        
+
+
         public static T LoadSync<T>(this IResLoader self, string ownerBundle, string assetName) where T : Object
         {
             var type = typeof(T);
@@ -72,7 +74,7 @@ texture = mResLoader.LoadSync<Texture2D>(""MyBundle"",""MyAsset"");
                 return retAsset;
             }
         }
-        
+
 #if UNITY_EDITOR
         [MethodAPI]
         [APIDescriptionCN("异步加载资源")]
@@ -94,7 +96,6 @@ mResLoader.LoadAsync(()=>
         public static void Add2Load(this IResLoader self, string assetName, Action<bool, IRes> listener = null,
             bool lastOrder = true)
         {
-            
             var searchRule = ResSearchKeys.Allocate(assetName);
             self.Add2Load(searchRule, listener, lastOrder);
             searchRule.Recycle2Cache();
@@ -146,7 +147,7 @@ mResLoader.LoadAsync(()=>
                 searchRule.Recycle2Cache();
             }
         }
-        
+
 
 #if UNITY_EDITOR
         [MethodAPI]
@@ -188,18 +189,16 @@ mResLoader.LoadSceneSync(""BattleScene"",LoadSceneMode.Additive,LocalPhysicsMode
             if (ResFactory.AssetBundleSceneResCreator.Match(resSearchRule))
             {
                 //加载的为场景
-                IRes res = ResFactory.AssetBundleSceneResCreator.Create(resSearchRule);
+                var res = ResFactory.AssetBundleSceneResCreator.Create(resSearchRule);
 #if UNITY_EDITOR
                 if (AssetBundlePathHelper.SimulationMode)
                 {
-                    string path =
-                        UnityEditor.AssetDatabase.GetAssetPathsFromAssetBundle((res as AssetBundleSceneRes)
+                    var path =
+                        AssetDatabase.GetAssetPathsFromAssetBundle((res as AssetBundleSceneRes)
                             .AssetBundleName)[0];
                     if (!string.IsNullOrEmpty(path))
-                    {
-                        UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(path,
+                        EditorSceneManager.LoadSceneInPlayMode(path,
                             new LoadSceneParameters(mode, physicsMode));
-                    }
                 }
                 else
 #endif
@@ -239,30 +238,27 @@ mResLoader.LoadSceneAsync(""BattleScene"",(operation)=>
                 LoadSceneMode.Single, LocalPhysicsMode physicsMode = LocalPhysicsMode.None,
             Action<AsyncOperation> onStartLoading = null)
         {
-
             var resSearchKey = ResSearchKeys.Allocate(sceneName);
-            self.LoadSceneAsync(resSearchKey,loadSceneMode,physicsMode,onStartLoading);
+            self.LoadSceneAsync(resSearchKey, loadSceneMode, physicsMode, onStartLoading);
             resSearchKey.Recycle2Cache();
         }
-        
-        public static void LoadSceneAsync(this IResLoader self, string bundleName,string sceneName,
+
+        public static void LoadSceneAsync(this IResLoader self, string bundleName, string sceneName,
             LoadSceneMode loadSceneMode =
                 LoadSceneMode.Single, LocalPhysicsMode physicsMode = LocalPhysicsMode.None,
             Action<AsyncOperation> onStartLoading = null)
         {
-
-            var resSearchKey = ResSearchKeys.Allocate(bundleName,sceneName);
-            self.LoadSceneAsync(resSearchKey,loadSceneMode,physicsMode,onStartLoading);
+            var resSearchKey = ResSearchKeys.Allocate(bundleName, sceneName);
+            self.LoadSceneAsync(resSearchKey, loadSceneMode, physicsMode, onStartLoading);
             resSearchKey.Recycle2Cache();
         }
-        
 
-        public static void LoadSceneAsync(this IResLoader self,ResSearchKeys resSearchKeys,
+
+        public static void LoadSceneAsync(this IResLoader self, ResSearchKeys resSearchKeys,
             LoadSceneMode loadSceneMode =
                 LoadSceneMode.Single, LocalPhysicsMode physicsMode = LocalPhysicsMode.None,
             Action<AsyncOperation> onStartLoading = null)
         {
-
             if (ResFactory.AssetBundleSceneResCreator.Match(resSearchKeys))
             {
                 //加载的为场景
@@ -271,7 +267,7 @@ mResLoader.LoadSceneAsync(""BattleScene"",(operation)=>
                 if (AssetBundlePathHelper.SimulationMode)
                 {
                     var path =
-                        UnityEditor.AssetDatabase.GetAssetPathsFromAssetBundle((res as AssetBundleSceneRes)
+                        AssetDatabase.GetAssetPathsFromAssetBundle((res as AssetBundleSceneRes)
                             .AssetBundleName)[0];
 
                     if (!string.IsNullOrEmpty(path))
@@ -282,7 +278,7 @@ mResLoader.LoadSceneAsync(""BattleScene"",(operation)=>
                             localPhysicsMode = physicsMode
                         };
 
-                        var asyncOperation = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
+                        var asyncOperation = EditorSceneManager.LoadSceneAsyncInPlayMode(
                             path,
                             sceneParameters);
                         onStartLoading?.Invoke(asyncOperation);
@@ -292,10 +288,10 @@ mResLoader.LoadSceneAsync(""BattleScene"",(operation)=>
 #endif
                 {
                     var sceneName = resSearchKeys.OriginalAssetName;
-                    
-                    self.Add2Load(resSearchKeys,(b, res1) =>
+
+                    self.Add2Load(resSearchKeys, (b, res1) =>
                     {
-                        var asyncOperation = SceneManager.LoadSceneAsync(sceneName, new LoadSceneParameters()
+                        var asyncOperation = SceneManager.LoadSceneAsync(sceneName, new LoadSceneParameters
                         {
                             loadSceneMode = loadSceneMode,
                             localPhysicsMode = physicsMode
@@ -312,10 +308,15 @@ mResLoader.LoadSceneAsync(""BattleScene"",(operation)=>
         }
 
         [Obsolete("请使用 LoadSync<Sprite>,use LoadSync<Sprite> instead", true)]
-        public static Sprite LoadSprite(this IResLoader self, string spriteName) => self.LoadSync<Sprite>(spriteName);
+        public static Sprite LoadSprite(this IResLoader self, string spriteName)
+        {
+            return self.LoadSync<Sprite>(spriteName);
+        }
 
         [Obsolete("请使用 LoadSync<Sprite>,use LoadSync<Sprite> instead", true)]
-        public static Sprite LoadSprite(this IResLoader self, string bundleName, string spriteName) =>
-            self.LoadSync<Sprite>(bundleName, spriteName);
+        public static Sprite LoadSprite(this IResLoader self, string bundleName, string spriteName)
+        {
+            return self.LoadSync<Sprite>(bundleName, spriteName);
+        }
     }
 }

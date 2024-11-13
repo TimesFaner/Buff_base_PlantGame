@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -15,13 +15,13 @@ namespace QFramework
     [MonoSingletonPath("QFramework/ActionKit/GlobalMonoBehaviourEvents")]
     internal class ActionKitMonoBehaviourEvents : MonoSingleton<ActionKitMonoBehaviourEvents>
     {
-        internal readonly EasyEvent OnUpdate = new EasyEvent();
-        internal readonly EasyEvent OnFixedUpdate = new EasyEvent();
-        internal readonly EasyEvent OnLateUpdate = new EasyEvent();
-        internal readonly EasyEvent OnGUIEvent = new EasyEvent();
-        internal readonly EasyEvent<bool> OnApplicationFocusEvent = new EasyEvent<bool>();
-        internal readonly EasyEvent<bool> OnApplicationPauseEvent = new EasyEvent<bool>();
-        internal readonly EasyEvent OnApplicationQuitEvent = new EasyEvent();
+        internal readonly EasyEvent<bool> OnApplicationFocusEvent = new();
+        internal readonly EasyEvent<bool> OnApplicationPauseEvent = new();
+        internal readonly EasyEvent OnApplicationQuitEvent = new();
+        internal readonly EasyEvent OnFixedUpdate = new();
+        internal readonly EasyEvent OnGUIEvent = new();
+        internal readonly EasyEvent OnLateUpdate = new();
+        internal readonly EasyEvent OnUpdate = new();
 
         private void Awake()
         {
@@ -33,11 +33,6 @@ namespace QFramework
             OnUpdate?.Trigger();
         }
 
-        private void OnGUI()
-        {
-            OnGUIEvent?.Trigger();
-        }
-
         private void FixedUpdate()
         {
             OnFixedUpdate?.Trigger();
@@ -46,6 +41,11 @@ namespace QFramework
         private void LateUpdate()
         {
             OnLateUpdate?.Trigger();
+        }
+
+        private void OnGUI()
+        {
+            OnGUIEvent?.Trigger();
         }
 
         private void OnApplicationFocus(bool hasFocus)
@@ -69,7 +69,7 @@ namespace QFramework
             StartCoroutine(DoExecuteCoroutine(coroutine, onFinish));
         }
 
-        IEnumerator DoExecuteCoroutine(IEnumerator coroutine, Action onFinish)
+        private IEnumerator DoExecuteCoroutine(IEnumerator coroutine, Action onFinish)
         {
             yield return coroutine;
             onFinish?.Invoke();

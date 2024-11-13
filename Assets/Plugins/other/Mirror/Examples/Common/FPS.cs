@@ -4,16 +4,17 @@ namespace Mirror.Examples.Common
 {
     public class FPS : MonoBehaviour
     {
-        // fps accessible to the outside
-        public int framesPerSecond { get; private set; }
-
         // configuration
         public bool showGUI = true;
-        public bool showLog = false;
+        public bool showLog;
 
         // helpers
-        int count;
-        double startTime;
+        private int count;
+
+        private double startTime;
+
+        // fps accessible to the outside
+        public int framesPerSecond { get; private set; }
 
         protected void Update()
         {

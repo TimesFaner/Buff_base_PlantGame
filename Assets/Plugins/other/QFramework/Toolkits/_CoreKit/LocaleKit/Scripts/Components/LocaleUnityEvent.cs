@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -8,10 +8,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-using UnityEngine;
 
 namespace QFramework
 {
@@ -26,13 +26,10 @@ namespace QFramework
             LocaleKit.OnLanguageChanged.Register(() => { CallUnityEvent(LocaleKit.CurrentLanguage); })
                 .UnRegisterWhenGameObjectDestroyed(gameObject);
 
-            if (CallOnInit)
-            {
-                CallUnityEvent(LocaleKit.CurrentLanguage);
-            }
+            if (CallOnInit) CallUnityEvent(LocaleKit.CurrentLanguage);
         }
 
-        void CallUnityEvent(Language language)
+        private void CallUnityEvent(Language language)
         {
             LocaleEvents.First(le => le.Language == language)?.OnLocale?.Invoke();
         }
@@ -42,7 +39,7 @@ namespace QFramework
     [CustomEditor(typeof(LocaleUnityEvent))]
     internal class LocaleUnityEventInspector : Editor
     {
-        LocaleText mScript => target as LocaleText;
+        private LocaleText mScript => target as LocaleText;
 
         public override void OnInspectorGUI()
         {

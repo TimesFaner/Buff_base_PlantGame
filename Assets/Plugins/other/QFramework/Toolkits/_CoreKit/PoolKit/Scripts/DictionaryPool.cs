@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -28,26 +28,23 @@ infos.Release2Pool();
     public class DictionaryPool<TKey, TValue>
     {
         /// <summary>
-        /// 栈对象：存储多个字典
+        ///     栈对象：存储多个字典
         /// </summary>
-        static Stack<Dictionary<TKey, TValue>> mListStack = new Stack<Dictionary<TKey, TValue>>(8);
+        private static readonly Stack<Dictionary<TKey, TValue>> mListStack = new(8);
 
         /// <summary>
-        /// 出栈：从栈中获取某个字典数据
+        ///     出栈：从栈中获取某个字典数据
         /// </summary>
         /// <returns></returns>
         public static Dictionary<TKey, TValue> Get()
         {
-            if (mListStack.Count == 0)
-            {
-                return new Dictionary<TKey, TValue>(8);
-            }
+            if (mListStack.Count == 0) return new Dictionary<TKey, TValue>(8);
 
             return mListStack.Pop();
         }
 
         /// <summary>
-        /// 入栈：将字典数据存储到栈中 
+        ///     入栈：将字典数据存储到栈中
         /// </summary>
         /// <param name="toRelease"></param>
         public static void Release(Dictionary<TKey, TValue> toRelease)
@@ -58,12 +55,12 @@ infos.Release2Pool();
     }
 
     /// <summary>
-    /// 对象池字典 拓展方法类
+    ///     对象池字典 拓展方法类
     /// </summary>
     public static class DictionaryPoolExtensions
     {
         /// <summary>
-        /// 对字典拓展 自身入栈 的方法
+        ///     对字典拓展 自身入栈 的方法
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>

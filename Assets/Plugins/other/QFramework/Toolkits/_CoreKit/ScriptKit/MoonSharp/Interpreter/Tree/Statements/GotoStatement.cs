@@ -4,50 +4,49 @@ using MoonSharp.Interpreter.Execution.VM;
 
 namespace MoonSharp.Interpreter.Tree.Statements
 {
-	class GotoStatement : Statement
-	{
-		internal SourceRef SourceRef { get; private set; }
-		internal Token GotoToken { get; private set; }
-		public string Label { get; private set; }
+    internal class GotoStatement : Statement
+    {
+        private Instruction m_Jump;
+        private int m_LabelAddress = -1;
 
-		internal int DefinedVarsCount { get; private set; }
-		internal string LastDefinedVarName { get; private set; }
+        public GotoStatement(ScriptLoadingContext lcontext)
+            : base(lcontext)
+        {
+            GotoToken = CheckTokenType(lcontext, TokenType.Goto);
+            var name = CheckTokenType(lcontext, TokenType.Name);
 
-		Instruction m_Jump;
-		int m_LabelAddress = -1;
+            SourceRef = GotoToken.GetSourceRef(name);
 
-		public GotoStatement(ScriptLoadingContext lcontext)
-			: base(lcontext)
-		{
-			GotoToken = CheckTokenType(lcontext, TokenType.Goto);
-			Token name = CheckTokenType(lcontext, TokenType.Name);
+            Label = name.Text;
 
-			SourceRef = GotoToken.GetSourceRef(name);
+            lcontext.Scope.RegisterGoto(this);
+        }
 
-			Label = name.Text;
+        internal SourceRef SourceRef { get; private set; }
+        internal Token GotoToken { get; }
+        public string Label { get; private set; }
 
-			lcontext.Scope.RegisterGoto(this);
-		}
+        internal int DefinedVarsCount { get; private set; }
+        internal string LastDefinedVarName { get; private set; }
 
-		public override void Compile(ByteCode bc)
-		{
-			m_Jump = bc.Emit_Jump(OpCode.Jump, m_LabelAddress);
-		}
+        public override void Compile(ByteCode bc)
+        {
+            m_Jump = bc.Emit_Jump(OpCode.Jump, m_LabelAddress);
+        }
 
-		internal void SetDefinedVars(int definedVarsCount, string lastDefinedVarsName)
-		{
-			DefinedVarsCount = definedVarsCount;
-			LastDefinedVarName = lastDefinedVarsName;
-		}
+        internal void SetDefinedVars(int definedVarsCount, string lastDefinedVarsName)
+        {
+            DefinedVarsCount = definedVarsCount;
+            LastDefinedVarName = lastDefinedVarsName;
+        }
 
 
-		internal void SetAddress(int labelAddress)
-		{
-			m_LabelAddress = labelAddress;
+        internal void SetAddress(int labelAddress)
+        {
+            m_LabelAddress = labelAddress;
 
-			if (m_Jump != null)
-				m_Jump.NumVal = labelAddress;
-		}
-
-	}
+            if (m_Jump != null)
+                m_Jump.NumVal = labelAddress;
+        }
+    }
 }

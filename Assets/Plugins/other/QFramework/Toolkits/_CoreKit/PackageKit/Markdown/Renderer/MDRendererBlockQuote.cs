@@ -16,7 +16,7 @@ namespace QFramework
 {
     ////////////////////////////////////////////////////////////////////////////////
     // <blockquote>...</blockquote>
-    /// <see cref="Markdig.Renderers.Html.QuoteBlockRenderer"/>
+    /// <see cref="Markdig.Renderers.Html.QuoteBlockRenderer" />
     internal class MDRendererBlockQuote : MarkdownObjectRenderer<MDRendererMarkdown, QuoteBlock>
     {
         protected override void Write(MDRendererMarkdown renderer, QuoteBlock block)

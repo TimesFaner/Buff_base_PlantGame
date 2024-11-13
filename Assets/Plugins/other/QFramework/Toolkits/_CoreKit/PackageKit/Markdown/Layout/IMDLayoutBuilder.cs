@@ -16,25 +16,66 @@ namespace QFramework
 {
     internal class IMDLayoutBuilder : IMDBuilder
     {
+        ////////////////////////////////////////////////////////////////////////////////
+        // private
+
+
+        private readonly MDContext mContext;
+
+        private readonly MDBlockContainer mDocument;
+        private readonly StringBuilder mWord;
+        private MDBlock mCurrentBlock;
+        private MDBlockContainer mCurrentContainer;
+        private MDBlockContent mCurrentContent;
+        private float mIndent;
+        private string mLink;
+
+        private MDStyle mStyle;
+        private string mTooltip;
+
+
+        //------------------------------------------------------------------------------
+
+        public IMDLayoutBuilder(MDContext context)
+        {
+            mContext = context;
+
+            mStyle = new MDStyle();
+            mLink = null;
+            mTooltip = null;
+            mWord = new StringBuilder(1024);
+
+            mIndent = 0.0f;
+
+            mDocument = new MDBlockContainer(mIndent);
+            mCurrentContainer = mDocument;
+            mCurrentBlock = null;
+            mCurrentContent = null;
+        }
+
+        private MDBlock CurrentBlock
+        {
+            get => mCurrentBlock;
+
+            set
+            {
+                mCurrentBlock = value;
+                mCurrentContent = mCurrentBlock as MDBlockContent;
+            }
+        }
+
         public void Text(string text, MDStyle style, string link, string tooltip)
         {
-            if (mCurrentContent == null)
-            {
-                NewContentBlock();
-            }
+            if (mCurrentContent == null) NewContentBlock();
 
             mContext.Apply(style);
 
             if (style.Size > 0)
             {
                 if (mCurrentContent.ID == null)
-                {
                     mCurrentContent.ID = "#";
-                }
                 else
-                {
                     mCurrentContent.ID += "-";
-                }
 
                 mCurrentContent.ID += text.Trim().Replace(' ', '-').ToLower();
             }
@@ -85,30 +126,21 @@ namespace QFramework
 
         public void NewLine()
         {
-            if (mCurrentContent != null && mCurrentContent.IsEmpty)
-            {
-                return;
-            }
+            if (mCurrentContent != null && mCurrentContent.IsEmpty) return;
 
             NewContentBlock();
         }
 
         public void Space()
         {
-            if (CurrentBlock is MDBlockSpace || CurrentBlock is MDBlockContainer)
-            {
-                return;
-            }
+            if (CurrentBlock is MDBlockSpace || CurrentBlock is MDBlockContainer) return;
 
             AddBlock(new MDBlockSpace(mIndent));
         }
 
         public void HorizontalLine()
         {
-            if (CurrentBlock is MDBlockLine)
-            {
-                return;
-            }
+            if (CurrentBlock is MDBlockLine) return;
 
             AddBlock(new MDBlockLine(mIndent));
         }
@@ -122,10 +154,7 @@ namespace QFramework
 
             mIndent += mContext.IndentSize;
 
-            if (mCurrentContent != null)
-            {
-                mCurrentContent.Indent = mIndent;
-            }
+            if (mCurrentContent != null) mCurrentContent.Indent = mIndent;
         }
 
         public void Outdent()
@@ -134,20 +163,14 @@ namespace QFramework
 
             mIndent = Mathf.Max(mIndent - mContext.IndentSize, 0.0f);
 
-            if (mCurrentContent != null)
-            {
-                mCurrentContent.Indent = mIndent;
-            }
+            if (mCurrentContent != null) mCurrentContent.Indent = mIndent;
         }
 
         public void Prefix(string text, MDStyle style)
         {
             mContext.Apply(style);
 
-            if (mCurrentContent == null)
-            {
-                return;
-            }
+            if (mCurrentContent == null) return;
 
             var payload = new GUIContent(text);
             var content = new MDContentText(payload, style, null);
@@ -210,54 +233,6 @@ namespace QFramework
             CurrentBlock = null;
         }
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // private
-
-
-        MDContext mContext;
-
-        MDStyle mStyle;
-        string mLink;
-        string mTooltip;
-        StringBuilder mWord;
-        float mIndent;
-
-        MDBlockContainer mDocument;
-        MDBlockContainer mCurrentContainer;
-        MDBlock mCurrentBlock;
-        MDBlockContent mCurrentContent;
-
-        MDBlock CurrentBlock
-        {
-            get { return mCurrentBlock; }
-
-            set
-            {
-                mCurrentBlock = value;
-                mCurrentContent = mCurrentBlock as MDBlockContent;
-            }
-        }
-
-
-        //------------------------------------------------------------------------------
-
-        public IMDLayoutBuilder(MDContext context)
-        {
-            mContext = context;
-
-            mStyle = new MDStyle();
-            mLink = null;
-            mTooltip = null;
-            mWord = new StringBuilder(1024);
-
-            mIndent = 0.0f;
-
-            mDocument = new MDBlockContainer(mIndent);
-            mCurrentContainer = mDocument;
-            mCurrentBlock = null;
-            mCurrentContent = null;
-        }
-
         public MDLayout GetLayout()
         {
             return new MDLayout(mContext, mDocument);
@@ -265,23 +240,20 @@ namespace QFramework
 
         //------------------------------------------------------------------------------
 
-        void AddContent(MDContent content)
+        private void AddContent(MDContent content)
         {
-            if (mCurrentContent == null)
-            {
-                NewContentBlock();
-            }
+            if (mCurrentContent == null) NewContentBlock();
 
             mCurrentContent.Add(content);
         }
 
-        T AddBlock<T>(T block) where T : MDBlock
+        private T AddBlock<T>(T block) where T : MDBlock
         {
             CurrentBlock = mCurrentContainer.Add(block);
             return block;
         }
 
-        void NewContentBlock()
+        private void NewContentBlock()
         {
             AddBlock(new MDBlockContent(mIndent));
 
@@ -289,12 +261,9 @@ namespace QFramework
             mContext.Apply(mStyle);
         }
 
-        void AddWord()
+        private void AddWord()
         {
-            if (mWord.Length == 0)
-            {
-                return;
-            }
+            if (mWord.Length == 0) return;
 
             var payload = new GUIContent(mWord.ToString(), mTooltip);
             var content = new MDContentText(payload, mStyle, mLink);

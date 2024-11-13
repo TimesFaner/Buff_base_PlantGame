@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -8,13 +8,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 namespace QFramework
 {
@@ -23,7 +27,7 @@ namespace QFramework
     public class AssemblyUtil
     {
         /// <summary>
-        /// 获取 Assembly-CSharp 程序集
+        ///     获取 Assembly-CSharp 程序集
         /// </summary>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static Assembly DefaultCSharpAssembly
@@ -36,7 +40,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 获取默认的程序集中的类型
+        ///     获取默认的程序集中的类型
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
@@ -49,7 +53,7 @@ namespace QFramework
 
 
     /// <summary>
-    /// 简单的概率计算
+    ///     简单的概率计算
     /// </summary>
     public static class ProbilityHelper
     {
@@ -92,18 +96,18 @@ namespace QFramework
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static T RandomValueFrom<T>(params T[] values)
         {
-            return values[UnityEngine.Random.Range(0, values.Length)];
+            return values[Random.Range(0, values.Length)];
         }
 
         /// <summary>
-        /// percent probability
+        ///     percent probability
         /// </summary>
         /// <param name="percent"> 0 ~ 100 </param>
         /// <returns></returns>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static bool PercentProbability(int percent)
         {
-            return UnityEngine.Random.Range(0, 1000) * 0.001f < 50 * 0.01f;
+            return Random.Range(0, 1000) * 0.001f < 50 * 0.01f;
         }
     }
 
@@ -113,14 +117,10 @@ namespace QFramework
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (var a in assemblies)
-            {
                 if (a.FullName.StartsWith("Assembly-CSharp,"))
-                {
                     return a;
-                }
-            }
 
-//            Log.E(">>>>>>>Error: Can\'t find Assembly-CSharp.dll");
+            //            Log.E(">>>>>>>Error: Can\'t find Assembly-CSharp.dll");
             return null;
         }
 
@@ -128,21 +128,17 @@ namespace QFramework
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (var a in assemblies)
-            {
                 if (a.FullName.StartsWith("Assembly-CSharp-Editor,"))
-                {
                     return a;
-                }
-            }
 
-//            Log.E(">>>>>>>Error: Can\'t find Assembly-CSharp-Editor.dll");
+            //            Log.E(">>>>>>>Error: Can\'t find Assembly-CSharp-Editor.dll");
             return null;
         }
     }
 
     /// <summary>
-    /// Write in unity 2017 .Net 3.5
-    /// after unity 2018 .Net 4.x and new C# version are more powerful
+    ///     Write in unity 2017 .Net 3.5
+    ///     after unity 2018 .Net 4.x and new C# version are more powerful
     /// </summary>
     public static class DeprecatedExtension
     {
@@ -150,20 +146,14 @@ namespace QFramework
         public static int GetRandomWithPower(this List<int> powers)
         {
             var sum = 0;
-            foreach (var power in powers)
-            {
-                sum += power;
-            }
+            foreach (var power in powers) sum += power;
 
-            var randomNum = UnityEngine.Random.Range(0, sum);
+            var randomNum = Random.Range(0, sum);
             var currentSum = 0;
             for (var i = 0; i < powers.Count; i++)
             {
                 var nextSum = currentSum + powers[i];
-                if (randomNum >= currentSum && randomNum <= nextSum)
-                {
-                    return i;
-                }
+                if (randomNum >= currentSum && randomNum <= nextSum) return i;
 
                 currentSum = nextSum;
             }
@@ -187,64 +177,46 @@ namespace QFramework
             var finalKeyIndex = values.GetRandomWithPower();
             return keys[finalKeyIndex];
         }
-        
-        
+
+
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void AddAnimatorParameterIfExists(this Animator animator, string parameterName,
             AnimatorControllerParameterType type, List<string> parameterList)
         {
-            if (animator.HasParameterOfType(parameterName, type))
-            {
-                parameterList.Add(parameterName);
-            }
+            if (animator.HasParameterOfType(parameterName, type)) parameterList.Add(parameterName);
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void UpdateAnimatorBool(this Animator self, string parameterName, bool value,
             List<string> parameterList)
         {
-            if (parameterList.Contains(parameterName))
-            {
-                self.SetBool(parameterName, value);
-            }
+            if (parameterList.Contains(parameterName)) self.SetBool(parameterName, value);
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void UpdateAnimatorTrigger(this Animator self, string parameterName, List<string> parameterList)
         {
-            if (parameterList.Contains(parameterName))
-            {
-                self.SetTrigger(parameterName);
-            }
+            if (parameterList.Contains(parameterName)) self.SetTrigger(parameterName);
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void SetAnimatorTrigger(this Animator self, string parameterName, List<string> parameterList)
         {
-            if (parameterList.Contains(parameterName))
-            {
-                self.SetTrigger(parameterName);
-            }
+            if (parameterList.Contains(parameterName)) self.SetTrigger(parameterName);
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void UpdateAnimatorFloat(this Animator self, string parameterName, float value,
             List<string> parameterList)
         {
-            if (parameterList.Contains(parameterName))
-            {
-                self.SetFloat(parameterName, value);
-            }
+            if (parameterList.Contains(parameterName)) self.SetFloat(parameterName, value);
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void UpdateAnimatorInteger(this Animator self, string parameterName, int value,
             List<string> parameterList)
         {
-            if (parameterList.Contains(parameterName))
-            {
-                self.SetInteger(parameterName, value);
-            }
+            if (parameterList.Contains(parameterName)) self.SetInteger(parameterName, value);
         }
 
 
@@ -283,54 +255,41 @@ namespace QFramework
         public static void UpdateAnimatorBoolIfExists(this Animator self, string parameterName, bool value)
         {
             if (self.HasParameterOfType(parameterName, AnimatorControllerParameterType.Bool))
-            {
                 self.SetBool(parameterName, value);
-            }
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void UpdateAnimatorTriggerIfExists(this Animator self, string parameterName)
         {
             if (self.HasParameterOfType(parameterName, AnimatorControllerParameterType.Trigger))
-            {
                 self.SetTrigger(parameterName);
-            }
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void SetAnimatorTriggerIfExists(this Animator self, string parameterName)
         {
             if (self.HasParameterOfType(parameterName, AnimatorControllerParameterType.Trigger))
-            {
                 self.SetTrigger(parameterName);
-            }
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void UpdateAnimatorFloatIfExists(this Animator self, string parameterName, float value)
         {
             if (self.HasParameterOfType(parameterName, AnimatorControllerParameterType.Float))
-            {
                 self.SetFloat(parameterName, value);
-            }
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void UpdateAnimatorIntegerIfExists(this Animator self, string parameterName, int value)
         {
             if (self.HasParameterOfType(parameterName, AnimatorControllerParameterType.Int))
-            {
                 self.SetInteger(parameterName, value);
-            }
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static bool HasParameterOfType(this Animator self, string name, AnimatorControllerParameterType type)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                return false;
-            }
+            if (string.IsNullOrEmpty(name)) return false;
 
             var parameters = self.parameters;
             return parameters.Any(currParam => currParam.type == type && currParam.name == name);
@@ -419,15 +378,15 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 参考资料: https://blog.csdn.net/qiminixi/article/details/78402505
+        ///     参考资料: https://blog.csdn.net/qiminixi/article/details/78402505
         /// </summary>
         /// <param name="self"></param>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void SetStandardMaterialToTransparentMode(this Material self)
         {
             self.SetFloat("_Mode", 3);
-            self.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            self.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            self.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+            self.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
             self.SetInt("_ZWrite", 0);
             self.DisableKeyword("_ALPHATEST_ON");
             self.EnableKeyword("_ALPHABLEND_ON");
@@ -493,10 +452,7 @@ namespace QFramework
         public static void ActionRecursion(this Transform tfParent, Action<Transform> action)
         {
             action(tfParent);
-            foreach (Transform tfChild in tfParent)
-            {
-                tfChild.ActionRecursion(action);
-            }
+            foreach (Transform tfChild in tfParent) tfChild.ActionRecursion(action);
         }
 
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
@@ -504,19 +460,14 @@ namespace QFramework
             StringComparison stringComparison = StringComparison.Ordinal)
         {
             if (tfParent.name.Equals(name, stringComparison))
-            {
                 //Debug.Log("Hit " + tfParent.name);
                 return tfParent;
-            }
 
             foreach (Transform tfChild in tfParent)
             {
                 Transform tfFinal = null;
                 tfFinal = tfChild.FindChildRecursion(name, stringComparison);
-                if (tfFinal)
-                {
-                    return tfFinal;
-                }
+                if (tfFinal) return tfFinal;
             }
 
             return null;
@@ -535,10 +486,7 @@ namespace QFramework
             {
                 Transform tfFinal = null;
                 tfFinal = tfChild.FindChildRecursion(predicate);
-                if (tfFinal)
-                {
-                    return tfFinal;
-                }
+                if (tfFinal) return tfFinal;
             }
 
             return null;
@@ -547,20 +495,16 @@ namespace QFramework
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static string GetPath(this Transform transform)
         {
-            var sb = new System.Text.StringBuilder();
+            var sb = new StringBuilder();
             var t = transform;
             while (true)
             {
                 sb.Insert(0, t.name);
                 t = t.parent;
                 if (t)
-                {
                     sb.Insert(0, "/");
-                }
                 else
-                {
                     return sb.ToString();
-                }
             }
         }
 
@@ -638,7 +582,7 @@ namespace QFramework
         }
 
         [Obsolete("弃用，请使用 Self, use Self instead", APIVersion.Force)]
-        public static T ApplySelfTo<T>(this T selfObj, System.Action<T> toFunction) where T : UnityEngine.Object
+        public static T ApplySelfTo<T>(this T selfObj, Action<T> toFunction) where T : Object
         {
             toFunction.InvokeGracefully(selfObj);
             return selfObj;
@@ -678,7 +622,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 通过反射方式获取域值
+        ///     通过反射方式获取域值
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="fieldName">域名</param>
@@ -691,7 +635,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 通过反射方式获取属性
+        ///     通过反射方式获取属性
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="fieldName">属性名</param>
@@ -724,7 +668,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 格式化
+        ///     格式化
         /// </summary>
         /// <param name="selfStr"></param>
         /// <param name="toAppend"></param>
@@ -738,7 +682,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 添加前缀
+        ///     添加前缀
         /// </summary>
         /// <param name="selfStr"></param>
         /// <param name="toPrefix"></param>
@@ -753,7 +697,7 @@ namespace QFramework
 
 
         /// <summary>
-        /// 添加前缀
+        ///     添加前缀
         /// </summary>
         /// <param name="selfStr"></param>
         /// <param name="toAppend"></param>
@@ -767,7 +711,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 首字母大写
+        ///     首字母大写
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
@@ -778,7 +722,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 首字母小写
+        ///     首字母小写
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
@@ -789,7 +733,6 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
@@ -800,7 +743,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 转换成 CSV
+        ///     转换成 CSV
         /// </summary>
         /// <param name="values"></param>
         /// <returns></returns>
@@ -830,10 +773,7 @@ namespace QFramework
             sb.Append(char.ToUpper(text[0]));
             for (var i = 1; i < text.Length; i++)
             {
-                if (char.IsUpper(text[i]) && text[i - 1] != ' ')
-                {
-                    sb.Append(' ');
-                }
+                if (char.IsUpper(text[i]) && text[i - 1] != ' ') sb.Append(' ');
 
                 sb.Append(text[i]);
             }
@@ -843,8 +783,8 @@ namespace QFramework
 
 
         /// <summary>
-        /// Determines whether the type implements the specified interface
-        /// and is not an interface itself.
+        ///     Determines whether the type implements the specified interface
+        ///     and is not an interface itself.
         /// </summary>
         /// <returns><c>true</c>, if interface was implementsed, <c>false</c> otherwise.</returns>
         /// <param name="type">Type.</param>
@@ -856,8 +796,8 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Determines whether the type implements the specified interface
-        /// and is not an interface itself.
+        ///     Determines whether the type implements the specified interface
+        ///     and is not an interface itself.
         /// </summary>
         /// <returns><c>true</c>, if interface was implementsed, <c>false</c> otherwise.</returns>
         /// <param name="type">Type.</param>
@@ -871,17 +811,14 @@ namespace QFramework
 
 
         /// <summary>
-        /// 使目录存在,Path可以是目录名必须是文件名
+        ///     使目录存在,Path可以是目录名必须是文件名
         /// </summary>
         /// <param name="path"></param>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void MakeFileDirectoryExist(string path)
         {
-            string root = Path.GetDirectoryName(path);
-            if (!Directory.Exists(root))
-            {
-                Directory.CreateDirectory(root);
-            }
+            var root = Path.GetDirectoryName(path);
+            if (!Directory.Exists(root)) Directory.CreateDirectory(root);
         }
 
 
@@ -892,10 +829,7 @@ namespace QFramework
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static string GetFolderName(this string path)
         {
-            if (string.IsNullOrEmpty(path))
-            {
-                return string.Empty;
-            }
+            if (string.IsNullOrEmpty(path)) return string.Empty;
 
             return Path.GetDirectoryName(path);
         }
@@ -910,7 +844,7 @@ namespace QFramework
 
 
         /// <summary>
-        /// 获取不带后缀的文件路径
+        ///     获取不带后缀的文件路径
         /// </summary>
         /// <param name="fileName"></param>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
@@ -922,7 +856,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 获取不带后缀的文件名
+        ///     获取不带后缀的文件名
         /// </summary>
         /// <param name="fileName"></param>
         /// <param name="separator"></param>
@@ -934,7 +868,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 获取文件名
+        ///     获取文件名
         /// </summary>
         /// <param name="path"></param>
         /// <param name="separator"></param>
@@ -947,7 +881,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 获取文件夹名
+        ///     获取文件夹名
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
@@ -983,21 +917,14 @@ namespace QFramework
             var pathList = new List<string>();
             var di = new DirectoryInfo(dirABSPath);
 
-            if (!di.Exists)
-            {
-                return pathList;
-            }
+            if (!di.Exists) return pathList;
 
             var files = di.GetFiles();
             foreach (var fi in files)
             {
                 if (!string.IsNullOrEmpty(suffix))
-                {
-                    if (!fi.FullName.EndsWith(suffix, System.StringComparison.CurrentCultureIgnoreCase))
-                    {
+                    if (!fi.FullName.EndsWith(suffix, StringComparison.CurrentCultureIgnoreCase))
                         continue;
-                    }
-                }
 
                 pathList.Add(fi.FullName);
             }
@@ -1005,10 +932,7 @@ namespace QFramework
             if (isRecursive)
             {
                 var dirs = di.GetDirectories();
-                foreach (var d in dirs)
-                {
-                    pathList.AddRange(GetDirSubFilePathList(d.FullName, isRecursive, suffix));
-                }
+                foreach (var d in dirs) pathList.AddRange(GetDirSubFilePathList(d.FullName, isRecursive, suffix));
             }
 
             return pathList;
@@ -1025,20 +949,17 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 使目录存在
+        ///     使目录存在
         /// </summary>
         /// <param name="path"></param>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void MakeDirectoryExist(string path)
         {
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
         }
 
         /// <summary>
-        /// 打开文件夹
+        ///     打开文件夹
         /// </summary>
         /// <param name="path"></param>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
@@ -1047,28 +968,25 @@ namespace QFramework
 #if UNITY_STANDALONE_OSX
             System.Diagnostics.Process.Start("open", path);
 #elif UNITY_STANDALONE_WIN
-            System.Diagnostics.Process.Start("explorer.exe", path);
+            Process.Start("explorer.exe", path);
 #endif
         }
 
         /// <summary>
-        /// 获取父文件夹
+        ///     获取父文件夹
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static string GetPathParentFolder(this string path)
         {
-            if (string.IsNullOrEmpty(path))
-            {
-                return string.Empty;
-            }
+            if (string.IsNullOrEmpty(path)) return string.Empty;
 
             return Path.GetDirectoryName(path);
         }
 
         /// <summary>
-        /// 检测路径是否存在，如果不存在则创建
+        ///     检测路径是否存在，如果不存在则创建
         /// </summary>
         /// <param name="path"></param>
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
@@ -1076,20 +994,18 @@ namespace QFramework
         {
             var direct = path.GetPathParentFolder();
 
-            if (!Directory.Exists(direct))
-            {
-                Directory.CreateDirectory(direct);
-            }
+            if (!Directory.Exists(direct)) Directory.CreateDirectory(direct);
 
             return path;
         }
 
 
         /// <summary>
-        /// 获取泛型名字
-        /// <code>
-        /// var typeName = GenericExtention.GetTypeName<string>();
-        /// typeName.LogInfo(); // string
+        ///     获取泛型名字
+        ///     <code>
+        /// var typeName = GenericExtention.GetTypeName<string>
+        ///             ();
+        ///             typeName.LogInfo(); // string
         /// </code>
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -1104,18 +1020,14 @@ namespace QFramework
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static void DoIfNotNull<T>(this T selfObj, Action<T> action) where T : class
         {
-            if (selfObj != null)
-            {
-                action(selfObj);
-            }
+            if (selfObj != null) action(selfObj);
         }
 
 
         /// <summary>
-        /// 是否相等
-        /// 
-        /// 示例：
-        /// <code>
+        ///     是否相等
+        ///     示例：
+        ///     <code>
         /// if (this.Is(player))
         /// {
         ///     ...
@@ -1138,10 +1050,9 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 表达式成立 则执行 Action
-        /// 
-        /// 示例:
-        /// <code>
+        ///     表达式成立 则执行 Action
+        ///     示例:
+        ///     <code>
         /// (1 == 1).Do(()=>Debug.Log("1 == 1");
         /// </code>
         /// </summary>
@@ -1151,19 +1062,15 @@ namespace QFramework
         [Obsolete("不要使用，Do not used", APIVersion.Force)]
         public static bool Do(this bool selfCondition, Action action)
         {
-            if (selfCondition)
-            {
-                action();
-            }
+            if (selfCondition) action();
 
             return selfCondition;
         }
 
         /// <summary>
-        /// 不管表达成不成立 都执行 Action，并把结果返回
-        /// 
-        /// 示例:
-        /// <code>
+        ///     不管表达成不成立 都执行 Action，并把结果返回
+        ///     示例:
+        ///     <code>
         /// (1 == 1).Do((result)=>Debug.Log("1 == 1:" + result);
         /// </code>
         /// </summary>
@@ -1180,12 +1087,12 @@ namespace QFramework
 
 
         /// <summary>
-        /// 功能：不为空则调用 Func
-        /// 
-        /// 示例:
-        /// <code>
-        /// Func<int> func = ()=> 1;
-        /// var number = func.InvokeGracefully(); // 等价于 if (func != null) number = func();
+        ///     功能：不为空则调用 Func
+        ///     示例:
+        ///     <code>
+        /// Func<int>
+        ///             func = ()=> 1;
+        ///             var number = func.InvokeGracefully(); // 等价于 if (func != null) number = func();
         /// </code>
         /// </summary>
         /// <param name="selfFunc"></param>
@@ -1194,15 +1101,14 @@ namespace QFramework
         [Obsolete("请使用 someFunc?.Invoke() 方式调用, please use someFunc?.Invoke() instead", APIVersion.Force)]
         public static T InvokeGracefully<T>(this Func<T> selfFunc)
         {
-            return null != selfFunc ? selfFunc() : default(T);
+            return null != selfFunc ? selfFunc() : default;
         }
 
 
         /// <summary>
-        /// 功能：不为空则调用 Action
-        /// 
-        /// 示例:
-        /// <code>
+        ///     功能：不为空则调用 Action
+        ///     示例:
+        ///     <code>
         /// System.Action action = () => Log.I("action called");
         /// action.InvokeGracefully(); // if (action != null) action();
         /// </code>
@@ -1222,12 +1128,13 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 不为空则调用 Action<T>
-        /// 
-        /// 示例:
-        /// <code>
-        /// System.Action<int> action = (number) => Log.I("action called" + number);
-        /// action.InvokeGracefully(10); // if (action != null) action(10);
+        ///     不为空则调用 Action
+        ///     <T>
+        ///         示例:
+        ///         <code>
+        /// System.Action<int>
+        ///                 action = (number) => Log.I("action called" + number);
+        ///                 action.InvokeGracefully(10); // if (action != null) action(10);
         /// </code>
         /// </summary>
         /// <param name="selfAction"> action 对象</param>
@@ -1246,12 +1153,13 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 不为空则调用 Action<T,K>
-        ///
-        /// 示例
-        /// <code>
-        /// System.Action<int,string> action = (number,name) => Log.I("action called" + number + name);
-        /// action.InvokeGracefully(10,"qframework"); // if (action != null) action(10,"qframework");
+        ///     不为空则调用 Action
+        ///     <T, K>
+        ///         示例
+        ///         <code>
+        /// System.Action<int, string>
+        ///                 action = (number,name) => Log.I("action called" + number + name);
+        ///                 action.InvokeGracefully(10,"qframework"); // if (action != null) action(10,"qframework");
         /// </code>
         /// </summary>
         /// <param name="selfAction"></param>
@@ -1269,10 +1177,9 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 不为空则调用委托
-        ///
-        /// 示例：
-        /// <code>
+        ///     不为空则调用委托
+        ///     示例：
+        ///     <code>
         /// // delegate
         /// TestDelegate testDelegate = () => { };
         /// testDelegate.InvokeGracefully();

@@ -16,16 +16,10 @@ namespace QFramework
 {
     internal abstract class MDContent
     {
-        public Rect Location;
-        public MDStyle Style;
-        public GUIContent Payload;
         public string Link;
-
-        public float Width => Location.width;
-
-        public float Height => Location.height;
-
-        public bool CanUpdate => false;
+        public Rect Location;
+        public GUIContent Payload;
+        public MDStyle Style;
 
         public MDContent(GUIContent payload, MDStyle style, string link)
         {
@@ -33,6 +27,12 @@ namespace QFramework
             Style = style;
             Link = link;
         }
+
+        public float Width => Location.width;
+
+        public float Height => Location.height;
+
+        public bool CanUpdate => false;
 
         public void CalcSize(MDContext context)
         {
@@ -48,13 +48,9 @@ namespace QFramework
             else if (GUI.Button(Location, Payload, context.Apply(Style)))
             {
                 if (Regex.IsMatch(Link, @"^\w+:", RegexOptions.Singleline))
-                {
                     Application.OpenURL(Link);
-                }
                 else
-                {
                     context.SelectPage(Link);
-                }
             }
         }
 

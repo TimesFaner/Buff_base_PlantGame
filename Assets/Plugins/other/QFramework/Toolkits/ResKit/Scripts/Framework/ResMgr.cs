@@ -1,92 +1,36 @@
 /****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 ~ 2023 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace QFramework
 {
-    using System.Collections.Generic;
-    using UnityEngine;
-
     [MonoSingletonPath("[Framework]/ResMgr")]
-    public class ResMgr : MonoBehaviour,ISingleton
+    public class ResMgr : MonoBehaviour, ISingleton
     {
         public static ResMgr Instance => MonoSingletonProperty<ResMgr>.Instance;
 
-        #region ID:RKRM001 Init v0.1.0 Unity5.5.1p4
+        public int Count => mTable.Count();
 
-        private static bool mResMgrInited = false;
-
-        public static bool ResMgrInited => mResMgrInited;
-        
-        /// <summary>
-        /// 初始化bin文件
-        /// </summary>
-        public static void Init()
-        {
-            if (mResMgrInited) return;
-            mResMgrInited = true;
-
-            SafeObjectPool<AssetBundleRes>.Instance.Init(40, 20);
-            SafeObjectPool<AssetRes>.Instance.Init(40, 20);
-            SafeObjectPool<ResourcesRes>.Instance.Init(40, 20);
-            SafeObjectPool<NetImageRes>.Instance.Init(40, 20);
-            SafeObjectPool<ResSearchKeys>.Instance.Init(40, 20);
-            SafeObjectPool<ResLoader>.Instance.Init(40, 20);
-
-
-            Instance.InitResMgr();
-        }
-
-
-        public static IEnumerator InitAsync()
-        {
-            if (mResMgrInited) yield break;
-            mResMgrInited = true;
-
-            SafeObjectPool<AssetBundleRes>.Instance.Init(40, 20);
-            SafeObjectPool<AssetRes>.Instance.Init(40, 20);
-            SafeObjectPool<ResourcesRes>.Instance.Init(40, 20);
-            SafeObjectPool<NetImageRes>.Instance.Init(40, 20);
-            SafeObjectPool<ResSearchKeys>.Instance.Init(40, 20);
-            SafeObjectPool<ResLoader>.Instance.Init(40, 20);
-
-            yield return Instance.InitResMgrAsync();
-        }
-
-        #endregion
-
-        public int Count
-        {
-            get { return mTable.Count(); }
-        }
-
-        public static bool IsApplicationQuit { get;private set; }
+        public static bool IsApplicationQuit { get; private set; }
 
         private void OnApplicationQuit()
         {
             IsApplicationQuit = true;
         }
 
-        #region 字段
-
-        private ResTable mTable = new ResTable();
-
-        [SerializeField] private int mCurrentCoroutineCount;
-        private int mMaxCoroutineCount = 8; //最快协成大概在6到8之间
-        private LinkedList<IEnumeratorTask> mIEnumeratorTaskStack = new LinkedList<IEnumeratorTask>();
-
-        //Res 在ResMgr中 删除的问题，ResMgr定时收集列表中的Res然后删除
-        private bool mIsResMapDirty;
-
-        #endregion
+        public void OnSingletonInit()
+        {
+        }
 
         public IEnumerator InitResMgrAsync()
         {
@@ -142,24 +86,70 @@ namespace QFramework
 
                 // 未进行过热更
                 if (AssetBundleSettings.LoadAssetResFromStreamingAssetsPath)
-                {
                     ResKit.Get.Container.Get<IZipFileHelper>()
                         .GetFileInInner(ResDatas.FileName, outResult);
-                }
                 // 进行过热更
                 else
-                {
                     AssetBundlePathHelper.GetFileInFolder(AssetBundlePathHelper.PersistentDataPath, ResDatas.FileName,
                         outResult);
-                }
 
-                foreach (var outRes in outResult)
-                {
-                 
-                    AssetBundleSettings.AssetBundleConfigFile.LoadFromFile(outRes);
-                }
+                foreach (var outRes in outResult) AssetBundleSettings.AssetBundleConfigFile.LoadFromFile(outRes);
             }
         }
+
+        #region ID:RKRM001 Init v0.1.0 Unity5.5.1p4
+
+        public static bool ResMgrInited { get; private set; }
+
+        /// <summary>
+        ///     初始化bin文件
+        /// </summary>
+        public static void Init()
+        {
+            if (ResMgrInited) return;
+            ResMgrInited = true;
+
+            SafeObjectPool<AssetBundleRes>.Instance.Init(40, 20);
+            SafeObjectPool<AssetRes>.Instance.Init(40, 20);
+            SafeObjectPool<ResourcesRes>.Instance.Init(40, 20);
+            SafeObjectPool<NetImageRes>.Instance.Init(40, 20);
+            SafeObjectPool<ResSearchKeys>.Instance.Init(40, 20);
+            SafeObjectPool<ResLoader>.Instance.Init(40, 20);
+
+
+            Instance.InitResMgr();
+        }
+
+
+        public static IEnumerator InitAsync()
+        {
+            if (ResMgrInited) yield break;
+            ResMgrInited = true;
+
+            SafeObjectPool<AssetBundleRes>.Instance.Init(40, 20);
+            SafeObjectPool<AssetRes>.Instance.Init(40, 20);
+            SafeObjectPool<ResourcesRes>.Instance.Init(40, 20);
+            SafeObjectPool<NetImageRes>.Instance.Init(40, 20);
+            SafeObjectPool<ResSearchKeys>.Instance.Init(40, 20);
+            SafeObjectPool<ResLoader>.Instance.Init(40, 20);
+
+            yield return Instance.InitResMgrAsync();
+        }
+
+        #endregion
+
+        #region 字段
+
+        private readonly ResTable mTable = new();
+
+        [SerializeField] private int mCurrentCoroutineCount;
+        private readonly int mMaxCoroutineCount = 8; //最快协成大概在6到8之间
+        private readonly LinkedList<IEnumeratorTask> mIEnumeratorTaskStack = new();
+
+        //Res 在ResMgr中 删除的问题，ResMgr定时收集列表中的Res然后删除
+        private bool mIsResMapDirty;
+
+        #endregion
 
         #region 属性
 
@@ -170,10 +160,7 @@ namespace QFramework
 
         public void PushIEnumeratorTask(IEnumeratorTask task)
         {
-            if (task == null)
-            {
-                return;
-            }
+            if (task == null) return;
 
             mIEnumeratorTaskStack.AddLast(task);
             TryStartNextIEnumeratorTask();
@@ -184,10 +171,7 @@ namespace QFramework
         {
             var res = mTable.GetResBySearchKeys(resSearchKeys);
 
-            if (res != null)
-            {
-                return res;
-            }
+            if (res != null) return res;
 
             if (!createNew)
             {
@@ -197,10 +181,7 @@ namespace QFramework
 
             res = ResFactory.Create(resSearchKeys);
 
-            if (res != null)
-            {
-                mTable.Add(res);
-            }
+            if (res != null) mTable.Add(res);
 
             return res;
         }
@@ -216,34 +197,24 @@ namespace QFramework
 
         private void Update()
         {
-            if (mIsResMapDirty)
-            {
-                RemoveUnusedRes();
-            }
+            if (mIsResMapDirty) RemoveUnusedRes();
         }
 
         private void RemoveUnusedRes()
         {
-            if (!mIsResMapDirty)
-            {
-                return;
-            }
+            if (!mIsResMapDirty) return;
 
             mIsResMapDirty = false;
 
             foreach (var res in mTable.ToArray())
-            {
                 if (res.RefCount <= 0 && res.State != ResState.Loading)
-                {
                     if (res.ReleaseRes())
                     {
                         mTable.Remove(res);
 
-                        
+
                         res.Recycle2Cache();
                     }
-                }
-            }
         }
 
         private void OnGUI()
@@ -252,13 +223,13 @@ namespace QFramework
             {
                 GUILayout.BeginVertical("box");
 
-                GUILayout.Label("ResKit", new GUIStyle {fontSize = 30});
+                GUILayout.Label("ResKit", new GUIStyle { fontSize = 30 });
                 GUILayout.Space(10);
-                GUILayout.Label("ResInfo", new GUIStyle {fontSize = 20});
+                GUILayout.Label("ResInfo", new GUIStyle { fontSize = 20 });
                 mTable.ToList().ForEach(res => { GUILayout.Label((res as Res).ToString()); });
                 GUILayout.Space(10);
 
-                GUILayout.Label("Pools", new GUIStyle() {fontSize = 20});
+                GUILayout.Label("Pools", new GUIStyle { fontSize = 20 });
                 GUILayout.Label(string.Format("ResSearchRule:{0}",
                     SafeObjectPool<ResSearchKeys>.Instance.CurCount));
                 GUILayout.Label(string.Format("ResLoader:{0}",
@@ -275,15 +246,9 @@ namespace QFramework
 
         private void TryStartNextIEnumeratorTask()
         {
-            if (mIEnumeratorTaskStack.Count == 0)
-            {
-                return;
-            }
+            if (mIEnumeratorTaskStack.Count == 0) return;
 
-            if (mCurrentCoroutineCount >= mMaxCoroutineCount)
-            {
-                return;
-            }
+            if (mCurrentCoroutineCount >= mMaxCoroutineCount) return;
 
             var task = mIEnumeratorTaskStack.First.Value;
             mIEnumeratorTaskStack.RemoveFirst();
@@ -293,10 +258,5 @@ namespace QFramework
         }
 
         #endregion
-        
-        public void OnSingletonInit()
-        {
-            
-        }
     }
 }

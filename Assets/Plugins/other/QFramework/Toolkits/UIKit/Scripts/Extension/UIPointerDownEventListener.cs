@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2017 huibin123
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,15 +23,20 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.EventSystems;
+
 namespace QFramework
 {
-    using UnityEngine;
-    using UnityEngine.Events;
-    using UnityEngine.EventSystems;
-    
-    public class UIPointerDownEventListener : MonoBehaviour,IPointerDownHandler
+    public class UIPointerDownEventListener : MonoBehaviour, IPointerDownHandler
     {
         public UnityAction<PointerEventData> OnPointerDownEvent;
+
+        private void OnDestroy()
+        {
+            OnPointerDownEvent = null;
+        }
 
         void IPointerDownHandler.OnPointerDown(PointerEventData eventData)
         {
@@ -40,19 +45,15 @@ namespace QFramework
 
         public static UIPointerDownEventListener CheckAndAddListener(GameObject obj)
         {
-            UIPointerDownEventListener listener = obj.GetComponent<UIPointerDownEventListener>();
+            var listener = obj.GetComponent<UIPointerDownEventListener>();
             if (listener == null) listener = obj.AddComponent<UIPointerDownEventListener>();
 
             return listener;
         }
-        public static  UIPointerDownEventListener Get(GameObject obj)
+
+        public static UIPointerDownEventListener Get(GameObject obj)
         {
-            return CheckAndAddListener (obj);
-        }
-        
-        void OnDestroy()
-        {
-            OnPointerDownEvent = null;
+            return CheckAndAddListener(obj);
         }
     }
 }

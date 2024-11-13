@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -22,10 +22,7 @@ namespace QFramework
                     self.Play();
                 }).OnExecute(_ =>
                 {
-                    if (api.Data && !api.Data.isPlaying)
-                    {
-                        api.Finish();
-                    }
+                    if (api.Data && !api.Data.isPlaying) api.Finish();
                 });
             });
         }

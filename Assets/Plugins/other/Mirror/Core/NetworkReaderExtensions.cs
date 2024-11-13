@@ -9,68 +9,157 @@ namespace Mirror
     // but they do all need to be extensions.
     public static class NetworkReaderExtensions
     {
-        public static byte ReadByte(this NetworkReader reader) => reader.ReadBlittable<byte>();
-        public static byte? ReadByteNullable(this NetworkReader reader) => reader.ReadBlittableNullable<byte>();
-
-        public static sbyte ReadSByte(this NetworkReader reader) => reader.ReadBlittable<sbyte>();
-        public static sbyte? ReadSByteNullable(this NetworkReader reader) => reader.ReadBlittableNullable<sbyte>();
-
-        // bool is not blittable. read as ushort.
-        public static char ReadChar(this NetworkReader reader) => (char)reader.ReadBlittable<ushort>();
-        public static char? ReadCharNullable(this NetworkReader reader) => (char?)reader.ReadBlittableNullable<ushort>();
-
-        // bool is not blittable. read as byte.
-        public static bool ReadBool(this NetworkReader reader) => reader.ReadBlittable<byte>() != 0;
-        public static bool? ReadBoolNullable(this NetworkReader reader)
+        public static byte ReadByte(this NetworkReader reader)
         {
-            byte? value = reader.ReadBlittableNullable<byte>();
-            return value.HasValue ? (value.Value != 0) : default(bool?);
+            return reader.ReadBlittable<byte>();
         }
 
-        public static short ReadShort(this NetworkReader reader) => (short)reader.ReadUShort();
-        public static short? ReadShortNullable(this NetworkReader reader) => reader.ReadBlittableNullable<short>();
+        public static byte? ReadByteNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<byte>();
+        }
 
-        public static ushort ReadUShort(this NetworkReader reader) => reader.ReadBlittable<ushort>();
-        public static ushort? ReadUShortNullable(this NetworkReader reader) => reader.ReadBlittableNullable<ushort>();
+        public static sbyte ReadSByte(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<sbyte>();
+        }
 
-        public static int ReadInt(this NetworkReader reader) => reader.ReadBlittable<int>();
-        public static int? ReadIntNullable(this NetworkReader reader) => reader.ReadBlittableNullable<int>();
+        public static sbyte? ReadSByteNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<sbyte>();
+        }
 
-        public static uint ReadUInt(this NetworkReader reader) => reader.ReadBlittable<uint>();
-        public static uint? ReadUIntNullable(this NetworkReader reader) => reader.ReadBlittableNullable<uint>();
+        // bool is not blittable. read as ushort.
+        public static char ReadChar(this NetworkReader reader)
+        {
+            return (char)reader.ReadBlittable<ushort>();
+        }
 
-        public static long ReadLong(this NetworkReader reader) => reader.ReadBlittable<long>();
-        public static long? ReadLongNullable(this NetworkReader reader) => reader.ReadBlittableNullable<long>();
+        public static char? ReadCharNullable(this NetworkReader reader)
+        {
+            return (char?)reader.ReadBlittableNullable<ushort>();
+        }
 
-        public static ulong ReadULong(this NetworkReader reader) => reader.ReadBlittable<ulong>();
-        public static ulong? ReadULongNullable(this NetworkReader reader) => reader.ReadBlittableNullable<ulong>();
+        // bool is not blittable. read as byte.
+        public static bool ReadBool(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<byte>() != 0;
+        }
 
-        public static float ReadFloat(this NetworkReader reader) => reader.ReadBlittable<float>();
-        public static float? ReadFloatNullable(this NetworkReader reader) => reader.ReadBlittableNullable<float>();
+        public static bool? ReadBoolNullable(this NetworkReader reader)
+        {
+            var value = reader.ReadBlittableNullable<byte>();
+            return value.HasValue ? value.Value != 0 : default(bool?);
+        }
 
-        public static double ReadDouble(this NetworkReader reader) => reader.ReadBlittable<double>();
-        public static double? ReadDoubleNullable(this NetworkReader reader) => reader.ReadBlittableNullable<double>();
+        public static short ReadShort(this NetworkReader reader)
+        {
+            return (short)reader.ReadUShort();
+        }
 
-        public static decimal ReadDecimal(this NetworkReader reader) => reader.ReadBlittable<decimal>();
-        public static decimal? ReadDecimalNullable(this NetworkReader reader) => reader.ReadBlittableNullable<decimal>();
+        public static short? ReadShortNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<short>();
+        }
+
+        public static ushort ReadUShort(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<ushort>();
+        }
+
+        public static ushort? ReadUShortNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<ushort>();
+        }
+
+        public static int ReadInt(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<int>();
+        }
+
+        public static int? ReadIntNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<int>();
+        }
+
+        public static uint ReadUInt(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<uint>();
+        }
+
+        public static uint? ReadUIntNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<uint>();
+        }
+
+        public static long ReadLong(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<long>();
+        }
+
+        public static long? ReadLongNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<long>();
+        }
+
+        public static ulong ReadULong(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<ulong>();
+        }
+
+        public static ulong? ReadULongNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<ulong>();
+        }
+
+        public static float ReadFloat(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<float>();
+        }
+
+        public static float? ReadFloatNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<float>();
+        }
+
+        public static double ReadDouble(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<double>();
+        }
+
+        public static double? ReadDoubleNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<double>();
+        }
+
+        public static decimal ReadDecimal(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<decimal>();
+        }
+
+        public static decimal? ReadDecimalNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<decimal>();
+        }
 
         /// <exception cref="T:System.ArgumentException">if an invalid utf8 string is sent</exception>
         public static string ReadString(this NetworkReader reader)
         {
             // read number of bytes
-            ushort size = reader.ReadUShort();
+            var size = reader.ReadUShort();
 
             // null support, see NetworkWriter
             if (size == 0)
                 return null;
 
-            ushort realSize = (ushort)(size - 1);
+            var realSize = (ushort)(size - 1);
 
             // make sure it's within limits to avoid allocation attacks etc.
             if (realSize > NetworkWriter.MaxStringLength)
-                throw new EndOfStreamException($"NetworkReader.ReadString - Value too long: {realSize} bytes. Limit is: {NetworkWriter.MaxStringLength} bytes");
+                throw new EndOfStreamException(
+                    $"NetworkReader.ReadString - Value too long: {realSize} bytes. Limit is: {NetworkWriter.MaxStringLength} bytes");
 
-            ArraySegment<byte> data = reader.ReadBytesSegment(realSize);
+            var data = reader.ReadBytesSegment(realSize);
 
             // convert directly from buffer to string via encoding
             // throws in case of invalid utf8.
@@ -83,7 +172,7 @@ namespace Mirror
         {
             // count = 0 means the array was null
             // otherwise count -1 is the length of the array
-            uint count = reader.ReadUInt();
+            var count = reader.ReadUInt();
             // Use checked() to force it to throw OverflowException if data is invalid
             return count == 0 ? null : reader.ReadBytes(checked((int)(count - 1u)));
         }
@@ -94,12 +183,11 @@ namespace Mirror
             //   server shouldn't allocate too much on client devices.
             //   client shouldn't allocate too much on server in ClientToServer [SyncVar]s.
             if (count > NetworkReader.AllocationLimit)
-            {
                 // throw EndOfStream for consistency with ReadBlittable when out of data
-                throw new EndOfStreamException($"NetworkReader attempted to allocate {count} bytes, which is larger than the allowed limit of {NetworkReader.AllocationLimit} bytes.");
-            }
+                throw new EndOfStreamException(
+                    $"NetworkReader attempted to allocate {count} bytes, which is larger than the allowed limit of {NetworkReader.AllocationLimit} bytes.");
 
-            byte[] bytes = new byte[count];
+            var bytes = new byte[count];
             reader.ReadBytes(bytes, count);
             return bytes;
         }
@@ -109,49 +197,133 @@ namespace Mirror
         {
             // count = 0 means the array was null
             // otherwise count - 1 is the length of the array
-            uint count = reader.ReadUInt();
+            var count = reader.ReadUInt();
             // Use checked() to force it to throw OverflowException if data is invalid
             return count == 0 ? default : reader.ReadBytesSegment(checked((int)(count - 1u)));
         }
 
-        public static Vector2 ReadVector2(this NetworkReader reader) => reader.ReadBlittable<Vector2>();
-        public static Vector2? ReadVector2Nullable(this NetworkReader reader) => reader.ReadBlittableNullable<Vector2>();
+        public static Vector2 ReadVector2(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Vector2>();
+        }
 
-        public static Vector3 ReadVector3(this NetworkReader reader) => reader.ReadBlittable<Vector3>();
-        public static Vector3? ReadVector3Nullable(this NetworkReader reader) => reader.ReadBlittableNullable<Vector3>();
+        public static Vector2? ReadVector2Nullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Vector2>();
+        }
 
-        public static Vector4 ReadVector4(this NetworkReader reader) => reader.ReadBlittable<Vector4>();
-        public static Vector4? ReadVector4Nullable(this NetworkReader reader) => reader.ReadBlittableNullable<Vector4>();
+        public static Vector3 ReadVector3(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Vector3>();
+        }
 
-        public static Vector2Int ReadVector2Int(this NetworkReader reader) => reader.ReadBlittable<Vector2Int>();
-        public static Vector2Int? ReadVector2IntNullable(this NetworkReader reader) => reader.ReadBlittableNullable<Vector2Int>();
+        public static Vector3? ReadVector3Nullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Vector3>();
+        }
 
-        public static Vector3Int ReadVector3Int(this NetworkReader reader) => reader.ReadBlittable<Vector3Int>();
-        public static Vector3Int? ReadVector3IntNullable(this NetworkReader reader) => reader.ReadBlittableNullable<Vector3Int>();
+        public static Vector4 ReadVector4(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Vector4>();
+        }
 
-        public static Color ReadColor(this NetworkReader reader) => reader.ReadBlittable<Color>();
-        public static Color? ReadColorNullable(this NetworkReader reader) => reader.ReadBlittableNullable<Color>();
+        public static Vector4? ReadVector4Nullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Vector4>();
+        }
 
-        public static Color32 ReadColor32(this NetworkReader reader) => reader.ReadBlittable<Color32>();
-        public static Color32? ReadColor32Nullable(this NetworkReader reader) => reader.ReadBlittableNullable<Color32>();
+        public static Vector2Int ReadVector2Int(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Vector2Int>();
+        }
 
-        public static Quaternion ReadQuaternion(this NetworkReader reader) => reader.ReadBlittable<Quaternion>();
-        public static Quaternion? ReadQuaternionNullable(this NetworkReader reader) => reader.ReadBlittableNullable<Quaternion>();
+        public static Vector2Int? ReadVector2IntNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Vector2Int>();
+        }
+
+        public static Vector3Int ReadVector3Int(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Vector3Int>();
+        }
+
+        public static Vector3Int? ReadVector3IntNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Vector3Int>();
+        }
+
+        public static Color ReadColor(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Color>();
+        }
+
+        public static Color? ReadColorNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Color>();
+        }
+
+        public static Color32 ReadColor32(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Color32>();
+        }
+
+        public static Color32? ReadColor32Nullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Color32>();
+        }
+
+        public static Quaternion ReadQuaternion(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Quaternion>();
+        }
+
+        public static Quaternion? ReadQuaternionNullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Quaternion>();
+        }
 
         // Rect is a struct with properties instead of fields
-        public static Rect ReadRect(this NetworkReader reader) => new Rect(reader.ReadVector2(), reader.ReadVector2());
-        public static Rect? ReadRectNullable(this NetworkReader reader) => reader.ReadBool() ? ReadRect(reader) : default(Rect?);
+        public static Rect ReadRect(this NetworkReader reader)
+        {
+            return new Rect(reader.ReadVector2(), reader.ReadVector2());
+        }
+
+        public static Rect? ReadRectNullable(this NetworkReader reader)
+        {
+            return reader.ReadBool() ? ReadRect(reader) : default(Rect?);
+        }
 
         // Plane is a struct with properties instead of fields
-        public static Plane ReadPlane(this NetworkReader reader) => new Plane(reader.ReadVector3(), reader.ReadFloat());
-        public static Plane? ReadPlaneNullable(this NetworkReader reader) => reader.ReadBool() ? ReadPlane(reader) : default(Plane?);
+        public static Plane ReadPlane(this NetworkReader reader)
+        {
+            return new Plane(reader.ReadVector3(), reader.ReadFloat());
+        }
+
+        public static Plane? ReadPlaneNullable(this NetworkReader reader)
+        {
+            return reader.ReadBool() ? ReadPlane(reader) : default(Plane?);
+        }
 
         // Ray is a struct with properties instead of fields
-        public static Ray ReadRay(this NetworkReader reader) => new Ray(reader.ReadVector3(), reader.ReadVector3());
-        public static Ray? ReadRayNullable(this NetworkReader reader) => reader.ReadBool() ? ReadRay(reader) : default(Ray?);
+        public static Ray ReadRay(this NetworkReader reader)
+        {
+            return new Ray(reader.ReadVector3(), reader.ReadVector3());
+        }
 
-        public static Matrix4x4 ReadMatrix4x4(this NetworkReader reader) => reader.ReadBlittable<Matrix4x4>();
-        public static Matrix4x4? ReadMatrix4x4Nullable(this NetworkReader reader) => reader.ReadBlittableNullable<Matrix4x4>();
+        public static Ray? ReadRayNullable(this NetworkReader reader)
+        {
+            return reader.ReadBool() ? ReadRay(reader) : default(Ray?);
+        }
+
+        public static Matrix4x4 ReadMatrix4x4(this NetworkReader reader)
+        {
+            return reader.ReadBlittable<Matrix4x4>();
+        }
+
+        public static Matrix4x4? ReadMatrix4x4Nullable(this NetworkReader reader)
+        {
+            return reader.ReadBlittableNullable<Matrix4x4>();
+        }
 
         public static Guid ReadGuid(this NetworkReader reader)
         {
@@ -163,18 +335,23 @@ namespace Mirror
             // Guid is Sequential, but we can't guarantee packing.
             if (reader.Remaining >= 16)
             {
-                ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(reader.buffer.Array, reader.buffer.Offset + reader.Position, 16);
+                var span = new ReadOnlySpan<byte>(reader.buffer.Array, reader.buffer.Offset + reader.Position, 16);
                 reader.Position += 16;
                 return new Guid(span);
             }
+
             throw new EndOfStreamException($"ReadGuid out of range: {reader}");
 #endif
         }
-        public static Guid? ReadGuidNullable(this NetworkReader reader) => reader.ReadBool() ? ReadGuid(reader) : default(Guid?);
+
+        public static Guid? ReadGuidNullable(this NetworkReader reader)
+        {
+            return reader.ReadBool() ? ReadGuid(reader) : default(Guid?);
+        }
 
         public static NetworkIdentity ReadNetworkIdentity(this NetworkReader reader)
         {
-            uint netId = reader.ReadUInt();
+            var netId = reader.ReadUInt();
             if (netId == 0)
                 return null;
 
@@ -194,19 +371,19 @@ namespace Mirror
             //   even if netId was != 0 but the identity disappeared on the client,
             //   resulting in unequal amounts of data being written / read.
             //   https://github.com/vis2k/Mirror/issues/2972
-            uint netId = reader.ReadUInt();
+            var netId = reader.ReadUInt();
             if (netId == 0)
                 return null;
 
             // read component index in any case, BEFORE searching the spawned
             // NetworkIdentity by netId.
-            byte componentIndex = reader.ReadByte();
+            var componentIndex = reader.ReadByte();
 
             // NOTE: a netId not being in spawned is common.
             // for example, "[SyncVar] NetworkIdentity target" netId would not
             // be known on client if the monster walks out of proximity for a
             // moment. no need to log any error or warning here.
-            NetworkIdentity identity = Utils.GetSpawnedInServerOrClient(netId);
+            var identity = Utils.GetSpawnedInServerOrClient(netId);
 
             return identity != null
                 ? identity.NetworkBehaviours[componentIndex]
@@ -220,14 +397,11 @@ namespace Mirror
 
         public static NetworkBehaviourSyncVar ReadNetworkBehaviourSyncVar(this NetworkReader reader)
         {
-            uint netId = reader.ReadUInt();
+            var netId = reader.ReadUInt();
             byte componentIndex = default;
 
             // if netId is not 0, then index is also sent to read before returning
-            if (netId != 0)
-            {
-                componentIndex = reader.ReadByte();
-            }
+            if (netId != 0) componentIndex = reader.ReadByte();
 
             return new NetworkBehaviourSyncVar(netId, componentIndex);
         }
@@ -235,14 +409,14 @@ namespace Mirror
         public static Transform ReadTransform(this NetworkReader reader)
         {
             // Don't use null propagation here as it could lead to MissingReferenceException
-            NetworkIdentity networkIdentity = reader.ReadNetworkIdentity();
+            var networkIdentity = reader.ReadNetworkIdentity();
             return networkIdentity != null ? networkIdentity.transform : null;
         }
 
         public static GameObject ReadGameObject(this NetworkReader reader)
         {
             // Don't use null propagation here as it could lead to MissingReferenceException
-            NetworkIdentity networkIdentity = reader.ReadNetworkIdentity();
+            var networkIdentity = reader.ReadNetworkIdentity();
             return networkIdentity != null ? networkIdentity.gameObject : null;
         }
 
@@ -252,7 +426,7 @@ namespace Mirror
         // note that Weaver/Readers/GenerateReader() handles this manually.
         public static List<T> ReadList<T>(this NetworkReader reader)
         {
-            int length = reader.ReadInt();
+            var length = reader.ReadInt();
 
             // 'null' is encoded as '-1'
             if (length < 0) return null;
@@ -261,16 +435,12 @@ namespace Mirror
             //   server shouldn't allocate too much on client devices.
             //   client shouldn't allocate too much on server in ClientToServer [SyncVar]s.
             if (length > NetworkReader.AllocationLimit)
-            {
                 // throw EndOfStream for consistency with ReadBlittable when out of data
-                throw new EndOfStreamException($"NetworkReader attempted to allocate a List<{typeof(T)}> {length} elements, which is larger than the allowed limit of {NetworkReader.AllocationLimit}.");
-            }
+                throw new EndOfStreamException(
+                    $"NetworkReader attempted to allocate a List<{typeof(T)}> {length} elements, which is larger than the allowed limit of {NetworkReader.AllocationLimit}.");
 
-            List<T> result = new List<T>(length);
-            for (int i = 0; i < length; i++)
-            {
-                result.Add(reader.Read<T>());
-            }
+            var result = new List<T>(length);
+            for (var i = 0; i < length; i++) result.Add(reader.Read<T>());
             return result;
         }
 
@@ -296,7 +466,7 @@ namespace Mirror
 
         public static T[] ReadArray<T>(this NetworkReader reader)
         {
-            int length = reader.ReadInt();
+            var length = reader.ReadInt();
 
             // 'null' is encoded as '-1'
             if (length < 0) return null;
@@ -305,55 +475,52 @@ namespace Mirror
             //   server shouldn't allocate too much on client devices.
             //   client shouldn't allocate too much on server in ClientToServer [SyncVar]s.
             if (length > NetworkReader.AllocationLimit)
-            {
                 // throw EndOfStream for consistency with ReadBlittable when out of data
-                throw new EndOfStreamException($"NetworkReader attempted to allocate an Array<{typeof(T)}> with {length} elements, which is larger than the allowed limit of {NetworkReader.AllocationLimit}.");
-            }
+                throw new EndOfStreamException(
+                    $"NetworkReader attempted to allocate an Array<{typeof(T)}> with {length} elements, which is larger than the allowed limit of {NetworkReader.AllocationLimit}.");
 
             // we can't check if reader.Remaining < length,
             // because we don't know sizeof(T) since it's a managed type.
             // if (length > reader.Remaining) throw new EndOfStreamException($"Received array that is too large: {length}");
 
-            T[] result = new T[length];
-            for (int i = 0; i < length; i++)
-            {
-                result[i] = reader.Read<T>();
-            }
+            var result = new T[length];
+            for (var i = 0; i < length; i++) result[i] = reader.Read<T>();
             return result;
         }
 
         public static Uri ReadUri(this NetworkReader reader)
         {
-            string uriString = reader.ReadString();
-            return (string.IsNullOrWhiteSpace(uriString) ? null : new Uri(uriString));
+            var uriString = reader.ReadString();
+            return string.IsNullOrWhiteSpace(uriString) ? null : new Uri(uriString);
         }
 
         public static Texture2D ReadTexture2D(this NetworkReader reader)
         {
             // support 'null' textures for [SyncVar]s etc.
             // https://github.com/vis2k/Mirror/issues/3144
-            short width = reader.ReadShort();
+            var width = reader.ReadShort();
             if (width == -1) return null;
 
             // read height
-            short height = reader.ReadShort();
+            var height = reader.ReadShort();
 
             // prevent allocation attacks with a reasonable limit.
             //   server shouldn't allocate too much on client devices.
             //   client shouldn't allocate too much on server in ClientToServer [SyncVar]s.
             // log an error and return default.
             // we don't want attackers to be able to trigger exceptions.
-            int totalSize = width * height;
+            var totalSize = width * height;
             if (totalSize > NetworkReader.AllocationLimit)
             {
-                Debug.LogWarning($"NetworkReader attempted to allocate a Texture2D with total size (width * height) of {totalSize}, which is larger than the allowed limit of {NetworkReader.AllocationLimit}.");
+                Debug.LogWarning(
+                    $"NetworkReader attempted to allocate a Texture2D with total size (width * height) of {totalSize}, which is larger than the allowed limit of {NetworkReader.AllocationLimit}.");
                 return null;
             }
 
-            Texture2D texture2D = new Texture2D(width, height);
+            var texture2D = new Texture2D(width, height);
 
             // read pixel content
-            Color32[] pixels = reader.ReadArray<Color32>();
+            var pixels = reader.ReadArray<Color32>();
             texture2D.SetPixels32(pixels);
             texture2D.Apply();
             return texture2D;
@@ -363,14 +530,21 @@ namespace Mirror
         {
             // support 'null' textures for [SyncVar]s etc.
             // https://github.com/vis2k/Mirror/issues/3144
-            Texture2D texture = reader.ReadTexture2D();
+            var texture = reader.ReadTexture2D();
             if (texture == null) return null;
 
             // otherwise create a valid sprite
             return Sprite.Create(texture, reader.ReadRect(), reader.ReadVector2());
         }
 
-        public static DateTime ReadDateTime(this NetworkReader reader) => DateTime.FromOADate(reader.ReadDouble());
-        public static DateTime? ReadDateTimeNullable(this NetworkReader reader) => reader.ReadBool() ? ReadDateTime(reader) : default(DateTime?);
+        public static DateTime ReadDateTime(this NetworkReader reader)
+        {
+            return DateTime.FromOADate(reader.ReadDouble());
+        }
+
+        public static DateTime? ReadDateTimeNullable(this NetworkReader reader)
+        {
+            return reader.ReadBool() ? ReadDateTime(reader) : default(DateTime?);
+        }
     }
 }

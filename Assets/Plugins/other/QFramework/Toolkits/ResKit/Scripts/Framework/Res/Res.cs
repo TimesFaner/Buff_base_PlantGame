@@ -1,7 +1,7 @@
 /****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 ~ 2018.5 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,38 +24,47 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using System;
+using System.Collections;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace QFramework
 {
-    using System;
-    using System.Collections;
-
-    public class Res : SimpleRC, IRes, IPoolable,IPoolType
+    public class Res : SimpleRC, IRes, IPoolable, IPoolType
     {
-        
-        protected string                 mAssetName;
-        private   ResState               mResState = ResState.Waiting;
-        protected UnityEngine.Object     mAsset;
-        private event Action<bool, IRes> mOnResLoadDoneEvent;
+        protected Object mAsset;
+
+        protected string mAssetName;
+        private ResState mResState = ResState.Waiting;
+
+        protected Res(string assetName)
+        {
+            IsRecycled = false;
+            mAssetName = assetName;
+        }
+
+        public Res()
+        {
+            IsRecycled = false;
+        }
+
+        public bool IsRecycled { get; set; }
 
         public string AssetName
         {
-            get { return mAssetName; }
-            protected set { mAssetName = value; }
+            get => mAssetName;
+            protected set => mAssetName = value;
         }
 
 
         public ResState State
         {
-            get { return mResState; }
+            get => mResState;
             set
             {
                 mResState = value;
-                if (mResState == ResState.Ready)
-                {
-                    NotifyResLoadDoneEvent(true);
-                }
+                if (mResState == ResState.Ready) NotifyResLoadDoneEvent(true);
             }
         }
 
@@ -64,7 +73,7 @@ namespace QFramework
         public Type AssetType { get; set; }
 
         /// <summary>
-        /// 弃用
+        ///     弃用
         /// </summary>
         public float Progress
         {
@@ -82,26 +91,12 @@ namespace QFramework
             }
         }
 
-        protected virtual float CalculateProgress()
-        {
-            return 0;
-        }
-
-        public UnityEngine.Object Asset
-        {
-            get { return mAsset; }
-        }
-
-        public bool IsRecycled { get; set; }
-
+        public Object Asset => mAsset;
 
 
         public void RegisteOnResLoadDoneEvent(Action<bool, IRes> listener)
         {
-            if (listener == null)
-            {
-                return;
-            }
+            if (listener == null) return;
 
             if (mResState == ResState.Ready)
             {
@@ -114,17 +109,18 @@ namespace QFramework
 
         public void UnRegisteOnResLoadDoneEvent(Action<bool, IRes> listener)
         {
-            if (listener == null)
-            {
-                return;
-            }
+            if (listener == null) return;
 
-            if (mOnResLoadDoneEvent == null)
-            {
-                return;
-            }
+            if (mOnResLoadDoneEvent == null) return;
 
             mOnResLoadDoneEvent -= listener;
+        }
+
+        private event Action<bool, IRes> mOnResLoadDoneEvent;
+
+        protected virtual float CalculateProgress()
+        {
+            return 0;
         }
 
         protected void OnResLoadFaild()
@@ -140,18 +136,6 @@ namespace QFramework
                 mOnResLoadDoneEvent(result, this);
                 mOnResLoadDoneEvent = null;
             }
-            
-        }
-
-        protected Res(string assetName)
-        {
-            IsRecycled = false;
-            mAssetName = assetName;
-        }
-
-        public Res()
-        {
-            IsRecycled = false;
         }
 
         protected bool CheckLoadAble()
@@ -162,42 +146,30 @@ namespace QFramework
         protected void HoldDependRes()
         {
             var depends = GetDependResList();
-            if (depends == null || depends.Length == 0)
-            {
-                return;
-            }
+            if (depends == null || depends.Length == 0) return;
 
             for (var i = depends.Length - 1; i >= 0; --i)
             {
-                var resSearchRule = ResSearchKeys.Allocate(depends[i],null,typeof(AssetBundle));
-                var res = ResMgr.Instance.GetRes(resSearchRule, false);
+                var resSearchRule = ResSearchKeys.Allocate(depends[i], null, typeof(AssetBundle));
+                var res = ResMgr.Instance.GetRes(resSearchRule);
                 resSearchRule.Recycle2Cache();
-                
-                if (res != null)
-                {
-                    res.Retain();
-                }
+
+                if (res != null) res.Retain();
             }
         }
 
         protected void UnHoldDependRes()
         {
             var depends = GetDependResList();
-            if (depends == null || depends.Length == 0)
-            {
-                return;
-            }
+            if (depends == null || depends.Length == 0) return;
 
             for (var i = depends.Length - 1; i >= 0; --i)
             {
                 var resSearchRule = ResSearchKeys.Allocate(depends[i]);
-                var res = ResMgr.Instance.GetRes(resSearchRule, false);
+                var res = ResMgr.Instance.GetRes(resSearchRule);
                 resSearchRule.Recycle2Cache();
-                
-                if (res != null)
-                {
-                    res.Release();
-                }
+
+                if (res != null) res.Release();
             }
         }
 
@@ -220,21 +192,15 @@ namespace QFramework
         public bool IsDependResLoadFinish()
         {
             var depends = GetDependResList();
-            if (depends == null || depends.Length == 0)
-            {
-                return true;
-            }
+            if (depends == null || depends.Length == 0) return true;
 
             for (var i = depends.Length - 1; i >= 0; --i)
             {
                 var resSearchRule = ResSearchKeys.Allocate(depends[i]);
-                var res = ResMgr.Instance.GetRes(resSearchRule, false);
+                var res = ResMgr.Instance.GetRes(resSearchRule);
                 resSearchRule.Recycle2Cache();
-                
-                if (res == null || res.State != ResState.Ready)
-                {
-                    return false;
-                }
+
+                if (res == null || res.State != ResState.Ready) return false;
             }
 
             return true;
@@ -247,15 +213,9 @@ namespace QFramework
 
         public bool ReleaseRes()
         {
-            if (mResState == ResState.Loading)
-            {
-                return false;
-            }
+            if (mResState == ResState.Loading) return false;
 
-            if (mResState != ResState.Ready)
-            {
-                return true;
-            }
+            if (mResState != ResState.Ready) return true;
 
             //Log.I("Release Res:" + mName);
 
@@ -279,17 +239,13 @@ namespace QFramework
 
         protected override void OnZeroRef()
         {
-            if (mResState == ResState.Loading)
-            {
-                return;
-            }
+            if (mResState == ResState.Loading) return;
 
             ReleaseRes();
         }
 
         public virtual void Recycle2Cache()
         {
-
         }
 
         public virtual void OnRecycled()
@@ -298,7 +254,7 @@ namespace QFramework
             mOnResLoadDoneEvent = null;
         }
 
-        public virtual IEnumerator DoLoadAsync(System.Action finishCallback)
+        public virtual IEnumerator DoLoadAsync(Action finishCallback)
         {
             finishCallback();
             yield break;

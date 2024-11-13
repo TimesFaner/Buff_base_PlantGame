@@ -1,14 +1,12 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
 #if UNITY_EDITOR
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,8 +26,7 @@ namespace QFramework
 
     internal class InstalledPackageVersionTable : Table<PackageVersion>
     {
-        public TableIndex<string, PackageVersion> NameIndex =
-            new TableIndex<string, PackageVersion>(p => p.Name);
+        public TableIndex<string, PackageVersion> NameIndex = new(p => p.Name);
 
         protected override void OnAdd(PackageVersion item)
         {
@@ -60,14 +57,14 @@ namespace QFramework
 
     internal class LocalPackageVersionModel : AbstractModel, ILocalPackageVersionModel
     {
-        public InstalledPackageVersionTable PackageVersionsTable { get; private set; }
-
         public LocalPackageVersionModel()
         {
             PackageVersionsTable = new InstalledPackageVersionTable();
 
             Reload();
         }
+
+        public InstalledPackageVersionTable PackageVersionsTable { get; }
 
         public void Reload()
         {

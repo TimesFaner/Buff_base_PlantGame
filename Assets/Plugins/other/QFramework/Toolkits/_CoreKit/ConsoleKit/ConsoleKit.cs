@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace QFramework
 {
     public class ConsoleKit
     {
-        private static List<ConsoleModule> mModules = new List<ConsoleModule>()
+        private static readonly List<ConsoleModule> mModules = new()
         {
             new LogModule()
         };
@@ -27,6 +26,4 @@ namespace QFramework
             Modules.ForEach(m => m.OnDestroy());
         }
     }
-    
-
 }

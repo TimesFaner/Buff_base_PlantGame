@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -24,25 +24,30 @@ namespace QFramework
     [PackageKitRenderOrder(0)]
     internal class APIDoc : IPackageKitView, IUnRegisterList
     {
-        public EditorWindow EditorWindow { get; set; }
-        private ClassAPIRenderInfo mSelectionClassAPIRenderInfo;
+        private static GUIStyle mSelectionRect = "SelectionRect";
 
-        private List<ClassAPIGroupRenderInfo> mGroupRenderInfos = new List<ClassAPIGroupRenderInfo>();
+        private List<ClassAPIGroupRenderInfo> mGroupRenderInfos = new();
+
+        private APIDocLocale mLocaleText = new();
 
         private MDViewer mMDViewer;
+        private ClassAPIRenderInfo mSelectionClassAPIRenderInfo;
+
+        private VerticalSplitView mSplitView;
 
 
         public Type Type { get; } = typeof(APIDoc);
+        public EditorWindow EditorWindow { get; set; }
 
         public void Init()
         {
             var skin = Resources.Load<GUISkin>("Skin/MarkdownSkinQS");
             mMDViewer = new MDViewer(skin, string.Empty, "");
 
-            Vector2 scrollPos = Vector2.zero;
+            var scrollPos = Vector2.zero;
             mSplitView = new VerticalSplitView(240)
             {
-                FirstPan = (rect) =>
+                FirstPan = rect =>
                 {
                     GUILayout.BeginArea(rect);
                     mSplitView.DrawExpandButtonLeft();
@@ -83,7 +88,7 @@ namespace QFramework
                     GUILayout.EndScrollView();
                     GUILayout.EndArea();
                 },
-                SecondPan = (rect) =>
+                SecondPan = rect =>
                 {
                     GUILayout.BeginArea(rect);
                     mSplitView.DrawExpandButtonRight();
@@ -98,81 +103,8 @@ namespace QFramework
 
 
                     GUILayout.EndArea();
-                },
+                }
             };
-        }
-
-        private VerticalSplitView mSplitView;
-
-        private static GUIStyle mSelectionRect = "SelectionRect";
-
-        private APIDocLocale mLocaleText = new APIDocLocale();
-
-        void UpdateDoc()
-        {
-            mSelectionClassAPIRenderInfo.Parse();
-            new StringBuilder()
-                .Append("#### **").Append(mSelectionClassAPIRenderInfo.ClassName).AppendLine("**")
-                .AppendLine()
-                .Append("class in ").AppendLine(mSelectionClassAPIRenderInfo.Namespace)
-                .AppendLine()
-                // Description
-                .Append("**").Append(APIDocLocale.Description).AppendLine("**")
-                .Append("> ").AppendLine(mSelectionClassAPIRenderInfo.Description)
-                .AppendLine()
-                // ExampleCode
-                .Self(builder =>
-                {
-                    if (mSelectionClassAPIRenderInfo.ExampleCode.IsNotNullAndEmpty())
-                    {
-                        builder
-                            .Append("**").Append(APIDocLocale.ExampleCode).AppendLine("**")
-                            .AppendLine()
-                            .AppendLine("```")
-                            .AppendLine(mSelectionClassAPIRenderInfo.ExampleCode)
-                            .AppendLine("```");
-                    }
-                })
-                .AppendLine()
-                // Properties
-                .Self(builder =>
-                {
-                    if (mSelectionClassAPIRenderInfo.Properties.Any())
-                    {
-                        builder
-                            .Append("**").Append(APIDocLocale.Properties).AppendLine("**")
-                            .AppendLine()
-                            .AppendLine("--------");
-
-
-                        foreach (var property in mSelectionClassAPIRenderInfo.Properties)
-                        {
-                            builder.AppendLine()
-                                .Self(property.BuildString);
-                        }
-                    }
-                })
-                .AppendLine()
-                // Methods
-                .Self(builder =>
-                {
-                    if (mSelectionClassAPIRenderInfo.Methods.Any())
-                    {
-                        builder
-                            .Append("**").Append(APIDocLocale.Methods).AppendLine("**")
-                            .AppendLine()
-                            .AppendLine("--------");
-
-
-                        foreach (var method in mSelectionClassAPIRenderInfo.Methods)
-                        {
-                            builder.AppendLine()
-                                .Self(method.BuildString);
-                        }
-                    }
-                })
-                .ToString()
-                .Self(mMDViewer.UpdateText);
         }
 
         public void OnShow()
@@ -183,7 +115,7 @@ namespace QFramework
 
             mGroupRenderInfos = PackageKitAssemblyCache.GetAllTypes()
                 .Where(t => t.HasAttribute<ClassAPIAttribute>())
-                .Select(t => new ClassAPIRenderInfo(t, t.GetAttribute<ClassAPIAttribute>(false)))
+                .Select(t => new ClassAPIRenderInfo(t, t.GetAttribute<ClassAPIAttribute>()))
                 .GroupBy(c => c.GroupName)
                 .OrderBy(c => c.Key)
                 .Select(g => new ClassAPIGroupRenderInfo(g.Key)
@@ -230,7 +162,68 @@ namespace QFramework
             mMDViewer = null;
         }
 
-        public List<IUnRegister> UnregisterList { get; } = new List<IUnRegister>();
+        public List<IUnRegister> UnregisterList { get; } = new();
+
+        private void UpdateDoc()
+        {
+            mSelectionClassAPIRenderInfo.Parse();
+            new StringBuilder()
+                .Append("#### **").Append(mSelectionClassAPIRenderInfo.ClassName).AppendLine("**")
+                .AppendLine()
+                .Append("class in ").AppendLine(mSelectionClassAPIRenderInfo.Namespace)
+                .AppendLine()
+                // Description
+                .Append("**").Append(APIDocLocale.Description).AppendLine("**")
+                .Append("> ").AppendLine(mSelectionClassAPIRenderInfo.Description)
+                .AppendLine()
+                // ExampleCode
+                .Self(builder =>
+                {
+                    if (mSelectionClassAPIRenderInfo.ExampleCode.IsNotNullAndEmpty())
+                        builder
+                            .Append("**").Append(APIDocLocale.ExampleCode).AppendLine("**")
+                            .AppendLine()
+                            .AppendLine("```")
+                            .AppendLine(mSelectionClassAPIRenderInfo.ExampleCode)
+                            .AppendLine("```");
+                })
+                .AppendLine()
+                // Properties
+                .Self(builder =>
+                {
+                    if (mSelectionClassAPIRenderInfo.Properties.Any())
+                    {
+                        builder
+                            .Append("**").Append(APIDocLocale.Properties).AppendLine("**")
+                            .AppendLine()
+                            .AppendLine("--------");
+
+
+                        foreach (var property in mSelectionClassAPIRenderInfo.Properties)
+                            builder.AppendLine()
+                                .Self(property.BuildString);
+                    }
+                })
+                .AppendLine()
+                // Methods
+                .Self(builder =>
+                {
+                    if (mSelectionClassAPIRenderInfo.Methods.Any())
+                    {
+                        builder
+                            .Append("**").Append(APIDocLocale.Methods).AppendLine("**")
+                            .AppendLine()
+                            .AppendLine("--------");
+
+
+                        foreach (var method in mSelectionClassAPIRenderInfo.Methods)
+                            builder.AppendLine()
+                                .Self(method.BuildString);
+                    }
+                })
+                .ToString()
+                .Self(mMDViewer.UpdateText);
+        }
     }
 }
 #endif

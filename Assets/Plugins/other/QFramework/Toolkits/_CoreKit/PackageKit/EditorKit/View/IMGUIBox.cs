@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -17,6 +17,8 @@ namespace QFramework
 
     public class IMGUIBoxView : IMGUIAbstractView, IMGUIBox
     {
+        private string mText = string.Empty;
+
         public IMGUIBoxView()
         {
             mStyle = new FluentGUIStyle(() =>
@@ -27,17 +29,15 @@ namespace QFramework
             });
         }
 
-        protected override void OnGUI()
-        {
-            GUILayout.Box(mText, mStyle.Value, LayoutStyles);
-        }
-
-        private string mText = string.Empty;
-
         public IMGUIBox Text(string labelText)
         {
             mText = labelText;
             return this;
+        }
+
+        protected override void OnGUI()
+        {
+            GUILayout.Box(mText, mStyle.Value, LayoutStyles);
         }
     }
 }

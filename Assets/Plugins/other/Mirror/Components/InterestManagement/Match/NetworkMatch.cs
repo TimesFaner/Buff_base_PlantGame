@@ -1,4 +1,5 @@
 // simple component that holds match information
+
 using System;
 using UnityEngine;
 

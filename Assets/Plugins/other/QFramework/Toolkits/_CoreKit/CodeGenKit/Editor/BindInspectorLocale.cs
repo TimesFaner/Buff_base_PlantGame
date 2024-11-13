@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -16,7 +16,7 @@ namespace QFramework
             get => LocaleKitEditor.IsCN.Value;
             set => LocaleKitEditor.IsCN.Value = value;
         }
-        
+
         public string Type => CN ? " 类型:" : " Type:";
         public string Comment => CN ? " 注释" : " Comment";
         public string BelongsTo => CN ? " 属于:" : " Belongs 2:";

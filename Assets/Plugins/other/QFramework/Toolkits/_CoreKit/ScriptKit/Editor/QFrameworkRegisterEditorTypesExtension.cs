@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -8,11 +8,7 @@
 
 #if UNITY_EDITOR
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
-using QFramework;
 using MoonSharp.Interpreter;
 using UnityEditor;
 using UnityEngine;
@@ -26,7 +22,7 @@ namespace QFramework
             // IO
             UserData.RegisterType(typeof(File));
             self.Globals["File"] = typeof(File);
-            
+
             UserData.RegisterType<Application>();
             self.Globals["Application"] = typeof(Application);
 
@@ -58,8 +54,8 @@ namespace QFramework
             UserData.RegisterType<EditorHttpResponse>();
             UserData.RegisterType<WWWForm>();
             self.Globals["CreateForm"] = (Func<WWWForm>)CreateForm;
-            self.Globals["Post"] = (Action<String,WWWForm,DynValue>)Post;
-            
+            self.Globals["Post"] = (Action<string, WWWForm, DynValue>)Post;
+
             UserData.RegisterType<JSONObject>();
             self.Globals["ParseToJSONObject"] = (Func<string, JSONObject>)ParseToJSONObject;
 
@@ -72,7 +68,7 @@ namespace QFramework
 
             UserData.RegisterType<MoonSharpEditorWindow>();
             self.Globals["MoonSharpEditorWindow"] = typeof(MoonSharpEditorWindow);
-            
+
             return self;
         }
 
@@ -81,22 +77,18 @@ namespace QFramework
             return new JSONObject(arg);
         }
 
-        static WWWForm CreateForm()
+        private static WWWForm CreateForm()
         {
             return new WWWForm();
         }
 
-        static void Post(string url,WWWForm form,DynValue onResponse)
+        private static void Post(string url, WWWForm form, DynValue onResponse)
         {
-            EditorHttp.Post(url,form,response =>
+            EditorHttp.Post(url, form, response =>
             {
-                if (response.Type == ResponseType.SUCCEED)
-                {
-                    onResponse.Function.Call(response.Text);
-                }
+                if (response.Type == ResponseType.SUCCEED) onResponse.Function.Call(response.Text);
             });
         }
-        
     }
 }
 #endif

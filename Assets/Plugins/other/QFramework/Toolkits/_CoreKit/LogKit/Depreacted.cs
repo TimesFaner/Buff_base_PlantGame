@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  ****************************************************************************/
@@ -12,7 +12,6 @@ namespace QFramework
     [Obsolete("请使用 LogKit，use LogKit instead", true)]
     public static class Log
     {
-        
         [Obsolete("请使用 LogKit.Level，use LogKit.Level instead", true)]
         public static LogKit.LogLevel Level
         {

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2017 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,15 +23,20 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.EventSystems;
+
 namespace QFramework
 {
-    using UnityEngine;
-    using UnityEngine.Events;
-    using UnityEngine.EventSystems;
-
     public class UIPointerUpEventListener : MonoBehaviour, IPointerUpHandler
     {
         public UnityAction<PointerEventData> OnPointerUpEvent;
+
+        private void OnDestroy()
+        {
+            OnPointerUpEvent = null;
+        }
 
         void IPointerUpHandler.OnPointerUp(PointerEventData eventData)
         {
@@ -40,7 +45,7 @@ namespace QFramework
 
         public static UIPointerUpEventListener CheckAndAddListener(GameObject obj)
         {
-            UIPointerUpEventListener listener = obj.GetComponent<UIPointerUpEventListener>();
+            var listener = obj.GetComponent<UIPointerUpEventListener>();
             if (listener == null) listener = obj.AddComponent<UIPointerUpEventListener>();
 
             return listener;
@@ -49,11 +54,6 @@ namespace QFramework
         public static UIPointerUpEventListener Get(GameObject obj)
         {
             return CheckAndAddListener(obj);
-        }
-
-        void OnDestroy()
-        {
-            OnPointerUpEvent = null;
         }
     }
 }

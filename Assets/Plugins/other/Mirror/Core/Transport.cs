@@ -22,6 +22,7 @@
 //     (Transports can use other threads in the background if they manage them)
 //   * Transports should only process messages while the component is enabled.
 //
+
 using System;
 using UnityEngine;
 
@@ -32,9 +33,6 @@ namespace Mirror
     {
         /// <summary>The current transport used by Mirror.</summary>
         public static Transport active;
-
-        /// <summary>Is this transport available in the current platform?</summary>
-        public abstract bool Available();
 
         // client //////////////////////////////////////////////////////////////
         /// <summary>Called by Transport when the client connected to the server.</summary>
@@ -50,11 +48,11 @@ namespace Mirror
         // - allows transports to decide the actual used channel (i.e. tcp always sending reliable)
         public Action<ArraySegment<byte>, int> OnClientDataSent;
 
-        /// <summary>Called by Transport when the client encountered an error.</summary>
-        public Action<TransportError, string> OnClientError;
-
         /// <summary>Called by Transport when the client disconnected from the server.</summary>
         public Action OnClientDisconnected;
+
+        /// <summary>Called by Transport when the client encountered an error.</summary>
+        public Action<TransportError, string> OnClientError;
 
         // server //////////////////////////////////////////////////////////////
         /// <summary>Called by Transport when a new client connected to the server.</summary>
@@ -70,12 +68,25 @@ namespace Mirror
         // - allows transports to decide the actual used channel (i.e. tcp always sending reliable)
         public Action<int, ArraySegment<byte>, int> OnServerDataSent;
 
+        /// <summary>Called by Transport when a client disconnected from the server.</summary>
+        public Action<int> OnServerDisconnected;
+
         /// <summary>Called by Transport when a server's connection encountered a problem.</summary>
         /// If a Disconnect will also be raised, raise the Error first.
         public Action<int, TransportError, string> OnServerError;
 
-        /// <summary>Called by Transport when a client disconnected from the server.</summary>
-        public Action<int> OnServerDisconnected;
+        /// <summary>Called by Unity when quitting. Inheriting Transports should call base for proper Shutdown.</summary>
+        public virtual void OnApplicationQuit()
+        {
+            // stop transport (e.g. to shut down threads)
+            // (when pressing Stop in the Editor, Unity keeps threads alive
+            //  until we press Start again. so if Transports use threads, we
+            //  really want them to end now and not after next start)
+            Shutdown();
+        }
+
+        /// <summary>Is this transport available in the current platform?</summary>
+        public abstract bool Available();
 
         // client functions ////////////////////////////////////////////////////
         /// <summary>True if the client is currently connected to the server.</summary>
@@ -111,7 +122,8 @@ namespace Mirror
         public abstract void ServerStart();
 
         /// <summary>Send a message to a client over the given channel.</summary>
-        public abstract void ServerSend(int connectionId, ArraySegment<byte> segment, int channelId = Channels.Reliable);
+        public abstract void ServerSend(int connectionId, ArraySegment<byte> segment,
+            int channelId = Channels.Reliable);
 
         /// <summary>Disconnect a client from the server.</summary>
         public abstract void ServerDisconnect(int connectionId);
@@ -141,6 +153,37 @@ namespace Mirror
             return GetMaxPacketSize(channelId);
         }
 
+        /// <summary>
+        ///     NetworkLoop NetworkEarly/LateUpdate were added for a proper network
+        ///     update order. the goal is to:
+        ///     process_incoming()
+        ///     update_world()
+        ///     process_outgoing()
+        ///     in order to avoid unnecessary latency and data races.
+        /// </summary>
+        // => split into client and server parts so that we can cleanly call
+        //    them from NetworkClient/Server
+        // => VIRTUAL for now so we can take our time to convert transports
+        //    without breaking anything.
+        public virtual void ClientEarlyUpdate()
+        {
+        }
+
+        public virtual void ServerEarlyUpdate()
+        {
+        }
+
+        public virtual void ClientLateUpdate()
+        {
+        }
+
+        public virtual void ServerLateUpdate()
+        {
+        }
+
+        /// <summary>Shut down the transport, both as client and server</summary>
+        public abstract void Shutdown();
+
         // block Update & LateUpdate to show warnings if Transports still use
         // them instead of using
         //   Client/ServerEarlyUpdate: to process incoming messages
@@ -154,38 +197,13 @@ namespace Mirror
         //
         // => see NetworkLoop.cs for detailed explanations!
 #pragma warning disable UNT0001 // Empty Unity message
-        public void Update() {}
-        public void LateUpdate() {}
-#pragma warning restore UNT0001 // Empty Unity message
-
-        /// <summary>
-        /// NetworkLoop NetworkEarly/LateUpdate were added for a proper network
-        /// update order. the goal is to:
-        ///    process_incoming()
-        ///    update_world()
-        ///    process_outgoing()
-        /// in order to avoid unnecessary latency and data races.
-        /// </summary>
-        // => split into client and server parts so that we can cleanly call
-        //    them from NetworkClient/Server
-        // => VIRTUAL for now so we can take our time to convert transports
-        //    without breaking anything.
-        public virtual void ClientEarlyUpdate() {}
-        public virtual void ServerEarlyUpdate() {}
-        public virtual void ClientLateUpdate() {}
-        public virtual void ServerLateUpdate() {}
-
-        /// <summary>Shut down the transport, both as client and server</summary>
-        public abstract void Shutdown();
-
-        /// <summary>Called by Unity when quitting. Inheriting Transports should call base for proper Shutdown.</summary>
-        public virtual void OnApplicationQuit()
+        public void Update()
         {
-            // stop transport (e.g. to shut down threads)
-            // (when pressing Stop in the Editor, Unity keeps threads alive
-            //  until we press Start again. so if Transports use threads, we
-            //  really want them to end now and not after next start)
-            Shutdown();
         }
+
+        public void LateUpdate()
+        {
+        }
+#pragma warning restore UNT0001 // Empty Unity message
     }
 }

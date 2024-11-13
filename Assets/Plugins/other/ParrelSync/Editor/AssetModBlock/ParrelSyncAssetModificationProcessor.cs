@@ -1,11 +1,12 @@
 ﻿using UnityEditor;
 using UnityEngine;
+
 namespace ParrelSync
 {
     /// <summary>
-    /// For preventing assets being modified from the clone instance.
+    ///     For preventing assets being modified from the clone instance.
     /// </summary>
-    public class ParrelSyncAssetModificationProcessor : UnityEditor.AssetModificationProcessor
+    public class ParrelSyncAssetModificationProcessor : AssetModificationProcessor
     {
         public static string[] OnWillSaveAssets(string[] paths)
         {
@@ -21,13 +22,12 @@ namespace ParrelSync
                         "Please use the original editor window if you want to make changes to the project files.",
                         "ok"
                     );
-                    foreach (var path in paths)
-                    {
-                        Debug.Log("Attempting to save " + path + " are blocked.");
-                    }
+                    foreach (var path in paths) Debug.Log("Attempting to save " + path + " are blocked.");
                 }
+
                 return new string[0] { };
             }
+
             return paths;
         }
     }

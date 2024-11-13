@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.Events;
 using UnityEngine;
 
 namespace Mirror.Discovery
@@ -9,24 +11,11 @@ namespace Mirror.Discovery
     [RequireComponent(typeof(NetworkDiscovery))]
     public class NetworkDiscoveryHUD : MonoBehaviour
     {
-        readonly Dictionary<long, ServerResponse> discoveredServers = new Dictionary<long, ServerResponse>();
-        Vector2 scrollViewPos = Vector2.zero;
-
         public NetworkDiscovery networkDiscovery;
+        private readonly Dictionary<long, ServerResponse> discoveredServers = new();
+        private Vector2 scrollViewPos = Vector2.zero;
 
-#if UNITY_EDITOR
-        void OnValidate()
-        {
-            if (networkDiscovery == null)
-            {
-                networkDiscovery = GetComponent<NetworkDiscovery>();
-                UnityEditor.Events.UnityEventTools.AddPersistentListener(networkDiscovery.OnServerFound, OnDiscoveredServer);
-                UnityEditor.Undo.RecordObjects(new Object[] { this, networkDiscovery }, "Set NetworkDiscovery");
-            }
-        }
-#endif
-
-        void OnGUI()
+        private void OnGUI()
         {
             if (NetworkManager.singleton == null)
                 return;
@@ -38,7 +27,19 @@ namespace Mirror.Discovery
                 StopButtons();
         }
 
-        void DrawGUI()
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (networkDiscovery == null)
+            {
+                networkDiscovery = GetComponent<NetworkDiscovery>();
+                UnityEventTools.AddPersistentListener(networkDiscovery.OnServerFound, OnDiscoveredServer);
+                Undo.RecordObjects(new Object[] { this, networkDiscovery }, "Set NetworkDiscovery");
+            }
+        }
+#endif
+
+        private void DrawGUI()
         {
             GUILayout.BeginArea(new Rect(10, 10, 300, 500));
             GUILayout.BeginHorizontal();
@@ -74,7 +75,7 @@ namespace Mirror.Discovery
             // servers
             scrollViewPos = GUILayout.BeginScrollView(scrollViewPos);
 
-            foreach (ServerResponse info in discoveredServers.Values)
+            foreach (var info in discoveredServers.Values)
                 if (GUILayout.Button(info.EndPoint.Address.ToString()))
                     Connect(info);
 
@@ -82,7 +83,7 @@ namespace Mirror.Discovery
             GUILayout.EndArea();
         }
 
-        void StopButtons()
+        private void StopButtons()
         {
             GUILayout.BeginArea(new Rect(10, 40, 100, 25));
 
@@ -117,7 +118,7 @@ namespace Mirror.Discovery
             GUILayout.EndArea();
         }
 
-        void Connect(ServerResponse info)
+        private void Connect(ServerResponse info)
         {
             networkDiscovery.StopDiscovery();
             NetworkManager.singleton.StartClient(info.uri);

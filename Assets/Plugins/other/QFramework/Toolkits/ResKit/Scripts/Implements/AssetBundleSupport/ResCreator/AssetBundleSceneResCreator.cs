@@ -4,12 +4,9 @@ namespace QFramework
     {
         public bool Match(ResSearchKeys resSearchKeys)
         {
-            var assetData =  AssetBundleSettings.AssetBundleConfigFile.GetAssetData(resSearchKeys);
+            var assetData = AssetBundleSettings.AssetBundleConfigFile.GetAssetData(resSearchKeys);
 
-            if (assetData != null)
-            {
-                return assetData.AssetType == ResLoadType.ABScene;
-            }
+            if (assetData != null) return assetData.AssetType == ResLoadType.ABScene;
 
             return false;
         }

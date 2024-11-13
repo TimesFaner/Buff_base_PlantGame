@@ -1,8 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-
 namespace Remake
 {
     public abstract class StateMachine
@@ -20,14 +15,15 @@ namespace Remake
         {
             currentState?.Handleinput();
         }
+
         public void Update()
         {
             currentState?.Update();
         }
+
         public void PhysicsUpdate()
         {
             currentState?.PhysicsUpdate();
         }
     }
-
 }

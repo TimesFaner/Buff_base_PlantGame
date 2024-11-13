@@ -1,7 +1,7 @@
 /****************************************************************************
  * Copyright (c) 2017 xiaojun
  * Copyright (c) 2017 ~ 2021.1  liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,28 +24,28 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
-namespace QFramework 
-{
-    using UnityEngine;
+using UnityEngine;
 
+namespace QFramework
+{
     public enum PanelState
     {
         Opening = 0,
         Hide = 1,
-        Closed = 2,
+        Closed = 2
     }
-	
+
     /// <summary>
-    /// IUIPanel.
+    ///     IUIPanel.
     /// </summary>
-    public partial interface IPanel
+    public interface IPanel
     {
         Transform Transform { get; }
-		
+
         IPanelLoader Loader { get; set; }
-		
+
         PanelInfo Info { get; set; }
-		
+
         PanelState State { get; set; }
 
         void Init(IUIData uiData = null);
@@ -55,7 +55,7 @@ namespace QFramework
         void Show();
 
         void Hide();
-		
+
         void Close(bool destroy = true);
     }
 }

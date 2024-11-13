@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -11,59 +11,18 @@ using System.Collections.Generic;
 
 namespace QFramework
 {
-    [Obsolete("请使用 SafeObjectPool，通过设置 NonPublicObjectFactory 对象来替代,please use SafeObjectPool and set NonPublicObjectFactory instead",APIVersion.Force)]
+    [Obsolete(
+        "请使用 SafeObjectPool，通过设置 NonPublicObjectFactory 对象来替代,please use SafeObjectPool and set NonPublicObjectFactory instead",
+        APIVersion.Force)]
     public class NonPublicObjectPool<T> : Pool<T>, ISingleton where T : class, IPoolable
     {
-        #region Singleton
-
-        public void OnSingletonInit()
-        {
-        }
-
-        public static NonPublicObjectPool<T> Instance
-        {
-            get { return SingletonProperty<NonPublicObjectPool<T>>.Instance; }
-        }
-
-        protected NonPublicObjectPool()
-        {
-            mFactory = new NonPublicObjectFactory<T>();
-        }
-
-        public void Dispose()
-        {
-            SingletonProperty<NonPublicObjectPool<T>>.Dispose();
-        }
-
-        #endregion
-
         /// <summary>
-        /// Init the specified maxCount and initCount.
-        /// </summary>
-        /// <param name="maxCount">Max Cache count.</param>
-        /// <param name="initCount">Init Cache count.</param>
-        public void Init(int maxCount, int initCount)
-        {
-            if (maxCount > 0)
-            {
-                initCount = Math.Min(maxCount, initCount);
-            }
-
-            if (CurCount >= initCount) return;
-
-            for (var i = CurCount; i < initCount; ++i)
-            {
-                Recycle(mFactory.Create());
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the max cache count.
+        ///     Gets or sets the max cache count.
         /// </summary>
         /// <value>The max cache count.</value>
         public int MaxCacheCount
         {
-            get { return mMaxCount; }
+            get => mMaxCount;
             set
             {
                 mMaxCount = value;
@@ -81,7 +40,21 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Allocate T instance.
+        ///     Init the specified maxCount and initCount.
+        /// </summary>
+        /// <param name="maxCount">Max Cache count.</param>
+        /// <param name="initCount">Init Cache count.</param>
+        public void Init(int maxCount, int initCount)
+        {
+            if (maxCount > 0) initCount = Math.Min(maxCount, initCount);
+
+            if (CurCount >= initCount) return;
+
+            for (var i = CurCount; i < initCount; ++i) Recycle(mFactory.Create());
+        }
+
+        /// <summary>
+        ///     Allocate T instance.
         /// </summary>
         public override T Allocate()
         {
@@ -91,24 +64,19 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Recycle the T instance
+        ///     Recycle the T instance
         /// </summary>
         /// <param name="t">T.</param>
         public override bool Recycle(T t)
         {
-            if (t == null || t.IsRecycled)
-            {
-                return false;
-            }
+            if (t == null || t.IsRecycled) return false;
 
             if (mMaxCount > 0)
-            {
                 if (mCacheStack.Count >= mMaxCount)
                 {
                     t.OnRecycled();
                     return false;
                 }
-            }
 
             t.IsRecycled = true;
             t.OnRecycled();
@@ -116,14 +84,34 @@ namespace QFramework
 
             return true;
         }
+
+        #region Singleton
+
+        public void OnSingletonInit()
+        {
+        }
+
+        public static NonPublicObjectPool<T> Instance => SingletonProperty<NonPublicObjectPool<T>>.Instance;
+
+        protected NonPublicObjectPool()
+        {
+            mFactory = new NonPublicObjectFactory<T>();
+        }
+
+        public void Dispose()
+        {
+            SingletonProperty<NonPublicObjectPool<T>>.Dispose();
+        }
+
+        #endregion
     }
-     
-    [Obsolete("请使用 PoolableObject,please use PoolableObject instead",APIVersion.Force)]
+
+    [Obsolete("请使用 PoolableObject,please use PoolableObject instead", APIVersion.Force)]
     public abstract class AbstractPool<T> where T : AbstractPool<T>, new()
     {
-        private static Stack<T> mPool = new Stack<T>(10);
+        private static readonly Stack<T> mPool = new(10);
 
-        protected bool mInPool = false;
+        protected bool mInPool;
 
         public static T Allocate()
         {

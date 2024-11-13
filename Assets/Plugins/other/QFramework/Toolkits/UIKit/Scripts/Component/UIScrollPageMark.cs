@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2018.8 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,26 +23,25 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace QFramework
 {
-    using UnityEngine;
-    using System.Collections.Generic;
-    using UnityEngine.UI;
-    
     public class UIScrollPageMark : MonoBehaviour
     {
         public UIScrollPage scrollPage;
         public ToggleGroup toggleGroup;
         public Toggle togglePrefab;
-        
-        [Tooltip("页签中心位置")]
-        public UnityEngine.Vector2 centerPos;
-        [Tooltip("每个页签之间的间距")]
-        public UnityEngine.Vector2 interval;
 
-        public List<Toggle> toggleList = new List<Toggle>();
+        [Tooltip("页签中心位置")] public Vector2 centerPos;
 
-        void Awake()
+        [Tooltip("每个页签之间的间距")] public Vector2 interval;
+
+        public List<Toggle> toggleList = new();
+
+        private void Awake()
         {
             AdjustTogglePos();
             scrollPage.AddPageChangeListener(OnScrollPageChanged);
@@ -54,17 +53,14 @@ namespace QFramework
             {
                 if (pageCount > toggleList.Count)
                 {
-                    int cc = pageCount - toggleList.Count;
-                    for (int i = 0; i < cc; i++)
-                    {
-                        toggleList.Add(CreateToggle(i));
-                    }
+                    var cc = pageCount - toggleList.Count;
+                    for (var i = 0; i < cc; i++) toggleList.Add(CreateToggle(i));
                 }
                 else if (pageCount < toggleList.Count)
                 {
                     while (toggleList.Count > pageCount)
                     {
-                        Toggle t = toggleList[toggleList.Count - 1];
+                        var t = toggleList[toggleList.Count - 1];
                         toggleList.Remove(t);
                         DestroyImmediate(t.gameObject);
                     }
@@ -75,18 +71,14 @@ namespace QFramework
 
             toggleGroup.gameObject.SetActive(pageCount > 1);
             if (currentPageIndex >= 0)
-            {
-                for (int i = 0; i < toggleList.Count; i++)
-                {
+                for (var i = 0; i < toggleList.Count; i++)
                     if (i == currentPageIndex) toggleList[i].isOn = true;
                     else toggleList[i].isOn = false;
-                }
-            }
         }
 
-        Toggle CreateToggle(int i)
+        private Toggle CreateToggle(int i)
         {
-            Toggle t = GameObject.Instantiate<Toggle>(togglePrefab);
+            var t = Instantiate(togglePrefab);
             t.gameObject.SetActive(true);
             t.transform.SetParent(toggleGroup.transform);
             t.transform.localScale = Vector3.one;
@@ -94,13 +86,11 @@ namespace QFramework
             return t;
         }
 
-        void AdjustTogglePos()
+        private void AdjustTogglePos()
         {
-            UnityEngine.Vector2 startPos = centerPos - 0.5f * (toggleList.Count - 1) * interval;
-            for (int i = 0; i < toggleList.Count; i++)
-            {
+            var startPos = centerPos - 0.5f * (toggleList.Count - 1) * interval;
+            for (var i = 0; i < toggleList.Count; i++)
                 toggleList[i].GetComponent<RectTransform>().anchoredPosition = startPos + i * interval;
-            }
         }
     }
 }

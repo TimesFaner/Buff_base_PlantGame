@@ -8,7 +8,9 @@ namespace Mirror
     {
         internal LocalConnectionToServer connectionToServer;
 
-        public LocalConnectionToClient() : base(LocalConnectionId) {}
+        public LocalConnectionToClient() : base(LocalConnectionId)
+        {
+        }
 
         public override string address => "localhost";
 
@@ -21,16 +23,21 @@ namespace Mirror
             // => WriteBytes instead of WriteArraySegment because the latter
             //    includes a 4 bytes header. we just want to write raw.
             //Debug.Log($"Enqueue {BitConverter.ToString(segment.Array, segment.Offset, segment.Count)}");
-            NetworkWriterPooled writer = NetworkWriterPool.Get();
+            var writer = NetworkWriterPool.Get();
             writer.WriteBytes(segment.Array, segment.Offset, segment.Count);
             connectionToServer.queue.Enqueue(writer);
         }
 
         // true because local connections never timeout
-        internal override bool IsAlive(float timeout) => true;
+        internal override bool IsAlive(float timeout)
+        {
+            return true;
+        }
 
         // don't ping host client in host mode
-        protected override void UpdatePing() {}
+        protected override void UpdatePing()
+        {
+        }
 
         internal void DisconnectInternal()
         {

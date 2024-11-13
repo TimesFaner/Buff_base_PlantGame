@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -16,19 +16,19 @@ namespace QFramework
 {
     internal class InstallPackageCommand : AbstractCommand
     {
-        private readonly PackageRepository mRequestPackageData;
         private readonly Action mOnAfterDownloadBeforeImport;
-
-        private void OnProgressChanged(float progress)
-        {
-            EditorUtility.DisplayProgressBar("插件更新",
-                string.Format("插件下载中 {0:P2}", progress), progress);
-        }
+        private readonly PackageRepository mRequestPackageData;
 
         public InstallPackageCommand(PackageRepository requestPackageData, Action onAfterDownloadBeforeImport = null)
         {
             mRequestPackageData = requestPackageData;
             mOnAfterDownloadBeforeImport = onAfterDownloadBeforeImport;
+        }
+
+        private void OnProgressChanged(float progress)
+        {
+            EditorUtility.DisplayProgressBar("插件更新",
+                string.Format("插件下载中 {0:P2}", progress), progress);
         }
 
         protected override void OnExecute()
@@ -46,7 +46,7 @@ namespace QFramework
                     File.WriteAllBytes(tempFile, response.Bytes);
 
                     EditorUtility.ClearProgressBar();
-                    
+
                     mOnAfterDownloadBeforeImport?.Invoke();
 
                     AssetDatabase.ImportPackage(tempFile, false);

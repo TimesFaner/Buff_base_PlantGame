@@ -1,17 +1,22 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
+using System;
+
 namespace QFramework
 {
-    using System;
-
     public class ClassCodeScope : CodeScope
     {
+        private readonly string mClassName;
+        private readonly bool mIsPartial;
+        private readonly bool mIsStatic;
+        private readonly string mParentClassName;
+
         public ClassCodeScope(string className, string parentClassName, bool isPartial, bool isStatic)
         {
             mClassName = className;
@@ -19,11 +24,6 @@ namespace QFramework
             mIsPartial = isPartial;
             mIsStatic = isStatic;
         }
-
-        private string mClassName;
-        private string mParentClassName;
-        private bool mIsPartial;
-        private bool mIsStatic;
 
         protected override void GenFirstLine(ICodeWriter codeWriter)
         {
@@ -35,12 +35,13 @@ namespace QFramework
                 parentClassKey));
         }
     }
-    
+
     public static partial class ICodeScopeExtensions
     {
-        public static ICodeScope Class(this ICodeScope self,string className, string parentClassName, bool isPartial, bool isStatic,Action<ClassCodeScope> classCodeScopeSetting)
+        public static ICodeScope Class(this ICodeScope self, string className, string parentClassName, bool isPartial,
+            bool isStatic, Action<ClassCodeScope> classCodeScopeSetting)
         {
-            var classCodeScope = new ClassCodeScope(className,parentClassName,isPartial,isStatic);
+            var classCodeScope = new ClassCodeScope(className, parentClassName, isPartial, isStatic);
             classCodeScopeSetting(classCodeScope);
             self.Codes.Add(classCodeScope);
             return self;

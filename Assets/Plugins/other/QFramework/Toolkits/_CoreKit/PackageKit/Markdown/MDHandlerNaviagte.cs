@@ -18,35 +18,28 @@ namespace QFramework
 {
     internal class MDHandlerNavigate
     {
-        public MDHistory  MDHistory;
-        public string   CurrentPath;
+        public string CurrentPath;
+        public Func<string, MDBlock> FindBlock;
+        public MDHistory MDHistory;
 
-        public Action<float>        ScrollTo;
-        public Func<string,MDBlock>   FindBlock;
+        public Action<float> ScrollTo;
 
         //------------------------------------------------------------------------------
 
-        public void SelectPage( string url )
+        public void SelectPage(string url)
         {
-            if( string.IsNullOrEmpty( url ) )
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(url)) return;
 
             // internal link
 
-            if( url.StartsWith( "#" ) )
+            if (url.StartsWith("#"))
             {
-                var block = FindBlock( url.ToLower() );
+                var block = FindBlock(url.ToLower());
 
-                if( block != null )
-                {
-                    ScrollTo( block.Rect.y );
-                }
+                if (block != null)
+                    ScrollTo(block.Rect.y);
                 else
-                {
-                    Debug.LogWarning( string.Format( "Unable to find section header {0}", url ) );
-                }
+                    Debug.LogWarning(string.Format("Unable to find section header {0}", url));
 
                 return;
             }
@@ -55,27 +48,23 @@ namespace QFramework
 
             var newPath = string.Empty;
 
-            if( url.StartsWith( "/" ) )
-            {
-                newPath = url.Substring( 1 );
-            }
+            if (url.StartsWith("/"))
+                newPath = url.Substring(1);
             else
-            {
-                newPath = MDUtils.PathCombine( Path.GetDirectoryName( CurrentPath ), url );
-            }
+                newPath = MDUtils.PathCombine(Path.GetDirectoryName(CurrentPath), url);
 
             // load file
 
-            var asset = AssetDatabase.LoadAssetAtPath<TextAsset>( newPath );
+            var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(newPath);
 
-            if( asset != null )
+            if (asset != null)
             {
-                MDHistory.Add( newPath );
+                MDHistory.Add(newPath);
                 Selection.activeObject = asset;
             }
             else
             {
-                Debug.LogError( string.Format( "Could not find asset {0}", newPath ) );
+                Debug.LogError(string.Format("Could not find asset {0}", newPath));
             }
         }
     }

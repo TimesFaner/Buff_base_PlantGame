@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -18,15 +18,37 @@ namespace QFramework
 #endif
     public class UIKit
     {
+        public static UIKitConfig Config = new();
 
-        public static UIKitConfig Config = new UIKitConfig();
-
+        private static readonly WaitForEndOfFrame mWaitForEndOfFrame = new();
 
 
         /// <summary>
-        /// UIPanel  管理（数据结构）
+        ///     UIPanel  管理（数据结构）
         /// </summary>
-        public static UIPanelTable Table { get; } = new UIPanelTable();
+        public static UIPanelTable Table { get; } = new();
+
+#if UNITY_EDITOR
+        [PropertyAPI]
+        [APIDescriptionCN("UIKit 界面根节点")]
+        [APIDescriptionEN("UIKit Root GameObject")]
+        [APIExampleCode(@"
+UIKit.Root.SetResolution(1920,1080,0);
+")]
+#endif
+        public static UIRoot Root => Config.Root;
+
+#if UNITY_EDITOR
+        [PropertyAPI]
+        [APIDescriptionCN("UIKit 界面堆栈")]
+        [APIDescriptionEN("UIKit Panel Stack")]
+        [APIExampleCode(@"
+UIKit.Stack.Push(UIKit.OpenPanel<UIHomePanel>(); // push and close uihomepanel
+ 
+UIKit.Stack.Pop() // pop and open uihomepanel
+")]
+#endif
+        public static UIPanelStack Stack { get; } = new();
 
 
 #if UNITY_EDITOR
@@ -64,14 +86,12 @@ UIKit.OpenPanel<UIHomePanel>(UILevel.Common);
             panelSearchKeys.GameObjName = prefabName;
             panelSearchKeys.UIData = uiData;
 
-            T retPanel = UIManager.Instance.OpenUI(panelSearchKeys) as T;
+            var retPanel = UIManager.Instance.OpenUI(panelSearchKeys) as T;
 
             panelSearchKeys.Recycle2Cache();
 
             return retPanel;
         }
-
-        private static WaitForEndOfFrame mWaitForEndOfFrame = new WaitForEndOfFrame();
 
 #if UNITY_EDITOR
         [MethodAPI]
@@ -98,13 +118,10 @@ UIKit.OpenPanelAsync<UIHomePanel>().ToAction().Start(this);
             panelSearchKeys.GameObjName = prefabName;
             panelSearchKeys.UIData = uiData;
 
-            bool loaded = false;
+            var loaded = false;
             UIManager.Instance.OpenUIAsync(panelSearchKeys, panel => { loaded = true; });
 
-            while (!loaded)
-            {
-                yield return mWaitForEndOfFrame;
-            }
+            while (!loaded) yield return mWaitForEndOfFrame;
 
             panelSearchKeys.Recycle2Cache();
         }
@@ -122,7 +139,7 @@ UIKit.OpenPanelAsync<UIHomePanel>().ToAction().Start(this);
             panelSearchKeys.GameObjName = prefabName;
             panelSearchKeys.UIData = uiData;
 
-            T retPanel = UIManager.Instance.OpenUI(panelSearchKeys) as T;
+            var retPanel = UIManager.Instance.OpenUI(panelSearchKeys) as T;
 
             panelSearchKeys.Recycle2Cache();
 
@@ -142,7 +159,7 @@ UIKit.OpenPanelAsync<UIHomePanel>().ToAction().Start(this);
             panelSearchKeys.GameObjName = prefabName;
             panelSearchKeys.UIData = uiData;
 
-            T retPanel = UIManager.Instance.OpenUI(panelSearchKeys) as T;
+            var retPanel = UIManager.Instance.OpenUI(panelSearchKeys) as T;
 
             panelSearchKeys.Recycle2Cache();
 
@@ -262,6 +279,67 @@ UIKit.GetPanel(""UIHomePanel"");
             return retPanel as T;
         }
 
+
+#if UNITY_EDITOR
+        [MethodAPI]
+        [APIDescriptionCN("关闭掉当前界面,返回上一个 Push 过的界面")]
+        [APIDescriptionEN("Close Current Panel and Back to previous pushed Panel")]
+        [APIExampleCode(@"
+
+UIKit.Stack.Push(UIKit.OpenPanel<UIHomePanel>());
+
+var basicPanel = UIKit.OpenPanel<UIBasicPanel>();
+
+UIKit.Back(basicPanel);
+
+// UIHomePanel Opened
+")]
+#endif
+        public static void Back(string currentPanelName)
+        {
+            if (!string.IsNullOrEmpty(currentPanelName))
+            {
+                var panelSearchKeys = PanelSearchKeys.Allocate();
+
+                panelSearchKeys.GameObjName = currentPanelName;
+
+                UIManager.Instance.CloseUI(panelSearchKeys);
+
+                panelSearchKeys.Recycle2Cache();
+            }
+
+            Stack.Pop();
+        }
+
+        public static void Back(UIPanel currentPanel)
+        {
+            if (currentPanel != null)
+            {
+                var panelSearchKeys = PanelSearchKeys.Allocate();
+
+                panelSearchKeys.GameObjName = currentPanel.name;
+
+                UIManager.Instance.CloseUI(panelSearchKeys);
+
+                panelSearchKeys.Recycle2Cache();
+            }
+
+            Stack.Pop();
+        }
+
+        public static void Back<T>()
+        {
+            var panelSearchKeys = PanelSearchKeys.Allocate();
+
+            panelSearchKeys.PanelType = typeof(T);
+
+            UIManager.Instance.CloseUI(panelSearchKeys);
+
+            panelSearchKeys.Recycle2Cache();
+
+            Stack.Pop();
+        }
+
         #region 给脚本层用的 api
 
         public static UIPanel GetPanel(string panelName)
@@ -336,89 +414,5 @@ UIKit.GetPanel(""UIHomePanel"");
         }
 
         #endregion
-
-#if UNITY_EDITOR
-        [PropertyAPI]
-        [APIDescriptionCN("UIKit 界面根节点")]
-        [APIDescriptionEN("UIKit Root GameObject")]
-        [APIExampleCode(@"
-UIKit.Root.SetResolution(1920,1080,0);
-")]
-#endif
-        public static UIRoot Root => Config.Root;
-
-#if UNITY_EDITOR
-        [PropertyAPI]
-        [APIDescriptionCN("UIKit 界面堆栈")]
-        [APIDescriptionEN("UIKit Panel Stack")]
-        [APIExampleCode(@"
-UIKit.Stack.Push(UIKit.OpenPanel<UIHomePanel>(); // push and close uihomepanel
- 
-UIKit.Stack.Pop() // pop and open uihomepanel
-")]
-#endif
-        public static UIPanelStack Stack { get; } = new UIPanelStack();
-
-
-
-#if UNITY_EDITOR
-        [MethodAPI]
-        [APIDescriptionCN("关闭掉当前界面,返回上一个 Push 过的界面")]
-        [APIDescriptionEN("Close Current Panel and Back to previous pushed Panel")]
-        [APIExampleCode(@"
-
-UIKit.Stack.Push(UIKit.OpenPanel<UIHomePanel>());
-
-var basicPanel = UIKit.OpenPanel<UIBasicPanel>();
-
-UIKit.Back(basicPanel);
-
-// UIHomePanel Opened
-")]
-#endif
-        public static void Back(string currentPanelName)
-        {
-            if (!string.IsNullOrEmpty(currentPanelName))
-            {
-                var panelSearchKeys = PanelSearchKeys.Allocate();
-
-                panelSearchKeys.GameObjName = currentPanelName;
-
-                UIManager.Instance.CloseUI(panelSearchKeys);
-
-                panelSearchKeys.Recycle2Cache();
-            }
-
-            Stack.Pop();
-        }
-
-        public static void Back(UIPanel currentPanel)
-        {
-            if (currentPanel != null)
-            {
-                var panelSearchKeys = PanelSearchKeys.Allocate();
-
-                panelSearchKeys.GameObjName = currentPanel.name;
-
-                UIManager.Instance.CloseUI(panelSearchKeys);
-
-                panelSearchKeys.Recycle2Cache();
-            }
-
-            Stack.Pop();
-        }
-
-        public static void Back<T>()
-        {
-            var panelSearchKeys = PanelSearchKeys.Allocate();
-
-            panelSearchKeys.PanelType = typeof(T);
-
-            UIManager.Instance.CloseUI(panelSearchKeys);
-
-            panelSearchKeys.Recycle2Cache();
-
-            Stack.Pop();
-        }
     }
 }

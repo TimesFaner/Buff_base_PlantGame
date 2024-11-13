@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,9 +12,9 @@ using UnityEngine.EventSystems;
 
 namespace QFramework
 {
-    public class OnMoveEventTrigger: MonoBehaviour, IMoveHandler
+    public class OnMoveEventTrigger : MonoBehaviour, IMoveHandler
     {
-        public readonly EasyEvent<AxisEventData> OnMoveEvent = new EasyEvent<AxisEventData>();
+        public readonly EasyEvent<AxisEventData> OnMoveEvent = new();
 
         public void OnMove(AxisEventData eventData)
         {
@@ -29,7 +29,7 @@ namespace QFramework
         {
             return self.GetOrAddComponent<OnMoveEventTrigger>().OnMoveEvent.Register(onMove);
         }
-        
+
         public static IUnRegister OnMoveEvent(this GameObject self, Action<AxisEventData> onMove)
         {
             return self.GetOrAddComponent<OnMoveEventTrigger>().OnMoveEvent.Register(onMove);

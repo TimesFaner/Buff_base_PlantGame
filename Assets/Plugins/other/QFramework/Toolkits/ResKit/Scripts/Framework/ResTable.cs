@@ -5,7 +5,7 @@ namespace QFramework
 {
     public class ResTable : Table<IRes>
     {
-        public TableIndex<string, IRes> NameIndex = new TableIndex<string, IRes>(res => res.AssetName.ToLower());
+        public TableIndex<string, IRes> NameIndex = new(res => res.AssetName.ToLower());
 
         public IRes GetResBySearchKeys(ResSearchKeys resSearchKeys)
         {
@@ -13,16 +13,11 @@ namespace QFramework
 
             var reses = NameIndex
                 .Get(assetName);
-            
-            if (resSearchKeys.AssetType != null)
-            {
-                reses = reses.Where(res => res.AssetType == resSearchKeys.AssetType);
-            }
+
+            if (resSearchKeys.AssetType != null) reses = reses.Where(res => res.AssetType == resSearchKeys.AssetType);
 
             if (resSearchKeys.OwnerBundle != null)
-            {
                 reses = reses.Where(res => res.OwnerBundleName == resSearchKeys.OwnerBundle);
-            }
 
             return reses.FirstOrDefault();
         }

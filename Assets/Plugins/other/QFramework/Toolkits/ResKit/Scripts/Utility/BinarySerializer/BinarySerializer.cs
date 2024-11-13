@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2018 ~ 2022 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -20,20 +20,20 @@ namespace QFramework
         {
             if (string.IsNullOrEmpty(path))
             {
-                UnityEngine.Debug.LogWarning("SerializeBinary Without Valid Path.");
+                Debug.LogWarning("SerializeBinary Without Valid Path.");
                 return false;
             }
 
             if (obj == null)
             {
-                UnityEngine.Debug.LogWarning("SerializeBinary obj is Null.");
+                Debug.LogWarning("SerializeBinary obj is Null.");
                 return false;
             }
 
-            using (FileStream fs = new FileStream(path, FileMode.OpenOrCreate))
+            using (var fs = new FileStream(path, FileMode.OpenOrCreate))
             {
-                System.Runtime.Serialization.Formatters.Binary.BinaryFormatter bf =
-                    new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                var bf =
+                    new BinaryFormatter();
                 bf.Serialize(fs, obj);
                 return true;
             }
@@ -48,11 +48,10 @@ namespace QFramework
             }
 
 
-
             using (stream)
             {
                 var bf =
-                    new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    new BinaryFormatter();
                 var data = bf.Deserialize(stream);
 
                 // TODO:这里没风险嘛?
@@ -79,7 +78,7 @@ namespace QFramework
             using (var fs = fileInfo.OpenRead())
             {
                 var bf =
-                    new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    new BinaryFormatter();
 
                 var data = bf.Deserialize(fs);
 
@@ -87,17 +86,17 @@ namespace QFramework
             }
         }
 
-      
 
         public object DeserializeBinary(byte[] info)
         {
             object obj;
 
-            using (MemoryStream ms = new MemoryStream(info))
+            using (var ms = new MemoryStream(info))
             {
                 IFormatter iFormatter = new BinaryFormatter();
                 obj = iFormatter.Deserialize(ms);
             }
+
             return obj;
         }
     }

@@ -1,20 +1,20 @@
 /****************************************************************************
  * Copyright (c) 2021.1 ~ 3 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,24 +40,36 @@ namespace QFramework
     [PackageKitRenderOrder(1)]
     internal class PackageManagerView : IPackageKitView, IController, IUnRegisterList
     {
-        private IPopup mCategoriesSelectorView = null;
+        private static readonly GUIStyle mSelectionRect = "SelectionRect";
+        private IPopup mCategoriesSelectorView;
+
+        private bool mIsOfficial = true;
+
+        private IMGUILayout mLeftLayout;
+        private Rect mLeftRect;
 
 
         private MDViewer mMarkdownViewer;
 
         private PackageKitWindow mPackageKitWindow;
 
-        private IMGUILayout mLeftLayout = null;
-        private Rect mLeftRect;
-
-        private IMGUILayout mRightLayout = null;
+        private IMGUILayout mRightLayout;
         private Rect mRightRect;
 
-        private bool mIsOfficial = true;
 
-        public EditorWindow EditorWindow { get; set; }
+        private PackageRepository mSelectedPackageRepository;
+
+
+        private VerticalSplitView mSplitView;
 
         public Type Type { get; } = typeof(PackageManagerView);
+
+        public IArchitecture GetArchitecture()
+        {
+            return PackageKit.Interface;
+        }
+
+        public EditorWindow EditorWindow { get; set; }
 
         public void Init()
         {
@@ -88,7 +100,7 @@ namespace QFramework
 
                     // 权限
                     .AddChild(EasyIMGUI.Toolbar()
-                        .Menus(new List<string>()
+                        .Menus(new List<string>
                             { "All", PackageAccessRight.Public.ToString(), PackageAccessRight.Private.ToString() })
                         .Self(self =>
                         {
@@ -131,20 +143,11 @@ namespace QFramework
                                          {
                                              var installedVersion = localPackageVersionModel.GetByName(p.name);
 
-                                             if (installedVersion == null)
-                                             {
-                                                 return -1;
-                                             }
+                                             if (installedVersion == null) return -1;
 
-                                             if (installedVersion.VersionNumber < p.VersionNumber)
-                                             {
-                                                 return 2;
-                                             }
+                                             if (installedVersion.VersionNumber < p.VersionNumber) return 2;
 
-                                             if (installedVersion.VersionNumber == p.VersionNumber)
-                                             {
-                                                 return 1;
-                                             }
+                                             if (installedVersion.VersionNumber == p.VersionNumber) return 1;
 
                                              return 0;
                                          })
@@ -164,17 +167,13 @@ namespace QFramework
                                     var installedVersion = localPackageVersionModel.GetByName(p.name);
 
                                     if (installedVersion != null)
-                                    {
                                         EasyIMGUI.Box().Text(installedVersion.Version)
                                             .Self(self => self.BackgroundColor = Color.yellow)
                                             .DrawGUI();
-
-                                    }
                                     EasyIMGUI.Box().Text(p.latestVersion)
                                         .Self(self => self.BackgroundColor = Color.green)
                                         .DrawGUI();
 
-                        
 
                                     GUILayout.FlexibleSpace();
 
@@ -182,32 +181,26 @@ namespace QFramework
                                     if (installedVersion == null)
                                     {
                                         if (GUILayout.Button(LocaleText.Import))
-                                        {
                                             RenderEndCommandExecutor.PushCommand(() =>
                                             {
                                                 this.SendCommand(new ImportPackageCommand(p));
                                             });
-                                        }
                                     }
                                     else if (installedVersion.VersionNumber < p.VersionNumber)
                                     {
                                         if (GUILayout.Button(LocaleText.Update))
-                                        {
                                             RenderEndCommandExecutor.PushCommand(() =>
                                             {
                                                 this.SendCommand(new UpdatePackageCommand(p, installedVersion));
                                             });
-                                        }
                                     }
                                     else if (installedVersion.VersionNumber == p.VersionNumber)
                                     {
                                         if (GUILayout.Button(LocaleText.Reimport))
-                                        {
                                             RenderEndCommandExecutor.PushCommand(() =>
                                             {
                                                 this.SendCommand(new UpdatePackageCommand(p, installedVersion));
                                             });
-                                        }
                                     }
                                 }
                                 GUILayout.EndHorizontal();
@@ -216,10 +209,7 @@ namespace QFramework
 
                                 var rect = GUILayoutUtility.GetLastRect();
 
-                                if (mSelectedPackageRepository == p)
-                                {
-                                    GUI.Box(rect, "", mSelectionRect);
-                                }
+                                if (mSelectedPackageRepository == p) GUI.Box(rect, "", mSelectionRect);
 
                                 if (rect.Contains(Event.current.mousePosition) &&
                                     Event.current.type == EventType.MouseUp)
@@ -331,21 +321,10 @@ namespace QFramework
             };
         }
 
-        private static GUIStyle mSelectionRect = "SelectionRect";
-
-
-        private PackageRepository mSelectedPackageRepository;
-
-
-        private VerticalSplitView mSplitView;
-
 
         public void OnUpdate()
         {
-            if (mMarkdownViewer != null && mMarkdownViewer.Update())
-            {
-                mPackageKitWindow.Repaint();
-            }
+            if (mMarkdownViewer != null && mMarkdownViewer.Update()) mPackageKitWindow.Repaint();
         }
 
         public void OnGUI()
@@ -386,8 +365,10 @@ namespace QFramework
         {
         }
 
+        public List<IUnRegister> UnregisterList { get; } = new();
 
-        class LocaleText
+
+        private class LocaleText
         {
             public static bool IsCN => LocaleKitEditor.IsCN.Value;
             public static string FrameworkPackages => IsCN ? "框架模块" : "Framework Packages";
@@ -400,13 +381,6 @@ namespace QFramework
 
             public static string Reimport => IsCN ? "再次导入" : "Reimport";
         }
-
-        public IArchitecture GetArchitecture()
-        {
-            return PackageKit.Interface;
-        }
-
-        public List<IUnRegister> UnregisterList { get; } = new List<IUnRegister>();
     }
 }
 #endif

@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,10 +12,10 @@ using UnityEngine.EventSystems;
 
 namespace QFramework
 {
-    public class OnSelectEventTrigger: MonoBehaviour, ISelectHandler
+    public class OnSelectEventTrigger : MonoBehaviour, ISelectHandler
     {
-        public readonly EasyEvent<BaseEventData> OnSelectEvent = new EasyEvent<BaseEventData>();
-        
+        public readonly EasyEvent<BaseEventData> OnSelectEvent = new();
+
         public void OnSelect(BaseEventData eventData)
         {
             OnSelectEvent.Trigger(eventData);
@@ -29,7 +29,7 @@ namespace QFramework
         {
             return self.GetOrAddComponent<OnSelectEventTrigger>().OnSelectEvent.Register(onSelect);
         }
-        
+
         public static IUnRegister OnSelectEvent(this GameObject self, Action<BaseEventData> onSelect)
         {
             return self.GetOrAddComponent<OnSelectEventTrigger>().OnSelectEvent.Register(onSelect);

@@ -1,7 +1,7 @@
 ﻿/****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,311 +26,277 @@
 
 
 using System;
+using System.Collections;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace QFramework
 {
-	using UnityEngine;
-	using System.Collections;
+    public class AssetRes : Res
+    {
+        protected string[] mAssetBundleArray;
+        protected AssetBundleRequest mAssetBundleRequest;
+        protected string mOwnerBundleName;
 
-	public class AssetRes : Res
-	{
-		protected string[]           mAssetBundleArray;
-		protected AssetBundleRequest mAssetBundleRequest;
-		protected string                 mOwnerBundleName;
+        public AssetRes(string assetName) : base(assetName)
+        {
+        }
 
-		public override string OwnerBundleName
-		{
-			get { return mOwnerBundleName; }
-			set { mOwnerBundleName = value; }
-		}
-		
-		public static AssetRes Allocate(string name, string onwerBundleName, Type assetTypde)
-		{
-			var res = SafeObjectPool<AssetRes>.Instance.Allocate();
-			if (res != null)
-			{
-				res.AssetName = name;
-				res.mOwnerBundleName = onwerBundleName;
-				res.AssetType = assetTypde;
-				res.InitAssetBundleName();
-			}
+        public AssetRes()
+        {
+        }
 
-			return res;
-		}
+        public override string OwnerBundleName
+        {
+            get => mOwnerBundleName;
+            set => mOwnerBundleName = value;
+        }
 
-		public string AssetBundleName
-		{
-			get { return mAssetBundleArray == null ? null : mAssetBundleArray[0]; }
-		}
+        public string AssetBundleName => mAssetBundleArray == null ? null : mAssetBundleArray[0];
 
-		public AssetRes(string assetName) : base(assetName)
-		{
+        public static AssetRes Allocate(string name, string onwerBundleName, Type assetTypde)
+        {
+            var res = SafeObjectPool<AssetRes>.Instance.Allocate();
+            if (res != null)
+            {
+                res.AssetName = name;
+                res.mOwnerBundleName = onwerBundleName;
+                res.AssetType = assetTypde;
+                res.InitAssetBundleName();
+            }
 
-		}
+            return res;
+        }
 
-		public AssetRes()
-		{
+        public override bool LoadSync()
+        {
+            if (!CheckLoadAble()) return false;
 
-		}
-
-		public override bool LoadSync()
-		{
-			if (!CheckLoadAble())
-			{
-				return false;
-			}
-
-			if (string.IsNullOrEmpty(AssetBundleName))
-			{
-				return false;
-			}
+            if (string.IsNullOrEmpty(AssetBundleName)) return false;
 
 
-			Object obj = null;
+            Object obj = null;
 
-			if (AssetBundlePathHelper.SimulationMode && !string.Equals(mAssetName, "assetbundlemanifest"))
-			{
-				var resSearchKeys = ResSearchKeys.Allocate(AssetBundleName,null,typeof(AssetBundle));
+            if (AssetBundlePathHelper.SimulationMode && !string.Equals(mAssetName, "assetbundlemanifest"))
+            {
+                var resSearchKeys = ResSearchKeys.Allocate(AssetBundleName, null, typeof(AssetBundle));
 
-				var abR = ResMgr.Instance.GetRes<AssetBundleRes>(resSearchKeys);
-				resSearchKeys.Recycle2Cache();
+                var abR = ResMgr.Instance.GetRes<AssetBundleRes>(resSearchKeys);
+                resSearchKeys.Recycle2Cache();
 
-				var assetPaths =  AssetBundlePathHelper.GetAssetPathsFromAssetBundleAndAssetName(abR.AssetName, mAssetName);
-				if (assetPaths.Length == 0)
-				{
-					Debug.LogError("Failed Load Asset:" + mAssetName);
-					OnResLoadFaild();
-					return false;
-				}
-				
-				HoldDependRes();
+                var assetPaths =
+                    AssetBundlePathHelper.GetAssetPathsFromAssetBundleAndAssetName(abR.AssetName, mAssetName);
+                if (assetPaths.Length == 0)
+                {
+                    Debug.LogError("Failed Load Asset:" + mAssetName);
+                    OnResLoadFaild();
+                    return false;
+                }
 
-				State = ResState.Loading;
+                HoldDependRes();
 
-				if (AssetType != null)
-				{
+                State = ResState.Loading;
 
-					obj = AssetBundlePathHelper.LoadAssetAtPath(assetPaths[0],AssetType);
-				}
-				else
-				{
-					obj = AssetBundlePathHelper.LoadAssetAtPath<Object>(assetPaths[0]);
-				}
-			}
-			else
-			{
-				var resSearchKeys = ResSearchKeys.Allocate(AssetBundleName, null, typeof(AssetBundle));
-				var abR = ResMgr.Instance.GetRes<AssetBundleRes>(resSearchKeys);
-				resSearchKeys.Recycle2Cache();
+                if (AssetType != null)
+                    obj = AssetBundlePathHelper.LoadAssetAtPath(assetPaths[0], AssetType);
+                else
+                    obj = AssetBundlePathHelper.LoadAssetAtPath<Object>(assetPaths[0]);
+            }
+            else
+            {
+                var resSearchKeys = ResSearchKeys.Allocate(AssetBundleName, null, typeof(AssetBundle));
+                var abR = ResMgr.Instance.GetRes<AssetBundleRes>(resSearchKeys);
+                resSearchKeys.Recycle2Cache();
 
-				
-				if (abR == null || !abR.AssetBundle)
-				{
- 					Debug.LogError("Failed to Load Asset, Not Find AssetBundleImage:" + AssetBundleName);
-					return false;
-				}
-				
-				HoldDependRes();
 
-				State = ResState.Loading;
+                if (abR == null || !abR.AssetBundle)
+                {
+                    Debug.LogError("Failed to Load Asset, Not Find AssetBundleImage:" + AssetBundleName);
+                    return false;
+                }
 
-				if (AssetType != null)
-				{
-					obj = abR.AssetBundle.LoadAsset(mAssetName,AssetType);
-				}
-				else
-				{
-					obj = abR.AssetBundle.LoadAsset(mAssetName);
-				}
-			}
+                HoldDependRes();
 
-			UnHoldDependRes();
+                State = ResState.Loading;
 
-			if (obj == null)
-			{
-				Debug.LogError("Failed Load Asset:" + mAssetName + ":" + AssetType + ":" + AssetBundleName);
-				OnResLoadFaild();
-				return false;
-			}
+                if (AssetType != null)
+                    obj = abR.AssetBundle.LoadAsset(mAssetName, AssetType);
+                else
+                    obj = abR.AssetBundle.LoadAsset(mAssetName);
+            }
 
-			mAsset = obj;
+            UnHoldDependRes();
 
-			State = ResState.Ready;
-			return true;
-		}
+            if (obj == null)
+            {
+                Debug.LogError("Failed Load Asset:" + mAssetName + ":" + AssetType + ":" + AssetBundleName);
+                OnResLoadFaild();
+                return false;
+            }
 
-		public override void LoadAsync()
-		{
-			if (!CheckLoadAble())
-			{
-				return;
-			}
+            mAsset = obj;
 
-			if (string.IsNullOrEmpty(AssetBundleName))
-			{
-				return;
-			}
+            State = ResState.Ready;
+            return true;
+        }
 
-			State = ResState.Loading;
+        public override void LoadAsync()
+        {
+            if (!CheckLoadAble()) return;
 
-			ResMgr.Instance.PushIEnumeratorTask(this);
-		}
+            if (string.IsNullOrEmpty(AssetBundleName)) return;
 
-		public override IEnumerator DoLoadAsync(System.Action finishCallback)
-		{
-			if (RefCount <= 0)
-			{
-				OnResLoadFaild();
-				finishCallback();
-				yield break;
-			}
+            State = ResState.Loading;
 
-			
+            ResMgr.Instance.PushIEnumeratorTask(this);
+        }
+
+        public override IEnumerator DoLoadAsync(Action finishCallback)
+        {
+            if (RefCount <= 0)
+            {
+                OnResLoadFaild();
+                finishCallback();
+                yield break;
+            }
+
+
             //Object obj = null;
-            var resSearchKeys = ResSearchKeys.Allocate(AssetBundleName,null,typeof(AssetBundle));
+            var resSearchKeys = ResSearchKeys.Allocate(AssetBundleName, null, typeof(AssetBundle));
             var abR = ResMgr.Instance.GetRes<AssetBundleRes>(resSearchKeys);
-			resSearchKeys.Recycle2Cache();
+            resSearchKeys.Recycle2Cache();
 
-			if (AssetBundlePathHelper.SimulationMode && !string.Equals(mAssetName, "assetbundlemanifest"))
-			{
-				var assetPaths = AssetBundlePathHelper.GetAssetPathsFromAssetBundleAndAssetName(abR.AssetName, mAssetName);
-				if (assetPaths.Length == 0)
-				{
-					Debug.LogError("Failed Load Asset:" + mAssetName);
-					OnResLoadFaild();
-					finishCallback();
-					yield break;
-				}
+            if (AssetBundlePathHelper.SimulationMode && !string.Equals(mAssetName, "assetbundlemanifest"))
+            {
+                var assetPaths =
+                    AssetBundlePathHelper.GetAssetPathsFromAssetBundleAndAssetName(abR.AssetName, mAssetName);
+                if (assetPaths.Length == 0)
+                {
+                    Debug.LogError("Failed Load Asset:" + mAssetName);
+                    OnResLoadFaild();
+                    finishCallback();
+                    yield break;
+                }
 
-				//确保加载过程中依赖资源不被释放:目前只有AssetRes需要处理该情况
-				HoldDependRes();
-				State = ResState.Loading;
+                //确保加载过程中依赖资源不被释放:目前只有AssetRes需要处理该情况
+                HoldDependRes();
+                State = ResState.Loading;
 
-				// 模拟等一帧
-				yield return new WaitForEndOfFrame();
-				
-				UnHoldDependRes();
+                // 模拟等一帧
+                yield return new WaitForEndOfFrame();
 
-				if (AssetType != null)
-				{
+                UnHoldDependRes();
 
-					mAsset = AssetBundlePathHelper.LoadAssetAtPath(assetPaths[0],AssetType);
-				}
-				else
-				{
-					mAsset = AssetBundlePathHelper.LoadAssetAtPath<Object>(assetPaths[0]);
-				}
+                if (AssetType != null)
+                    mAsset = AssetBundlePathHelper.LoadAssetAtPath(assetPaths[0], AssetType);
+                else
+                    mAsset = AssetBundlePathHelper.LoadAssetAtPath<Object>(assetPaths[0]);
+            }
+            else
+            {
+                if (abR == null || abR.AssetBundle == null)
+                {
+                    Debug.LogError("Failed to Load Asset, Not Find AssetBundleImage:" + AssetBundleName);
+                    OnResLoadFaild();
+                    finishCallback();
+                    yield break;
+                }
 
-			}
-			else
-			{
-				
-				if (abR == null || abR.AssetBundle == null)
-				{
-					Debug.LogError("Failed to Load Asset, Not Find AssetBundleImage:" + AssetBundleName);
-					OnResLoadFaild();
-					finishCallback();
-					yield break;
-				}
-				
-				
-				HoldDependRes();
 
-				State = ResState.Loading;
+                HoldDependRes();
 
-				AssetBundleRequest abQ = null;
-				
-				if (AssetType != null)
-				{
-					abQ = abR.AssetBundle.LoadAssetAsync(mAssetName,AssetType);
-					mAssetBundleRequest = abQ;
+                State = ResState.Loading;
 
-					yield return abQ;
-				}
-				else
-				{
-					abQ = abR.AssetBundle.LoadAssetAsync(mAssetName);
-					mAssetBundleRequest = abQ;
+                AssetBundleRequest abQ = null;
 
-					yield return abQ;
-				}
+                if (AssetType != null)
+                {
+                    abQ = abR.AssetBundle.LoadAssetAsync(mAssetName, AssetType);
+                    mAssetBundleRequest = abQ;
 
-				mAssetBundleRequest = null;
+                    yield return abQ;
+                }
+                else
+                {
+                    abQ = abR.AssetBundle.LoadAssetAsync(mAssetName);
+                    mAssetBundleRequest = abQ;
 
-				UnHoldDependRes();
+                    yield return abQ;
+                }
 
-				if (!abQ.isDone)
-				{
-					Debug.LogError("Failed Load Asset:" + mAssetName);
-					OnResLoadFaild();
-					finishCallback();
-					yield break;
-				}
+                mAssetBundleRequest = null;
 
-				mAsset = abQ.asset;
-			}
+                UnHoldDependRes();
 
-			State = ResState.Ready;
+                if (!abQ.isDone)
+                {
+                    Debug.LogError("Failed Load Asset:" + mAssetName);
+                    OnResLoadFaild();
+                    finishCallback();
+                    yield break;
+                }
 
-			finishCallback();
-		}
+                mAsset = abQ.asset;
+            }
 
-		public override string[] GetDependResList()
-		{
-			return mAssetBundleArray;
-		}
+            State = ResState.Ready;
 
-		public override void OnRecycled()
-		{
-			mAssetBundleArray = null;
-		}
+            finishCallback();
+        }
 
-		public override void Recycle2Cache()
-		{
-			SafeObjectPool<AssetRes>.Instance.Recycle(this);
-		}
+        public override string[] GetDependResList()
+        {
+            return mAssetBundleArray;
+        }
 
-		protected override float CalculateProgress()
-		{
-			if (mAssetBundleRequest == null)
-			{
-				return 0;
-			}
+        public override void OnRecycled()
+        {
+            mAssetBundleArray = null;
+        }
 
-			return mAssetBundleRequest.progress;
-		}
+        public override void Recycle2Cache()
+        {
+            SafeObjectPool<AssetRes>.Instance.Recycle(this);
+        }
 
-		protected void InitAssetBundleName()
-		{
-			mAssetBundleArray = null;
+        protected override float CalculateProgress()
+        {
+            if (mAssetBundleRequest == null) return 0;
 
-			var resSearchKeys = ResSearchKeys.Allocate(mAssetName,mOwnerBundleName,AssetType);
+            return mAssetBundleRequest.progress;
+        }
 
-			var config =  AssetBundleSettings.AssetBundleConfigFile.GetAssetData(resSearchKeys);
+        protected void InitAssetBundleName()
+        {
+            mAssetBundleArray = null;
 
-			resSearchKeys.Recycle2Cache();
+            var resSearchKeys = ResSearchKeys.Allocate(mAssetName, mOwnerBundleName, AssetType);
 
-			if (config == null)
-			{
-				Debug.LogError("Not Find AssetData For Asset:" + mAssetName);
-				return;
-			}
+            var config = AssetBundleSettings.AssetBundleConfigFile.GetAssetData(resSearchKeys);
 
-			var assetBundleName = config.OwnerBundleName;
+            resSearchKeys.Recycle2Cache();
 
-			if (string.IsNullOrEmpty(assetBundleName))
-			{
-				Debug.LogError("Not Find AssetBundle In Config:" + config.AssetBundleIndex + mOwnerBundleName);
-				return;
-			}
+            if (config == null)
+            {
+                Debug.LogError("Not Find AssetData For Asset:" + mAssetName);
+                return;
+            }
 
-			mAssetBundleArray = new string[1];
-			mAssetBundleArray[0] = assetBundleName;
-		}
+            var assetBundleName = config.OwnerBundleName;
 
-		public override string ToString()
-		{
-			return string.Format("Type:Asset\t {0}\t FromAssetBundle:{1}", base.ToString(), AssetBundleName);
-		}
-	}
+            if (string.IsNullOrEmpty(assetBundleName))
+            {
+                Debug.LogError("Not Find AssetBundle In Config:" + config.AssetBundleIndex + mOwnerBundleName);
+                return;
+            }
+
+            mAssetBundleArray = new string[1];
+            mAssetBundleArray[0] = assetBundleName;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Type:Asset\t {0}\t FromAssetBundle:{1}", base.ToString(), AssetBundleName);
+        }
+    }
 }

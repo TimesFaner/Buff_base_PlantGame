@@ -16,17 +16,14 @@ namespace QFramework
 {
     internal class MDBlockContent : MDBlock
     {
-        MDContent mPrefix = null;
-        List<MDContent> mContent = new List<MDContent>();
-
-        public bool IsEmpty
-        {
-            get { return mContent.Count == 0; }
-        }
+        private readonly List<MDContent> mContent = new();
+        private MDContent mPrefix;
 
         public MDBlockContent(float indent) : base(indent)
         {
         }
+
+        public bool IsEmpty => mContent.Count == 0;
 
         public void Add(MDContent content)
         {
@@ -100,7 +97,7 @@ namespace QFramework
             Rect.height = pos.y - origin.y;
         }
 
-        void LayoutRow(Vector2 pos, int from, int until, float rowHeight)
+        private void LayoutRow(Vector2 pos, int from, int until, float rowHeight)
         {
             for (var i = from; i < until; i++)
             {
@@ -117,10 +114,7 @@ namespace QFramework
         {
             mContent.ForEach(c => c.Draw(context));
 
-            if (mPrefix != null)
-            {
-                mPrefix.Draw(context);
-            }
+            if (mPrefix != null) mPrefix.Draw(context);
         }
     }
 }

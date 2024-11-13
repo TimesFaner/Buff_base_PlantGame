@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -7,12 +8,11 @@ namespace QFramework
 {
     public static class UploadPackage
     {
-        private static string UPLOAD_URL
-        {
-            get { return "https://api.liangxiegame.com/qf/v4/package/add"; }
-        }
+        private static readonly string EXPORT_ROOT_DIR = Path.Combine(Application.dataPath, "../");
 
-        public static void DoUpload(PackageVersion packageVersion, System.Action succeed)
+        private static string UPLOAD_URL => "https://api.liangxiegame.com/qf/v4/package/add";
+
+        public static void DoUpload(PackageVersion packageVersion, Action succeed)
         {
             EditorUtility.DisplayProgressBar("插件上传", "打包中...", 0.1f);
 
@@ -33,36 +33,24 @@ namespace QFramework
             form.AddField("docUrl", packageVersion.DocUrl);
 
             if (packageVersion.Type == PackageType.FrameworkModule)
-            {
                 form.AddField("type", "fm");
-            }
             else if (packageVersion.Type == PackageType.Shader)
-            {
                 form.AddField("type", "s");
-            }
             else if (packageVersion.Type == PackageType.AppOrGameDemoOrTemplate)
-            {
                 form.AddField("type", "agt");
-            }
-            else if (packageVersion.Type == PackageType.Plugin)
-            {
-                form.AddField("type", "p");
-            }
+            else if (packageVersion.Type == PackageType.Plugin) form.AddField("type", "p");
 
             Debug.Log(fullPath);
 
             EditorUtility.DisplayProgressBar("插件上传", "上传中...", 0.2f);
 
-            EditorHttp.Post(UPLOAD_URL, form, (response) =>
+            EditorHttp.Post(UPLOAD_URL, form, response =>
             {
                 if (response.Type == ResponseType.SUCCEED)
                 {
                     EditorUtility.ClearProgressBar();
                     Debug.Log(response.Text);
-                    if (succeed != null)
-                    {
-                        succeed();
-                    }
+                    if (succeed != null) succeed();
 
                     File.Delete(fullPath);
                 }
@@ -74,8 +62,6 @@ namespace QFramework
                 }
             });
         }
-
-        private static readonly string EXPORT_ROOT_DIR = Path.Combine(Application.dataPath, "../");
 
         public static string ExportPaths(string exportPackageName, params string[] paths)
         {

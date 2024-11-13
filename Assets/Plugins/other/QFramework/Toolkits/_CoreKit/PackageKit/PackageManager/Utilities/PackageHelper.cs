@@ -19,19 +19,12 @@ namespace QFramework
             foreach (var installedVersionIncludeFileOrFolder in packageVersion.IncludeFileOrFolders)
             {
                 var path = Application.dataPath.Replace("Assets", installedVersionIncludeFileOrFolder);
-                
+
                 if (Directory.Exists(path))
-                {
                     Directory.Delete(path, true);
-                }
                 else if (File.Exists(path))
-                {
                     File.Delete(path);
-                }
-                else if (Directory.Exists(path + "/"))
-                {
-                    Directory.Delete(path + "/");
-                }
+                else if (Directory.Exists(path + "/")) Directory.Delete(path + "/");
             }
         }
     }

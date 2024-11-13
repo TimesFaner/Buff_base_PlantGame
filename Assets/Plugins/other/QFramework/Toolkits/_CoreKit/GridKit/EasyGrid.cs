@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2022 ~ 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  ****************************************************************************/
@@ -84,133 +84,95 @@ namespace QFramework.Example
     public class EasyGrid<T>
     {
         private T[,] mGrid;
-        private int mWidth;
-        private int mHeight;
-
-        public int Width => mWidth;
-        public int Height => mHeight;
 
         public EasyGrid(int width, int height)
         {
-            mWidth = width;
-            mHeight = height;
+            Width = width;
+            Height = height;
             mGrid = new T[width, height];
         }
 
-        public void Fill(T t)
-        {
-            for (var x = 0; x < mWidth; x++)
-            {
-                for (var y = 0; y < mHeight; y++)
-                {
-                    mGrid[x, y] = t;
-                }
-            }
-        }
+        public int Width { get; private set; }
 
-        public void Fill(Func<int, int, T> onFill)
-        {
-            for (var x = 0; x < mWidth; x++)
-            {
-                for (var y = 0; y < mHeight; y++)
-                {
-                    mGrid[x, y] = onFill(x, y);
-                }
-            }
-        }
-
-        public void Resize(int width, int height, Func<int, int, T> onAdd)
-        {
-            var newGrid = new T[width, height];
-            for (var x = 0; x < mWidth; x++)
-            {
-                for (var y = 0; y < mHeight; y++)
-                {
-                    newGrid[x, y] = mGrid[x, y];
-                }
-
-                // x addition
-                for (var y = mHeight; y < height; y++)
-                {
-                    newGrid[x, y] = onAdd(x, y);
-                }
-            }
-
-            for (var x = mWidth;  x < width; x++)
-            {
-                // y addition
-                for (var y = 0; y < height; y++)
-                {
-                    newGrid[x, y] = onAdd(x, y);
-                }
-            }
-
-            // 清空之前的
-            Fill(default(T));
-
-            mWidth = width;
-            mHeight = height;
-            mGrid = newGrid;
-        }
-
-        public void ForEach(Action<int, int, T> each)
-        {
-            for (var x = 0; x < mWidth; x++)
-            {
-                for (var y = 0; y < mHeight; y++)
-                {
-                    each(x, y, mGrid[x, y]);
-                }
-            }
-        }
-
-        public void ForEach(Action<T> each)
-        {
-            for (var x = 0; x < mWidth; x++)
-            {
-                for (var y = 0; y < mHeight; y++)
-                {
-                    each(mGrid[x, y]);
-                }
-            }
-        }
+        public int Height { get; private set; }
 
         public T this[int xIndex, int yIndex]
         {
             get
             {
-                if (xIndex >= 0 && xIndex < mWidth && yIndex >= 0 && yIndex < mHeight)
-                {
-                    return mGrid[xIndex, yIndex];
-                }
-                else
-                {
-                    Debug.LogWarning($"out of bounds [{xIndex}:{yIndex}] in grid[{mWidth}:{mHeight}]");
-                    return default;
-                }
+                if (xIndex >= 0 && xIndex < Width && yIndex >= 0 && yIndex < Height) return mGrid[xIndex, yIndex];
+
+                Debug.LogWarning($"out of bounds [{xIndex}:{yIndex}] in grid[{Width}:{Height}]");
+                return default;
             }
             set
             {
-                if (xIndex >= 0 && xIndex < mWidth && yIndex >= 0 && yIndex < mHeight)
-                {
+                if (xIndex >= 0 && xIndex < Width && yIndex >= 0 && yIndex < Height)
                     mGrid[xIndex, yIndex] = value;
-                }
                 else
-                {
-                    Debug.LogWarning($"out of bounds [{xIndex}:{yIndex}] in grid[{mWidth}:{mHeight}]");
-                }
+                    Debug.LogWarning($"out of bounds [{xIndex}:{yIndex}] in grid[{Width}:{Height}]");
             }
+        }
+
+        public void Fill(T t)
+        {
+            for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+                mGrid[x, y] = t;
+        }
+
+        public void Fill(Func<int, int, T> onFill)
+        {
+            for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+                mGrid[x, y] = onFill(x, y);
+        }
+
+        public void Resize(int width, int height, Func<int, int, T> onAdd)
+        {
+            var newGrid = new T[width, height];
+            for (var x = 0; x < Width; x++)
+            {
+                for (var y = 0; y < Height; y++) newGrid[x, y] = mGrid[x, y];
+
+                // x addition
+                for (var y = Height; y < height; y++) newGrid[x, y] = onAdd(x, y);
+            }
+
+            for (var x = Width; x < width; x++)
+                // y addition
+            for (var y = 0; y < height; y++)
+                newGrid[x, y] = onAdd(x, y);
+
+            // 清空之前的
+            Fill(default(T));
+
+            Width = width;
+            Height = height;
+            mGrid = newGrid;
+        }
+
+        public void ForEach(Action<int, int, T> each)
+        {
+            for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+                each(x, y, mGrid[x, y]);
+        }
+
+        public void ForEach(Action<T> each)
+        {
+            for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+                each(mGrid[x, y]);
         }
 
         public void Clear(Action<T> cleanupItem = null)
         {
-            for (var x = 0; x < mWidth; x++)
+            for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
             {
-                for (var y = 0; y < mHeight; y++)
-                {
-                    cleanupItem?.Invoke(mGrid[x, y]);
-                    mGrid[x, y] = default;
-                }
+                cleanupItem?.Invoke(mGrid[x, y]);
+                mGrid[x, y] = default;
             }
 
             mGrid = null;

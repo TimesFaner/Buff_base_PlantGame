@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-
 
 namespace QFramework.Internal
 {
@@ -26,10 +25,10 @@ namespace QFramework.Internal
         /// <summary> Custom editors defined with [CustomNodeEditor] </summary>
         private static Dictionary<Type, Type> editorTypes;
 
-        private static Dictionary<K, T> editors = new Dictionary<K, T>();
-        public GUIGraphWindow window;
-        public K target;
+        private static readonly Dictionary<K, T> editors = new();
         public SerializedObject serializedObject;
+        public K target;
+        public GUIGraphWindow window;
 
         public static T GetEditor(K target, GUIGraphWindow window)
         {
@@ -37,8 +36,8 @@ namespace QFramework.Internal
             T editor;
             if (!editors.TryGetValue(target, out editor))
             {
-                Type type = target.GetType();
-                Type editorType = GetEditorType(type);
+                var type = target.GetType();
+                var editorType = GetEditorType(type);
                 editor = Activator.CreateInstance(editorType) as T;
                 editor.target = target;
                 editor.serializedObject = new SerializedObject(target);
@@ -68,13 +67,13 @@ namespace QFramework.Internal
             editorTypes = new Dictionary<Type, Type>();
 
             //Get all classes deriving from NodeEditor via reflection
-            Type[] nodeEditors = typeof(T).GetDerivedTypes();
-            for (int i = 0; i < nodeEditors.Length; i++)
+            var nodeEditors = typeof(T).GetDerivedTypes();
+            for (var i = 0; i < nodeEditors.Length; i++)
             {
                 if (nodeEditors[i].IsAbstract) continue;
                 var attribs = nodeEditors[i].GetCustomAttributes(typeof(A), false);
                 if (attribs == null || attribs.Length == 0) continue;
-                A attrib = attribs[0] as A;
+                var attrib = attribs[0] as A;
                 editorTypes.Add(attrib.GetInspectedType(), nodeEditors[i]);
             }
         }

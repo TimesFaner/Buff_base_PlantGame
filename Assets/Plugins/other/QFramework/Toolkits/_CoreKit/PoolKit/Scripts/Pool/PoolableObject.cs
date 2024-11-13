@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,9 +12,9 @@ namespace QFramework
 {
     public abstract class PoolableObject<T> where T : PoolableObject<T>, new()
     {
-        private static Stack<T> mPool = new Stack<T>(10);
+        private static readonly Stack<T> mPool = new(10);
 
-        protected bool mInPool = false;
+        protected bool mInPool;
 
         public static T Allocate()
         {

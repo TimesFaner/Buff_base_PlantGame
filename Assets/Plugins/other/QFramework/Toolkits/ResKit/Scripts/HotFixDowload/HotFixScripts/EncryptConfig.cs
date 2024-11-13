@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace QFramework
 {
     [Serializable]
     public class EncryptConfig
     {
-        public bool EncryptAB = false;
-        public bool EncryptKey = false;
-        public string AESKey = "QFramework";    
+        public bool EncryptAB;
+        public bool EncryptKey;
+        public string AESKey = "QFramework";
     }
 }
-

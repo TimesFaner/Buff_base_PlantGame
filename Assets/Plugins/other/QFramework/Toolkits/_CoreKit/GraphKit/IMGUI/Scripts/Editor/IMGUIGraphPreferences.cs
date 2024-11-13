@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 namespace QFramework
 {
@@ -27,7 +28,7 @@ namespace QFramework
         Full,
         Dashed
     }
-    
+
 
     public static class GUIGraphPreferences
     {
@@ -37,17 +38,41 @@ namespace QFramework
         /// <summary> The last key we checked. This should be the one we modify </summary>
         private static string lastKey = "GraphKit.UMGI.Settings";
 
-        private static Dictionary<Type, Color> typeColors = new Dictionary<Type, Color>();
-        private static Dictionary<string, Settings> settings = new Dictionary<string, Settings>();
+        private static Dictionary<Type, Color> typeColors = new();
+        private static readonly Dictionary<string, Settings> settings = new();
 
-        [System.Serializable]
+        [Serializable]
         public class Settings : ISerializationCallbackReceiver
         {
             [SerializeField] private Color32 _gridLineColor = new Color(0.45f, 0.45f, 0.45f);
 
+            [SerializeField] private Color32 _gridBgColor = new Color(0.18f, 0.18f, 0.18f);
+
+            [FormerlySerializedAs("zoomOutLimit")] public float maxZoom = 5f;
+
+            public float minZoom = 1f;
+            public Color32 highlightColor = new(255, 255, 255, 255);
+            public bool gridSnap = true;
+            public bool autoSave = true;
+            public bool dragToCreate = true;
+            public bool zoomToMouse = true;
+            public bool portTooltips = true;
+            [SerializeField] private string typeColorsData = "";
+
+            [FormerlySerializedAs("imguiGraphConnectionPath")] [FormerlySerializedAs("noodleType")]
+            public GUIGraphConnectionPath guiGraphConnectionPath = GUIGraphConnectionPath.Curvy;
+
+            [FormerlySerializedAs("imguiGraphConnectionStroke")]
+            public GUIGraphConnectionStroke guiGraphConnectionStroke = GUIGraphConnectionStroke.Full;
+
+            private Texture2D _crossTexture;
+
+            private Texture2D _gridTexture;
+            [NonSerialized] public Dictionary<string, Color> typeColors = new();
+
             public Color32 gridLineColor
             {
-                get { return _gridLineColor; }
+                get => _gridLineColor;
                 set
                 {
                     _gridLineColor = value;
@@ -56,11 +81,9 @@ namespace QFramework
                 }
             }
 
-            [SerializeField] private Color32 _gridBgColor = new Color(0.18f, 0.18f, 0.18f);
-
             public Color32 gridBgColor
             {
-                get { return _gridBgColor; }
+                get => _gridBgColor;
                 set
                 {
                     _gridBgColor = value;
@@ -71,26 +94,9 @@ namespace QFramework
             [Obsolete("Use maxZoom instead")]
             public float zoomOutLimit
             {
-                get { return maxZoom; }
-                set { maxZoom = value; }
+                get => maxZoom;
+                set => maxZoom = value;
             }
-
-            [UnityEngine.Serialization.FormerlySerializedAs("zoomOutLimit")]
-            public float maxZoom = 5f;
-
-            public float minZoom = 1f;
-            public Color32 highlightColor = new Color32(255, 255, 255, 255);
-            public bool gridSnap = true;
-            public bool autoSave = true;
-            public bool dragToCreate = true;
-            public bool zoomToMouse = true;
-            public bool portTooltips = true;
-            [SerializeField] private string typeColorsData = "";
-            [NonSerialized] public Dictionary<string, Color> typeColors = new Dictionary<string, Color>();
-            [FormerlySerializedAs("imguiGraphConnectionPath")] [FormerlySerializedAs("noodleType")] public GUIGraphConnectionPath guiGraphConnectionPath = GUIGraphConnectionPath.Curvy;
-            [FormerlySerializedAs("imguiGraphConnectionStroke")] public GUIGraphConnectionStroke guiGraphConnectionStroke = GUIGraphConnectionStroke.Full;
-
-            private Texture2D _gridTexture;
 
             public Texture2D gridTexture
             {
@@ -101,8 +107,6 @@ namespace QFramework
                     return _gridTexture;
                 }
             }
-
-            private Texture2D _crossTexture;
 
             public Texture2D crossTexture
             {
@@ -117,14 +121,11 @@ namespace QFramework
             {
                 // Deserialize typeColorsData
                 typeColors = new Dictionary<string, Color>();
-                string[] data = typeColorsData.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                for (int i = 0; i < data.Length; i += 2)
+                var data = typeColorsData.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                for (var i = 0; i < data.Length; i += 2)
                 {
                     Color col;
-                    if (ColorUtility.TryParseHtmlString("#" + data[i + 1], out col))
-                    {
-                        typeColors.Add(data[i], col);
-                    }
+                    if (ColorUtility.TryParseHtmlString("#" + data[i + 1], out col)) typeColors.Add(data[i], col);
                 }
             }
 
@@ -133,29 +134,30 @@ namespace QFramework
                 // Serialize typeColors
                 typeColorsData = "";
                 foreach (var item in typeColors)
-                {
                     typeColorsData += item.Key + "," + ColorUtility.ToHtmlStringRGB(item.Value) + ",";
-                }
             }
         }
 
         /// <summary> Get settings of current active editor </summary>
         public static Settings GetSettings()
         {
-            if (QFramework.GUIGraphWindow.current == null) return new Settings();
+            if (GUIGraphWindow.current == null) return new Settings();
 
             if (lastEditor != GUIGraphWindow.current.graphEditor)
             {
-                object[] attribs = GUIGraphWindow.current.graphEditor.GetType()
+                var attribs = GUIGraphWindow.current.graphEditor.GetType()
                     .GetCustomAttributes(typeof(GUIGraphEditor.CustomNodeGraphEditorAttribute), true);
                 if (attribs.Length == 1)
                 {
-                    GUIGraphEditor.CustomNodeGraphEditorAttribute attrib =
+                    var attrib =
                         attribs[0] as GUIGraphEditor.CustomNodeGraphEditorAttribute;
                     lastEditor = GUIGraphWindow.current.graphEditor;
                     lastKey = attrib.editorPrefsKey;
                 }
-                else return null;
+                else
+                {
+                    return null;
+                }
             }
 
             if (!settings.ContainsKey(lastKey)) VerifyLoaded();
@@ -166,9 +168,9 @@ namespace QFramework
         // [SettingsProvider]
         public static SettingsProvider CreateSettingsProvider()
         {
-            SettingsProvider provider = new SettingsProvider("Preferences/GraphKit/IMGUI Graph Editor", SettingsScope.User)
+            var provider = new SettingsProvider("Preferences/GraphKit/IMGUI Graph Editor", SettingsScope.User)
             {
-                guiHandler = (searchContext) => { PreferencesGUI(); },
+                guiHandler = searchContext => { PreferencesGUI(); },
                 keywords = new HashSet<string>(new[]
                     { "xNode", "node", "editor", "graph", "connections", "noodles", "ports" })
             };
@@ -182,7 +184,7 @@ namespace QFramework
         private static void PreferencesGUI()
         {
             VerifyLoaded();
-            Settings settings = GUIGraphPreferences.settings[lastKey];
+            var settings = GUIGraphPreferences.settings[lastKey];
 
             if (GUILayout.Button(new GUIContent("Documentation", "https://github.com/Siccity/xNode/wiki"),
                     GUILayout.Width(100))) Application.OpenURL("https://github.com/Siccity/xNode/wiki");
@@ -193,9 +195,7 @@ namespace QFramework
             SystemSettingsGUI(lastKey, settings);
             TypeColorsGUI(lastKey, settings);
             if (GUILayout.Button(new GUIContent("Set Default", "Reset all values to default"), GUILayout.Width(120)))
-            {
                 ResetPrefs();
-            }
         }
 
         private static void GridSettingsGUI(string key, Settings settings)
@@ -242,9 +242,10 @@ namespace QFramework
             //Label
             EditorGUILayout.LabelField("Node", EditorStyles.boldLabel);
             settings.highlightColor = EditorGUILayout.ColorField("Selection", settings.highlightColor);
-            settings.guiGraphConnectionPath = (GUIGraphConnectionPath)EditorGUILayout.EnumPopup("Noodle path", (Enum)settings.guiGraphConnectionPath);
+            settings.guiGraphConnectionPath =
+                (GUIGraphConnectionPath)EditorGUILayout.EnumPopup("Noodle path", settings.guiGraphConnectionPath);
             settings.guiGraphConnectionStroke =
-                (GUIGraphConnectionStroke)EditorGUILayout.EnumPopup("Noodle stroke", (Enum)settings.guiGraphConnectionStroke);
+                (GUIGraphConnectionStroke)EditorGUILayout.EnumPopup("Noodle stroke", settings.guiGraphConnectionStroke);
             settings.portTooltips = EditorGUILayout.Toggle("Port Tooltips", settings.portTooltips);
             settings.dragToCreate =
                 EditorGUILayout.Toggle(
@@ -271,8 +272,8 @@ namespace QFramework
             //Display type colors. Save them if they are edited by the user
             foreach (var type in typeColorKeys)
             {
-                string typeColorKey = GUIGraphUtilities.PrettyName(type);
-                Color col = typeColors[type];
+                var typeColorKey = type.PrettyName();
+                var col = typeColors[type];
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.BeginHorizontal();
                 col = EditorGUILayout.ColorField(typeColorKey, col);
@@ -325,29 +326,31 @@ namespace QFramework
         }
 
         /// <summary> Return color based on type </summary>
-        public static Color GetTypeColor(System.Type type)
+        public static Color GetTypeColor(Type type)
         {
             VerifyLoaded();
             if (type == null) return Color.gray;
             Color col;
             if (!typeColors.TryGetValue(type, out col))
             {
-                string typeName = type.PrettyName();
+                var typeName = type.PrettyName();
                 if (settings[lastKey].typeColors.ContainsKey(typeName))
+                {
                     typeColors.Add(type, settings[lastKey].typeColors[typeName]);
+                }
                 else
                 {
 #if UNITY_5_4_OR_NEWER
-                    UnityEngine.Random.State oldState = UnityEngine.Random.state;
-                    UnityEngine.Random.InitState(typeName.GetHashCode());
+                    var oldState = Random.state;
+                    Random.InitState(typeName.GetHashCode());
 #else
                     int oldSeed = UnityEngine.Random.seed;
                     UnityEngine.Random.seed = typeName.GetHashCode();
 #endif
-                    col = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
+                    col = new Color(Random.value, Random.value, Random.value);
                     typeColors.Add(type, col);
 #if UNITY_5_4_OR_NEWER
-                    UnityEngine.Random.state = oldState;
+                    Random.state = oldState;
 #else
                     UnityEngine.Random.seed = oldSeed;
 #endif

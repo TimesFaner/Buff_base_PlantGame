@@ -15,6 +15,12 @@ namespace QFramework
 {
     internal class MDContext
     {
+        private readonly MDHandlerImages mImages;
+        private readonly MDHandlerNavigate mNagivate;
+
+        private readonly MDStyleConverter mStyleConverter;
+        private GUIStyle mStyleGUI;
+
         public MDContext(GUISkin skin, MDHandlerImages images, MDHandlerNavigate navigate)
         {
             mStyleConverter = new MDStyleConverter(skin);
@@ -24,10 +30,11 @@ namespace QFramework
             Apply(MDStyle.Default);
         }
 
-        MDStyleConverter mStyleConverter;
-        GUIStyle mStyleGUI;
-        MDHandlerImages mImages;
-        MDHandlerNavigate mNagivate;
+        public float LineHeight => mStyleGUI.lineHeight;
+
+        public float MinWidth => LineHeight * 2.0f;
+
+        public float IndentSize => LineHeight * 1.5f;
 
         public void SelectPage(string path)
         {
@@ -37,21 +44,6 @@ namespace QFramework
         public Texture FetchImage(string url)
         {
             return mImages.FetchImage(url);
-        }
-
-        public float LineHeight
-        {
-            get { return mStyleGUI.lineHeight; }
-        }
-
-        public float MinWidth
-        {
-            get { return LineHeight * 2.0f; }
-        }
-
-        public float IndentSize
-        {
-            get { return LineHeight * 1.5f; }
         }
 
         public void Reset()

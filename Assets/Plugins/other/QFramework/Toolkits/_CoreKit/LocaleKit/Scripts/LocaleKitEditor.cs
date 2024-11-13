@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -8,7 +8,6 @@
 
 #if UNITY_EDITOR
 using System;
-using UnityEditor;
 using UnityEngine;
 
 namespace QFramework
@@ -16,16 +15,14 @@ namespace QFramework
     public class LocaleKitEditor
     {
         /// <summary>
-        /// 快捷访问 减少代码量
+        ///     快捷访问 减少代码量
         /// </summary>
-        private static Lazy<EditorPrefsBoolProperty> mIsCN =
-            new Lazy<EditorPrefsBoolProperty>(() => new EditorPrefsBoolProperty("EDITOR_CN", true));
-
-        public static IBindableProperty<bool> IsCN => mIsCN.Value;
+        private static readonly Lazy<EditorPrefsBoolProperty> mIsCN = new(() =>
+            new EditorPrefsBoolProperty("EDITOR_CN", true));
 
         private static IMGUILabel mENLabel;
 
-        private static Lazy<IMGUIView> mSwitchToggleView = new Lazy<IMGUIView>(() =>
+        private static readonly Lazy<IMGUIView> mSwitchToggleView = new(() =>
         {
             var languageToggle = EasyIMGUI.Toggle()
                 .IsOn(() => !IsCN.Value);
@@ -43,6 +40,8 @@ namespace QFramework
                 GUILayout.EndHorizontal();
             });
         });
+
+        public static IBindableProperty<bool> IsCN => mIsCN.Value;
 
         public static void DrawSwitchToggle(Color fontColor)
         {

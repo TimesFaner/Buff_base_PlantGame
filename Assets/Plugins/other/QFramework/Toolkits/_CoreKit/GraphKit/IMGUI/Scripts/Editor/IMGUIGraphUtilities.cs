@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEditor;
+using UnityEditor.ProjectWindowCallback;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -22,32 +23,32 @@ namespace QFramework
     public static class GUIGraphUtilities
     {
         /// <summary>C#'s Script Icon [The one MonoBhevaiour Scripts have].</summary>
-        private static Texture2D scriptIcon = (EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D);
+        private static readonly Texture2D
+            scriptIcon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
 
         /// Saves Attribute from Type+Field for faster lookup. Resets on recompiles.
-        private static Dictionary<Type, Dictionary<string, Dictionary<Type, Attribute>>> typeAttributes =
-            new Dictionary<Type, Dictionary<string, Dictionary<Type, Attribute>>>();
+        private static readonly Dictionary<Type, Dictionary<string, Dictionary<Type, Attribute>>>
+            typeAttributes = new();
 
         /// Saves ordered PropertyAttribute from Type+Field for faster lookup. Resets on recompiles.
-        private static Dictionary<Type, Dictionary<string, List<PropertyAttribute>>> typeOrderedPropertyAttributes =
-            new Dictionary<Type, Dictionary<string, List<PropertyAttribute>>>();
+        private static readonly Dictionary<Type, Dictionary<string, List<PropertyAttribute>>>
+            typeOrderedPropertyAttributes =
+                new();
 
         public static bool GetAttrib<T>(Type classType, out T attribOut) where T : Attribute
         {
-            object[] attribs = classType.GetCustomAttributes(typeof(T), false);
+            var attribs = classType.GetCustomAttributes(typeof(T), false);
             return GetAttrib(attribs, out attribOut);
         }
 
         public static bool GetAttrib<T>(object[] attribs, out T attribOut) where T : Attribute
         {
-            for (int i = 0; i < attribs.Length; i++)
-            {
+            for (var i = 0; i < attribs.Length; i++)
                 if (attribs[i] is T)
                 {
                     attribOut = attribs[i] as T;
                     return true;
                 }
-            }
 
             attribOut = null;
             return false;
@@ -56,7 +57,7 @@ namespace QFramework
         public static bool GetAttrib<T>(Type classType, string fieldName, out T attribOut) where T : Attribute
         {
             // If we can't find field in the first run, it's probably a private field in a base class.
-            FieldInfo field = classType.GetFieldInfo(fieldName);
+            var field = classType.GetFieldInfo(fieldName);
             // This shouldn't happen. Ever.
             if (field == null)
             {
@@ -65,19 +66,15 @@ namespace QFramework
                 return false;
             }
 
-            object[] attribs = field.GetCustomAttributes(typeof(T), true);
+            var attribs = field.GetCustomAttributes(typeof(T), true);
             return GetAttrib(attribs, out attribOut);
         }
 
         public static bool HasAttrib<T>(object[] attribs) where T : Attribute
         {
-            for (int i = 0; i < attribs.Length; i++)
-            {
+            for (var i = 0; i < attribs.Length; i++)
                 if (attribs[i].GetType() == typeof(T))
-                {
                     return true;
-                }
-            }
 
             return false;
         }
@@ -101,12 +98,13 @@ namespace QFramework
             Attribute attr;
             if (!typeTypes.TryGetValue(typeof(T), out attr))
             {
-                if (GetAttrib<T>(classType, fieldName, out attribOut))
+                if (GetAttrib(classType, fieldName, out attribOut))
                 {
                     typeTypes.Add(typeof(T), attribOut);
                     return true;
                 }
-                else typeTypes.Add(typeof(T), null);
+
+                typeTypes.Add(typeof(T), null);
             }
 
             if (attr == null)
@@ -131,8 +129,8 @@ namespace QFramework
             List<PropertyAttribute> typeAttributes;
             if (!typeFields.TryGetValue(fieldName, out typeAttributes))
             {
-                FieldInfo field = classType.GetFieldInfo(fieldName);
-                object[] attribs = field.GetCustomAttributes(typeof(PropertyAttribute), true);
+                var field = classType.GetFieldInfo(fieldName);
+                var attribs = field.GetCustomAttributes(typeof(PropertyAttribute), true);
                 typeAttributes = attribs.Cast<PropertyAttribute>().Reverse().ToList(); //Unity draws them in reverse
                 typeFields.Add(fieldName, typeAttributes);
             }
@@ -149,7 +147,7 @@ namespace QFramework
 #endif
         }
 
-        /// <summary> Returns true if this can be casted to <see cref="Type"/></summary>
+        /// <summary> Returns true if this can be casted to <see cref="Type" /></summary>
         public static bool IsCastableTo(this Type from, Type to)
         {
             if (to.IsAssignableFrom(from)) return true;
@@ -166,66 +164,68 @@ namespace QFramework
         public static string PrettyName(this Type type)
         {
             if (type == null) return "null";
-            if (type == typeof(System.Object)) return "object";
+            if (type == typeof(object)) return "object";
             if (type == typeof(float)) return "float";
-            else if (type == typeof(int)) return "int";
-            else if (type == typeof(long)) return "long";
-            else if (type == typeof(double)) return "double";
-            else if (type == typeof(string)) return "string";
-            else if (type == typeof(bool)) return "bool";
-            else if (type.IsGenericType)
+
+            if (type == typeof(int)) return "int";
+
+            if (type == typeof(long)) return "long";
+
+            if (type == typeof(double)) return "double";
+
+            if (type == typeof(string)) return "string";
+
+            if (type == typeof(bool)) return "bool";
+
+            if (type.IsGenericType)
             {
-                string s = "";
-                Type genericType = type.GetGenericTypeDefinition();
+                var s = "";
+                var genericType = type.GetGenericTypeDefinition();
                 if (genericType == typeof(List<>)) s = "List";
                 else s = type.GetGenericTypeDefinition().ToString();
 
-                Type[] types = type.GetGenericArguments();
-                string[] stypes = new string[types.Length];
-                for (int i = 0; i < types.Length; i++)
-                {
-                    stypes[i] = types[i].PrettyName();
-                }
+                var types = type.GetGenericArguments();
+                var stypes = new string[types.Length];
+                for (var i = 0; i < types.Length; i++) stypes[i] = types[i].PrettyName();
 
                 return s + "<" + string.Join(", ", stypes) + ">";
             }
-            else if (type.IsArray)
-            {
-                string rank = "";
-                for (int i = 1; i < type.GetArrayRank(); i++)
-                {
-                    rank += ",";
-                }
 
-                Type elementType = type.GetElementType();
+            if (type.IsArray)
+            {
+                var rank = "";
+                for (var i = 1; i < type.GetArrayRank(); i++) rank += ",";
+
+                var elementType = type.GetElementType();
                 if (!elementType.IsArray) return elementType.PrettyName() + "[" + rank + "]";
-                else
+
                 {
-                    string s = elementType.PrettyName();
-                    int i = s.IndexOf('[');
+                    var s = elementType.PrettyName();
+                    var i = s.IndexOf('[');
                     return s.Substring(0, i) + "[" + rank + "]" + s.Substring(i);
                 }
             }
-            else return type.ToString();
+
+            return type.ToString();
         }
 
         /// <summary> Returns the default name for the node type. </summary>
         public static string NodeDefaultName(Type type)
         {
-            string typeName = type.Name;
+            var typeName = type.Name;
             // Automatically remove redundant 'Node' postfix
             if (typeName.EndsWith("Node")) typeName = typeName.Substring(0, typeName.LastIndexOf("Node"));
-            typeName = UnityEditor.ObjectNames.NicifyVariableName(typeName);
+            typeName = ObjectNames.NicifyVariableName(typeName);
             return typeName;
         }
 
         /// <summary> Returns the default creation path for the node type. </summary>
         public static string NodeDefaultPath(Type type)
         {
-            string typePath = type.ToString().Replace('.', '/');
+            var typePath = type.ToString().Replace('.', '/');
             // Automatically remove redundant 'Node' postfix
             if (typePath.EndsWith("Node")) typePath = typePath.Substring(0, typePath.LastIndexOf("Node"));
-            typePath = UnityEditor.ObjectNames.NicifyVariableName(typePath);
+            typePath = ObjectNames.NicifyVariableName(typePath);
             return typePath;
         }
 
@@ -240,7 +240,7 @@ namespace QFramework
                 return;
             }
 
-            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            var path = AssetDatabase.GUIDToAssetPath(guids[0]);
             CreateFromTemplate(
                 "NewNode.cs",
                 path
@@ -251,14 +251,14 @@ namespace QFramework
         [MenuItem("Assets/Create/@GraphKit/IMGUI Graph C# Script", false, 89)]
         private static void CreateGraph()
         {
-            string[] guids = AssetDatabase.FindAssets("IMGUIGraphTemplate.cs");
+            var guids = AssetDatabase.FindAssets("IMGUIGraphTemplate.cs");
             if (guids.Length == 0)
             {
                 Debug.LogWarning("IMGUIGraphTemplate.cs.txt not found in asset database");
                 return;
             }
 
-            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            var path = AssetDatabase.GUIDToAssetPath(guids[0]);
             CreateFromTemplate(
                 "NewGraph.cs",
                 path
@@ -276,28 +276,18 @@ namespace QFramework
             );
         }
 
-        /// Inherits from EndNameAction, must override EndNameAction.Action
-        public class DoCreateCodeFile : UnityEditor.ProjectWindowCallback.EndNameEditAction
-        {
-            public override void Action(int instanceId, string pathName, string resourceFile)
-            {
-                Object o = CreateScript(pathName, resourceFile);
-                ProjectWindowUtil.ShowCreatedAsset(o);
-            }
-        }
-
         /// <summary>Creates Script from Template's path.</summary>
-        internal static UnityEngine.Object CreateScript(string pathName, string templatePath)
+        internal static Object CreateScript(string pathName, string templatePath)
         {
-            string className = Path.GetFileNameWithoutExtension(pathName).Replace(" ", string.Empty);
-            string templateText = string.Empty;
+            var className = Path.GetFileNameWithoutExtension(pathName).Replace(" ", string.Empty);
+            var templateText = string.Empty;
 
-            UTF8Encoding encoding = new UTF8Encoding(true, false);
+            var encoding = new UTF8Encoding(true, false);
 
             if (File.Exists(templatePath))
             {
                 /// Read procedures.
-                StreamReader reader = new StreamReader(templatePath);
+                var reader = new StreamReader(templatePath);
                 templateText = reader.ReadToEnd();
                 reader.Close();
 
@@ -309,17 +299,25 @@ namespace QFramework
 
                 /// Write procedures.
 
-                StreamWriter writer = new StreamWriter(Path.GetFullPath(pathName), false, encoding);
+                var writer = new StreamWriter(Path.GetFullPath(pathName), false, encoding);
                 writer.Write(templateText);
                 writer.Close();
 
                 AssetDatabase.ImportAsset(pathName);
                 return AssetDatabase.LoadAssetAtPath(pathName, typeof(Object));
             }
-            else
+
+            Debug.LogError(string.Format("The template file was not found: {0}", templatePath));
+            return null;
+        }
+
+        /// Inherits from EndNameAction, must override EndNameAction.Action
+        public class DoCreateCodeFile : EndNameEditAction
+        {
+            public override void Action(int instanceId, string pathName, string resourceFile)
             {
-                Debug.LogError(string.Format("The template file was not found: {0}", templatePath));
-                return null;
+                var o = CreateScript(pathName, resourceFile);
+                ProjectWindowUtil.ShowCreatedAsset(o);
             }
         }
     }

@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -23,26 +23,16 @@ namespace QFramework
 
     internal class Custom<TData> : IAction, ICustomAPI<TData>
     {
-        public TData Data { get; set; }
+        private static readonly SimpleObjectPool<Custom<TData>> mSimpleObjectPool =
+            new(() => new Custom<TData>(), null, 10);
 
-        protected Action mOnStart;
         protected Action<float> mOnExecute;
         protected Action mOnFinish;
 
-        private static SimpleObjectPool<Custom<TData>> mSimpleObjectPool =
-            new SimpleObjectPool<Custom<TData>>(() => new Custom<TData>(), null, 10);
+        protected Action mOnStart;
 
         protected Custom()
         {
-        }
-
-        public static Custom<TData> Allocate()
-        {
-            var custom = mSimpleObjectPool.Allocate();
-            custom.ActionID = ActionKit.ID_GENERATOR++;
-            custom.Deinited = false;
-            custom.Reset();
-            return custom;
         }
 
         public bool Paused { get; set; }
@@ -56,7 +46,7 @@ namespace QFramework
                 mOnExecute = null;
                 mOnFinish = null;
 
-                ActionQueue.AddCallback(new ActionQueueRecycleCallback<Custom<TData>>(mSimpleObjectPool,this));
+                ActionQueue.AddCallback(new ActionQueueRecycleCallback<Custom<TData>>(mSimpleObjectPool, this));
             }
         }
 
@@ -85,6 +75,8 @@ namespace QFramework
             mOnFinish?.Invoke();
         }
 
+        public TData Data { get; set; }
+
         public ICustomAPI<TData> OnStart(Action onStart)
         {
             mOnStart = onStart;
@@ -107,12 +99,20 @@ namespace QFramework
         {
             Status = ActionStatus.Finished;
         }
+
+        public static Custom<TData> Allocate()
+        {
+            var custom = mSimpleObjectPool.Allocate();
+            custom.ActionID = ActionKit.ID_GENERATOR++;
+            custom.Deinited = false;
+            custom.Reset();
+            return custom;
+        }
     }
 
     internal class Custom : Custom<object>
     {
-        private static SimpleObjectPool<Custom> mSimpleObjectPool =
-            new SimpleObjectPool<Custom>(() => new Custom(), null, 10);
+        private static readonly SimpleObjectPool<Custom> mSimpleObjectPool = new(() => new Custom(), null, 10);
 
         protected Custom()
         {

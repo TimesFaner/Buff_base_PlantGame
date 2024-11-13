@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -17,15 +17,12 @@ namespace QFramework
 
         RenderEndCommandExecutor RenderEndCommandExecutor { get; set; }
     }
-    
+
     public static class IMGUILayoutRootExtension
     {
         public static IMGUILayout GetLayout(this IMGUILayoutRoot self)
         {
-            if (self.Layout == null)
-            {
-                self.Layout = new VerticalLayout();
-            }
+            if (self.Layout == null) self.Layout = new VerticalLayout();
 
             return self.Layout;
         }
@@ -43,10 +40,7 @@ namespace QFramework
 
         public static RenderEndCommandExecutor GetCommandExecutor(this IMGUILayoutRoot self)
         {
-            if (self.RenderEndCommandExecutor == null)
-            {
-                self.RenderEndCommandExecutor = new RenderEndCommandExecutor();
-            }
+            if (self.RenderEndCommandExecutor == null) self.RenderEndCommandExecutor = new RenderEndCommandExecutor();
 
             return self.RenderEndCommandExecutor;
         }

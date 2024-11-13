@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,12 +12,12 @@ namespace QFramework
 {
     public class NamespaceCodeScope : CodeScope
     {
-        private string mNamespace { get; set; }
-        
         public NamespaceCodeScope(string ns)
         {
             mNamespace = ns;
         }
+
+        private string mNamespace { get; }
 
         protected override void GenFirstLine(ICodeWriter codeWriter)
         {

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -18,24 +18,14 @@ namespace QFramework
 
     internal class Sequence : ISequence
     {
-        private IAction mCurrentAction = null;
-        private int mCurrentActionIndex = 0;
-        private List<IAction> mActions = ListPool<IAction>.Get();
+        private static readonly SimpleObjectPool<Sequence> mSimpleObjectPool = new(() => new Sequence(), null, 10);
+
+        private readonly List<IAction> mActions = ListPool<IAction>.Get();
+        private IAction mCurrentAction;
+        private int mCurrentActionIndex;
 
         private Sequence()
         {
-        }
-
-        private static SimpleObjectPool<Sequence> mSimpleObjectPool =
-            new SimpleObjectPool<Sequence>(() => new Sequence(), null, 10);
-
-        public static Sequence Allocate()
-        {
-            var sequence = mSimpleObjectPool.Allocate();
-            sequence.ActionID = ActionKit.ID_GENERATOR++;
-            sequence.Reset();
-            sequence.Deinited = false;
-            return sequence;
         }
 
         public bool Paused { get; set; }
@@ -57,25 +47,6 @@ namespace QFramework
             else
             {
                 this.Finish();
-            }
-        }
-
-        void TryExecuteUntilNextNotFinished()
-        {
-            while (mCurrentAction != null && mCurrentAction.Execute(0))
-            {
-                mCurrentActionIndex++;
-
-                if (mCurrentActionIndex < mActions.Count)
-                {
-                    mCurrentAction = mActions[mCurrentActionIndex];
-                    mCurrentAction.Reset();
-                }
-                else
-                {
-                    mCurrentAction = null;
-                    this.Finish();
-                }
             }
         }
 
@@ -121,15 +92,12 @@ namespace QFramework
             if (!Deinited)
             {
                 Deinited = true;
-                
-                foreach (var action in mActions)
-                {
-                    action.Deinit();
-                }
+
+                foreach (var action in mActions) action.Deinit();
 
                 mActions.Clear();
-                
-                ActionQueue.AddCallback(new ActionQueueRecycleCallback<Sequence>(mSimpleObjectPool,this));
+
+                ActionQueue.AddCallback(new ActionQueueRecycleCallback<Sequence>(mSimpleObjectPool, this));
             }
         }
 
@@ -138,13 +106,38 @@ namespace QFramework
             mCurrentActionIndex = 0;
             Status = ActionStatus.NotStart;
             Paused = false;
-            foreach (var action in mActions)
+            foreach (var action in mActions) action.Reset();
+        }
+
+        public static Sequence Allocate()
+        {
+            var sequence = mSimpleObjectPool.Allocate();
+            sequence.ActionID = ActionKit.ID_GENERATOR++;
+            sequence.Reset();
+            sequence.Deinited = false;
+            return sequence;
+        }
+
+        private void TryExecuteUntilNextNotFinished()
+        {
+            while (mCurrentAction != null && mCurrentAction.Execute(0))
             {
-                action.Reset();
+                mCurrentActionIndex++;
+
+                if (mCurrentActionIndex < mActions.Count)
+                {
+                    mCurrentAction = mActions[mCurrentActionIndex];
+                    mCurrentAction.Reset();
+                }
+                else
+                {
+                    mCurrentAction = null;
+                    this.Finish();
+                }
             }
         }
     }
-    
+
     public static class SequenceExtension
     {
         public static ISequence Sequence(this ISequence self, Action<ISequence> sequenceSetting)

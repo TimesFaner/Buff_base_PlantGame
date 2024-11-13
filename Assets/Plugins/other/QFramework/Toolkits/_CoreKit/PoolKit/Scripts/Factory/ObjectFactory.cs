@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -11,13 +11,13 @@ using System.Reflection;
 
 namespace QFramework
 {
- /// <summary>
-    /// 对象工厂
+    /// <summary>
+    ///     对象工厂
     /// </summary>
     public class ObjectFactory
     {
         /// <summary>
-        /// 动态创建类的实例：创建有参的构造函数
+        ///     动态创建类的实例：创建有参的构造函数
         /// </summary>
         /// <param name="type"></param>
         /// <param name="constructorArgs"></param>
@@ -28,7 +28,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 动态创建类的实例：泛型扩展
+        ///     动态创建类的实例：泛型扩展
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="constructorArgs"></param>
@@ -39,7 +39,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 动态创建类的实例：创建无参/私有的构造函数
+        ///     动态创建类的实例：创建无参/私有的构造函数
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
@@ -51,16 +51,13 @@ namespace QFramework
             // 获取无参构造函数
             var ctor = Array.Find(constructorInfos, c => c.GetParameters().Length == 0);
 
-            if (ctor == null)
-            {
-                throw new Exception("Non-Public Constructor() not found! in " + type);
-            }
+            if (ctor == null) throw new Exception("Non-Public Constructor() not found! in " + type);
 
             return ctor.Invoke(null);
         }
 
         /// <summary>
-        /// 动态创建类的实例：创建无参/私有的构造函数  泛型扩展
+        ///     动态创建类的实例：创建无参/私有的构造函数  泛型扩展
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
@@ -70,7 +67,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 创建带有初始化回调的 对象
+        ///     创建带有初始化回调的 对象
         /// </summary>
         /// <param name="type"></param>
         /// <param name="onObjectCreate"></param>
@@ -85,7 +82,7 @@ namespace QFramework
         }
 
         /// <summary>
-        /// 创建带有初始化回调的 对象：泛型扩展
+        ///     创建带有初始化回调的 对象：泛型扩展
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="onObjectCreate"></param>

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -10,7 +10,7 @@ namespace QFramework
 {
 #if UNITY_EDITOR
     // v1 No.166
-    [ClassAPI("03.SingletonKit", "SingletonProperty<T>", 3,"SingletonProperty<T>")]
+    [ClassAPI("03.SingletonKit", "SingletonProperty<T>", 3, "SingletonProperty<T>")]
     [APIDescriptionCN("通过属性实现的 Singleton")]
     [APIDescriptionEN("Singleton implemented through properties")]
     [APIExampleCode(@"
@@ -53,17 +53,17 @@ GameDataManager.Instance.Dispose();
     public static class SingletonProperty<T> where T : class, ISingleton
     {
         /// <summary>
-        /// 静态实例
+        ///     静态实例
         /// </summary>
         private static T mInstance;
 
         /// <summary>
-        /// 标签锁
+        ///     标签锁
         /// </summary>
-        private static readonly object mLock = new object();
+        private static readonly object mLock = new();
 
         /// <summary>
-        /// 静态属性
+        ///     静态属性
         /// </summary>
         public static T Instance
         {
@@ -71,10 +71,7 @@ GameDataManager.Instance.Dispose();
             {
                 lock (mLock)
                 {
-                    if (mInstance == null)
-                    {
-                        mInstance = SingletonCreator.CreateSingleton<T>();
-                    }
+                    if (mInstance == null) mInstance = SingletonCreator.CreateSingleton<T>();
                 }
 
                 return mInstance;
@@ -82,7 +79,7 @@ GameDataManager.Instance.Dispose();
         }
 
         /// <summary>
-        /// 资源释放
+        ///     资源释放
         /// </summary>
         public static void Dispose()
         {

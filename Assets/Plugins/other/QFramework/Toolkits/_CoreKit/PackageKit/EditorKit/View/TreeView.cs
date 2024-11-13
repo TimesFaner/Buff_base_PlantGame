@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -16,30 +16,25 @@ namespace QFramework
 {
     public class AssetTree
     {
-        private TreeNode<TreeAssetData> _root;
-
         public AssetTree()
         {
-            _root = new TreeNode<TreeAssetData>(null);
+            Root = new TreeNode<TreeAssetData>(null);
         }
 
-        public TreeNode<TreeAssetData> Root
-        {
-            get { return _root; }
-        }
+        public TreeNode<TreeAssetData> Root { get; }
 
         public void Clear()
         {
-            _root.Clear();
+            Root.Clear();
         }
 
         public void AddAsset(string guid, HashSet<string> incluedPathes)
         {
             if (string.IsNullOrEmpty(guid)) return;
 
-            TreeNode<TreeAssetData> node = _root;
+            var node = Root;
 
-            string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+            var assetPath = AssetDatabase.GUIDToAssetPath(guid);
 
             if (assetPath.StartsWith("Packages")) return;
 
@@ -51,9 +46,9 @@ namespace QFramework
 
             while (startIndex < length)
             {
-                int endIndex = assetPath.IndexOf('/', startIndex);
-                int subLength = endIndex == -1 ? length - startIndex : endIndex - startIndex;
-                string directory = assetPath.Substring(startIndex, subLength);
+                var endIndex = assetPath.IndexOf('/', startIndex);
+                var subLength = endIndex == -1 ? length - startIndex : endIndex - startIndex;
+                var directory = assetPath.Substring(startIndex, subLength);
 
                 var pathNode = new TreeAssetData(endIndex == -1 ? guid : null, directory,
                     assetPath.Substring(0, endIndex == -1 ? length : endIndex), node.Level == 0 || isExpanded,
@@ -71,11 +66,9 @@ namespace QFramework
 
     public class TreeAssetData : ITreeIMGUIData
     {
+        public readonly string fullPath;
         public readonly string guid;
         public readonly string path;
-        public readonly string fullPath;
-        public bool isExpanded { get; set; }
-        public bool isSelected { get; set; }
 
         public TreeAssetData(string guid, string path, string fullPath, bool isExpanded, bool isSelected)
         {
@@ -85,6 +78,9 @@ namespace QFramework
             this.isExpanded = isExpanded;
             this.isSelected = isSelected;
         }
+
+        public bool isSelected { get; set; }
+        public bool isExpanded { get; set; }
 
         public override string ToString()
         {
@@ -98,7 +94,7 @@ namespace QFramework
 
         public override bool Equals(object obj)
         {
-            TreeAssetData node = obj as TreeAssetData;
+            var node = obj as TreeAssetData;
             return node != null && node.path == path;
         }
 
@@ -116,13 +112,11 @@ namespace QFramework
 
         protected override void OnDrawTreeNode(Rect rect, TreeNode<TreeAssetData> node, bool selected, bool focus)
         {
-            GUIContent labelContent = new GUIContent(node.Data.path, AssetDatabase.GetCachedIcon(node.Data.fullPath));
+            var labelContent = new GUIContent(node.Data.path, AssetDatabase.GetCachedIcon(node.Data.fullPath));
 
             if (!node.IsLeaf)
-            {
                 node.Data.isExpanded = EditorGUI.Foldout(new Rect(rect.x - 12, rect.y, 12, rect.height),
                     node.Data.isExpanded, GUIContent.none);
-            }
 
             EditorGUI.BeginChangeCheck();
             node.Data.isSelected = EditorGUI.ToggleLeft(rect, labelContent, node.Data.isSelected);
@@ -132,12 +126,12 @@ namespace QFramework
     public class TreeIMGUI<T> where T : ITreeIMGUIData
     {
         private readonly TreeNode<T> _root;
+        private int _controlID;
 
         private Rect _controlRect;
         private float _drawY;
         private float _height;
         private TreeNode<T> _selected;
-        private int _controlID;
 
         public TreeIMGUI(TreeNode<T> root)
         {
@@ -173,21 +167,18 @@ namespace QFramework
             if (node.Data == null) return true;
 
             float rowIndent = 14 * node.Level;
-            float rowHeight = GetRowHeight(node);
+            var rowHeight = GetRowHeight(node);
 
-            Rect rowRect = new Rect(0, _controlRect.y + _drawY, _controlRect.width, rowHeight);
-            Rect indentRect = new Rect(rowIndent, _controlRect.y + _drawY, _controlRect.width - rowIndent, rowHeight);
+            var rowRect = new Rect(0, _controlRect.y + _drawY, _controlRect.width, rowHeight);
+            var indentRect = new Rect(rowIndent, _controlRect.y + _drawY, _controlRect.width - rowIndent, rowHeight);
 
             // render
-            if (_selected == node)
-            {
-                EditorGUI.DrawRect(rowRect, Color.gray);
-            }
+            if (_selected == node) EditorGUI.DrawRect(rowRect, Color.gray);
 
             OnDrawTreeNode(indentRect, node, _selected == node, false);
 
             // test for events
-            EventType eventType = Event.current.GetTypeForControl(_controlID);
+            var eventType = Event.current.GetTypeForControl(_controlID);
             if (eventType == EventType.MouseUp && rowRect.Contains(Event.current.mousePosition))
             {
                 _selected = node;
@@ -203,13 +194,11 @@ namespace QFramework
 
         protected virtual void OnDrawTreeNode(Rect rect, TreeNode<T> node, bool selected, bool focus)
         {
-            GUIContent labelContent = new GUIContent(node.Data.ToString());
+            var labelContent = new GUIContent(node.Data.ToString());
 
             if (!node.IsLeaf)
-            {
                 node.Data.isExpanded = EditorGUI.Foldout(new Rect(rect.x - 12, rect.y, 12, rect.height),
                     node.Data.isExpanded, GUIContent.none);
-            }
 
             EditorGUI.LabelField(rect, labelContent, selected ? EditorStyles.whiteLabel : EditorStyles.label);
         }
@@ -226,58 +215,34 @@ namespace QFramework
 
         public delegate bool TraversalNodeDelegate(TreeNode<T> node);
 
-        private readonly T _data;
-        private readonly TreeNode<T> _parent;
-        private readonly int _level;
         private readonly List<TreeNode<T>> _children;
 
         public TreeNode(T data)
         {
-            _data = data;
+            Data = data;
             _children = new List<TreeNode<T>>();
-            _level = 0;
+            Level = 0;
         }
 
         public TreeNode(T data, TreeNode<T> parent) : this(data)
         {
-            _parent = parent;
-            _level = _parent != null ? _parent.Level + 1 : 0;
+            Parent = parent;
+            Level = Parent != null ? Parent.Level + 1 : 0;
         }
 
-        public int Level
-        {
-            get { return _level; }
-        }
+        public int Level { get; }
 
-        public int Count
-        {
-            get { return _children.Count; }
-        }
+        public int Count => _children.Count;
 
-        public bool IsRoot
-        {
-            get { return _parent == null; }
-        }
+        public bool IsRoot => Parent == null;
 
-        public bool IsLeaf
-        {
-            get { return _children.Count == 0; }
-        }
+        public bool IsLeaf => _children.Count == 0;
 
-        public T Data
-        {
-            get { return _data; }
-        }
+        public T Data { get; }
 
-        public TreeNode<T> Parent
-        {
-            get { return _parent; }
-        }
+        public TreeNode<T> Parent { get; }
 
-        public TreeNode<T> this[int key]
-        {
-            get { return _children[key]; }
-        }
+        public TreeNode<T> this[int key] => _children[key];
 
         public void Clear()
         {
@@ -286,7 +251,7 @@ namespace QFramework
 
         public TreeNode<T> AddChild(T value)
         {
-            TreeNode<T> node = new TreeNode<T>(value, this);
+            var node = new TreeNode<T>(value, this);
             _children.Add(node);
 
             return node;
@@ -302,7 +267,7 @@ namespace QFramework
             int i = 0, l = Count;
             for (; i < l; ++i)
             {
-                TreeNode<T> child = _children[i];
+                var child = _children[i];
                 if (child.Data.Equals(data)) return child;
             }
 
@@ -316,7 +281,7 @@ namespace QFramework
 
         public void Traverse(TraversalDataDelegate handler)
         {
-            if (handler(_data))
+            if (handler(Data))
             {
                 int i = 0, l = Count;
                 for (; i < l; ++i) _children[i].Traverse(handler);

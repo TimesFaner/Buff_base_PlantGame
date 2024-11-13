@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -18,103 +18,23 @@ namespace QFramework
 {
     public class Guideline
     {
-        public class GuidelineItem : GuidelineItemFolder
-        {
-            public string FilePath;
-        }
+        private static readonly GUIStyle mSelectionRect = "SelectionRect";
 
-        public class GuidelineItemFolder
-        {
-            public string Name;
-            public bool Open;
-            public List<GuidelineItemFolder> Folders { get; } = new List<GuidelineItemFolder>();
-            public int Indent = 0;
-
-            public void DrawGUI(Guideline guideline)
-            {
-                foreach (var guidelineItemGroup in Folders.OrderBy(g=>g.Name))
-                {
-                    if (guidelineItemGroup is GuidelineItem)
-                    {
-                        var guidelineItem = guidelineItemGroup as GuidelineItem;
-                        
-                        GUILayout.BeginHorizontal();
-                        GUILayout.Space(Indent * 8);
-
-                        GUILayout.BeginVertical("box");
-
-                        GUILayout.BeginHorizontal();
-                        {
-                            GUILayout.Label(guidelineItem.Name);
-                            GUILayout.FlexibleSpace();
-                        }
-                        GUILayout.EndHorizontal();
-
-                        GUILayout.EndVertical();
-
-                        var rect = GUILayoutUtility.GetLastRect();
-
-                        if (Equals(guideline.mSelectedView, guidelineItem))
-                        {
-                            GUI.Box(rect, "", mSelectionRect);
-                        }
-
-                        if (rect.Contains(Event.current.mousePosition) &&
-                            Event.current.type == EventType.MouseUp)
-                        {
-                            guideline.mSelectedView = guidelineItem;
-                            var textAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(guideline.mSelectedView.FilePath);
-                            guideline.mMarkdownViewer.UpdateText(textAsset.text);
-                            guideline.mMarkdownViewer.MarkdownFilePath = guideline.mSelectedView.FilePath;
-                            guideline.mMarkdownViewer.ResetScrollPos();
-                            Event.current.Use();
-                        }
-                        GUILayout.EndHorizontal();
-                    }
-                    else
-                    {
-
-                        GUILayout.BeginHorizontal();
-                        if (Indent != 0)
-                        {
-                            GUILayout.Space((Indent) * 8);
-                        }
-
-                        GUILayout.BeginVertical("box");
-                        
-                        if (EditorGUILayout.Foldout(guidelineItemGroup.Open, guidelineItemGroup.Name,
-                                true))
-                        {
-                            guidelineItemGroup.Open = true;
-                            GUILayout.EndVertical();
-                            GUILayout.EndHorizontal();
-
-                            guidelineItemGroup.DrawGUI(guideline);
-                        }
-                        else
-                        {
-                            guidelineItemGroup.Open = false;
-                            GUILayout.EndVertical();
-                            GUILayout.EndHorizontal();
-                        }
-                    }
-                }
-            }
-        }
-
-        private List<GuidelineItem> mViews = null;
-
-        private GuidelineItemFolder mRootFolder = null;
-
-        private VerticalSplitView mSplitView = null;
-        private Rect mLeftRect;
-        private Rect mRightRect;
+        private EditorWindow mCurrentWindow;
         private IMGUILayout mLeftLayout;
-        private IMGUILayout mRightLayout;
-
-        private GuidelineItem mSelectedView = null;
+        private Rect mLeftRect;
 
         private MDViewer mMarkdownViewer;
+        private IMGUILayout mRightLayout;
+        private Rect mRightRect;
+
+        private GuidelineItemFolder mRootFolder;
+
+        private GuidelineItem mSelectedView;
+
+        private VerticalSplitView mSplitView;
+
+        private List<GuidelineItem> mViews;
 
         public void Init()
         {
@@ -136,13 +56,11 @@ namespace QFramework
             mMarkdownViewer = new MDViewer(Resources.Load<GUISkin>("Skin/MarkdownSkinQS"), path, "");
 
             foreach (var filePath in markdownFilePaths)
-            {
-                mViews.Add(new GuidelineItem()
+                mViews.Add(new GuidelineItem
                 {
                     Name = filePath.GetFileName(),
-                    FilePath = filePath,
+                    FilePath = filePath
                 });
-            }
 
 
             if (mViews.Count > 0)
@@ -151,9 +69,7 @@ namespace QFramework
                 mMarkdownViewer.UpdateText(AssetDatabase.LoadAssetAtPath<TextAsset>(mSelectedView.FilePath).text);
             }
 
-            mRootFolder = new GuidelineItemFolder()
-            {
-            };
+            mRootFolder = new GuidelineItemFolder();
 
             foreach (var guidelineItem in mViews)
             {
@@ -165,10 +81,7 @@ namespace QFramework
                 var indent = 1;
                 foreach (var name in names)
                 {
-                    if (name.IsNullOrEmpty())
-                    {
-                        continue;
-                    }
+                    if (name.IsNullOrEmpty()) continue;
 
                     indent++;
                     if (name.EndsWith(".md"))
@@ -186,7 +99,7 @@ namespace QFramework
                         }
                         else
                         {
-                            childGroup = new GuidelineItemFolder()
+                            childGroup = new GuidelineItemFolder
                             {
                                 Name = name,
                                 Indent = indent
@@ -220,7 +133,7 @@ namespace QFramework
                 .AddChild(EasyIMGUI.Custom().OnGUI(() =>
                 {
                     GUILayout.BeginHorizontal();
-                    
+
                     GUILayout.BeginVertical();
                     GUILayout.Space(20);
                     GUILayout.EndVertical();
@@ -229,10 +142,7 @@ namespace QFramework
                     {
                         GUILayout.FlexibleSpace();
 
-                        if (GUILayout.Button("<"))
-                        {
-                            mSplitView.Expand.Value = false;
-                        }
+                        if (GUILayout.Button("<")) mSplitView.Expand.Value = false;
                     }
 
                     GUILayout.EndHorizontal();
@@ -249,11 +159,10 @@ namespace QFramework
                     if (GUILayout.Button(LocaleKitEditor.IsCN.Value ? "导出" : "Export"))
                     {
                         var builder = new StringBuilder();
-                        
+
                         void Export(GuidelineItemFolder currentFolder)
                         {
                             foreach (var guidelineItemGroup in currentFolder.Folders)
-                            {
                                 if (guidelineItemGroup is GuidelineItem)
                                 {
                                     var guidelineItem = guidelineItemGroup as GuidelineItem;
@@ -268,26 +177,25 @@ namespace QFramework
 
                                     Export(guidelineItemGroup);
                                 }
-                            }
                         }
 
                         Export(mRootFolder);
-                    
+
                         var framework = PackageKit.Interface.GetModel<ILocalPackageVersionModel>()
                             .GetByName("Framework");
-                    
-                    
+
+
                         var guidelineText = LocaleKitEditor.IsCN.Value ? "使用指南 " : "Guideline";
-                    
+
                         var savedPath = EditorUtility.SaveFilePanel($"QFramework {framework.Version} {guidelineText}",
                             Application.dataPath,
                             $"QFramework {framework.Version} {guidelineText}", "md");
-                    
+
                         File.WriteAllText(savedPath, builder.ToString());
-                    
+
                         EditorUtility.RevealInFinder(savedPath);
                     }
-                    
+
                     GUILayout.Space(5);
                 }));
 
@@ -300,10 +208,7 @@ namespace QFramework
 
                     if (!mSplitView.Expand.Value)
                     {
-                        if (GUILayout.Button(">"))
-                        {
-                            mSplitView.Expand.Value = true;
-                        }
+                        if (GUILayout.Button(">")) mSplitView.Expand.Value = true;
 
                         GUILayout.FlexibleSpace();
                     }
@@ -333,15 +238,8 @@ namespace QFramework
 
         private void Update()
         {
-            if (mMarkdownViewer != null && mMarkdownViewer.Update())
-            {
-                mCurrentWindow.Repaint();
-            }
+            if (mMarkdownViewer != null && mMarkdownViewer.Update()) mCurrentWindow.Repaint();
         }
-
-        private static GUIStyle mSelectionRect = "SelectionRect";
-
-        private EditorWindow mCurrentWindow;
 
         public void OnGUI()
         {
@@ -352,6 +250,82 @@ namespace QFramework
 
         public void OnDestroy()
         {
+        }
+
+        public class GuidelineItem : GuidelineItemFolder
+        {
+            public string FilePath;
+        }
+
+        public class GuidelineItemFolder
+        {
+            public int Indent;
+            public string Name;
+            public bool Open;
+            public List<GuidelineItemFolder> Folders { get; } = new();
+
+            public void DrawGUI(Guideline guideline)
+            {
+                foreach (var guidelineItemGroup in Folders.OrderBy(g => g.Name))
+                    if (guidelineItemGroup is GuidelineItem)
+                    {
+                        var guidelineItem = guidelineItemGroup as GuidelineItem;
+
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Space(Indent * 8);
+
+                        GUILayout.BeginVertical("box");
+
+                        GUILayout.BeginHorizontal();
+                        {
+                            GUILayout.Label(guidelineItem.Name);
+                            GUILayout.FlexibleSpace();
+                        }
+                        GUILayout.EndHorizontal();
+
+                        GUILayout.EndVertical();
+
+                        var rect = GUILayoutUtility.GetLastRect();
+
+                        if (Equals(guideline.mSelectedView, guidelineItem)) GUI.Box(rect, "", mSelectionRect);
+
+                        if (rect.Contains(Event.current.mousePosition) &&
+                            Event.current.type == EventType.MouseUp)
+                        {
+                            guideline.mSelectedView = guidelineItem;
+                            var textAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(guideline.mSelectedView.FilePath);
+                            guideline.mMarkdownViewer.UpdateText(textAsset.text);
+                            guideline.mMarkdownViewer.MarkdownFilePath = guideline.mSelectedView.FilePath;
+                            guideline.mMarkdownViewer.ResetScrollPos();
+                            Event.current.Use();
+                        }
+
+                        GUILayout.EndHorizontal();
+                    }
+                    else
+                    {
+                        GUILayout.BeginHorizontal();
+                        if (Indent != 0) GUILayout.Space(Indent * 8);
+
+                        GUILayout.BeginVertical("box");
+
+                        if (EditorGUILayout.Foldout(guidelineItemGroup.Open, guidelineItemGroup.Name,
+                                true))
+                        {
+                            guidelineItemGroup.Open = true;
+                            GUILayout.EndVertical();
+                            GUILayout.EndHorizontal();
+
+                            guidelineItemGroup.DrawGUI(guideline);
+                        }
+                        else
+                        {
+                            guidelineItemGroup.Open = false;
+                            GUILayout.EndVertical();
+                            GUILayout.EndHorizontal();
+                        }
+                    }
+            }
         }
     }
 }

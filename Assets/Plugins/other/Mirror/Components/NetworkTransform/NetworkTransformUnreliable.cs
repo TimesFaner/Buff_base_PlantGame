@@ -1,5 +1,6 @@
 // NetworkTransform V2 by mischa (2021-07)
 // comment out the below line to quickly revert the onlySyncOnChange feature
+
 #define onlySyncOnChange_BANDWIDTH_SAVING
 using UnityEngine;
 
@@ -8,37 +9,9 @@ namespace Mirror
     [AddComponentMenu("Network/Network Transform (Unreliable)")]
     public class NetworkTransformUnreliable : NetworkTransformBase
     {
-        // only sync when changed hack /////////////////////////////////////////
-#if onlySyncOnChange_BANDWIDTH_SAVING
-        [Header("Sync Only If Changed")]
-        [Tooltip("When true, changes are not sent unless greater than sensitivity values below.")]
-        public bool onlySyncOnChange = true;
-
-        uint sendIntervalCounter = 0;
-        double lastSendIntervalTime = double.MinValue;
-
-        // Testing under really bad network conditions, 2%-5% packet loss and 250-1200ms ping, 5 proved to eliminate any twitching, however this should not be the default as it is a rare case Developers may want to cover.
-        [Tooltip("How much time, as a multiple of send interval, has passed before clearing buffers.\nA larger buffer means more delay, but results in smoother movement.\nExample: 1 for faster responses minimal smoothing, 5 covers bad pings but has noticable delay, 3 is recommended for balanced results,.")]
-        public float bufferResetMultiplier = 3;
-
-        [Header("Sensitivity"), Tooltip("Sensitivity of changes needed before an updated state is sent over the network")]
-        public float positionSensitivity = 0.01f;
-        public float rotationSensitivity = 0.01f;
-        public float scaleSensitivity = 0.01f;
-
-        protected bool positionChanged;
-        protected bool rotationChanged;
-        protected bool scaleChanged;
-
-        // Used to store last sent snapshots
-        protected TransformSnapshot lastSnapshot;
-        protected bool cachedSnapshotComparison;
-        protected bool hasSentUnchangedPosition;
-#endif
-
         // update //////////////////////////////////////////////////////////////
         // Update applies interpolation
-        void Update()
+        private void Update()
         {
             if (isServer) UpdateServerInterpolation();
             // for all other clients (and for local player if !authority),
@@ -52,7 +25,7 @@ namespace Mirror
         // use LateUpdate to ensure changes are detected in the same frame.
         // otherwise this may run before user update, delaying detection until next frame.
         // this could cause visible jitter.
-        void LateUpdate()
+        private void LateUpdate()
         {
             // if server then always sync to others.
             if (isServer) UpdateServerBroadcast();
@@ -64,21 +37,21 @@ namespace Mirror
 
         protected virtual void CheckLastSendTime()
         {
-			// We check interval every frame, and then send if interval is reached.
-			// So by the time sendIntervalCounter == sendIntervalMultiplier, data is sent,
-			// thus we reset the counter here.
-			// This fixes previous issue of, if sendIntervalMultiplier = 1, we send every frame,
-			// because intervalCounter is always = 1 in the previous version.
+            // We check interval every frame, and then send if interval is reached.
+            // So by the time sendIntervalCounter == sendIntervalMultiplier, data is sent,
+            // thus we reset the counter here.
+            // This fixes previous issue of, if sendIntervalMultiplier = 1, we send every frame,
+            // because intervalCounter is always = 1 in the previous version.
 
-			if (sendIntervalCounter == sendIntervalMultiplier)
-				sendIntervalCounter = 0;
+            if (sendIntervalCounter == sendIntervalMultiplier)
+                sendIntervalCounter = 0;
 
-			// timeAsDouble not available in older Unity versions.
-			if (AccurateInterval.Elapsed(NetworkTime.localTime, NetworkServer.sendInterval, ref lastSendIntervalTime))
+            // timeAsDouble not available in older Unity versions.
+            if (AccurateInterval.Elapsed(NetworkTime.localTime, NetworkServer.sendInterval, ref lastSendIntervalTime))
                 sendIntervalCounter++;
         }
 
-        void UpdateServerBroadcast()
+        private void UpdateServerBroadcast()
         {
             // broadcast to all clients each 'sendInterval'
             // (client with authority will drop the rpc)
@@ -117,10 +90,10 @@ namespace Mirror
             {
                 // send snapshot without timestamp.
                 // receiver gets it from batch timestamp to save bandwidth.
-                TransformSnapshot snapshot = Construct();
+                var snapshot = Construct();
 #if onlySyncOnChange_BANDWIDTH_SAVING
                 cachedSnapshotComparison = CompareSnapshots(snapshot);
-                if (cachedSnapshotComparison && hasSentUnchangedPosition && onlySyncOnChange) { return; }
+                if (cachedSnapshotComparison && hasSentUnchangedPosition && onlySyncOnChange) return;
 #endif
 
 #if onlySyncOnChange_BANDWIDTH_SAVING
@@ -153,7 +126,7 @@ namespace Mirror
             }
         }
 
-        void UpdateServerInterpolation()
+        private void UpdateServerInterpolation()
         {
             // apply buffered snapshots IF client authority
             // -> in server authority, server moves the object
@@ -174,17 +147,17 @@ namespace Mirror
                 SnapshotInterpolation.StepInterpolation(
                     serverSnapshots,
                     connectionToClient.remoteTimeline,
-                    out TransformSnapshot from,
-                    out TransformSnapshot to,
-                    out double t);
+                    out var from,
+                    out var to,
+                    out var t);
 
                 // interpolate & apply
-                TransformSnapshot computed = TransformSnapshot.Interpolate(from, to, t);
+                var computed = TransformSnapshot.Interpolate(from, to, t);
                 Apply(computed, to);
             }
         }
 
-        void UpdateClientBroadcast()
+        private void UpdateClientBroadcast()
         {
             // https://github.com/vis2k/Mirror/pull/2992/
             if (!NetworkClient.ready) return;
@@ -214,10 +187,10 @@ namespace Mirror
             {
                 // send snapshot without timestamp.
                 // receiver gets it from batch timestamp to save bandwidth.
-                TransformSnapshot snapshot = Construct();
+                var snapshot = Construct();
 #if onlySyncOnChange_BANDWIDTH_SAVING
                 cachedSnapshotComparison = CompareSnapshots(snapshot);
-                if (cachedSnapshotComparison && hasSentUnchangedPosition && onlySyncOnChange) { return; }
+                if (cachedSnapshotComparison && hasSentUnchangedPosition && onlySyncOnChange) return;
 #endif
 
 #if onlySyncOnChange_BANDWIDTH_SAVING
@@ -250,7 +223,7 @@ namespace Mirror
             }
         }
 
-        void UpdateClientInterpolation()
+        private void UpdateClientInterpolation()
         {
             // only while we have snapshots
             if (clientSnapshots.Count == 0) return;
@@ -260,12 +233,12 @@ namespace Mirror
             SnapshotInterpolation.StepInterpolation(
                 clientSnapshots,
                 NetworkTime.time, // == NetworkClient.localTimeline from snapshot interpolation
-                out TransformSnapshot from,
-                out TransformSnapshot to,
-                out double t);
+                out var from,
+                out var to,
+                out var t);
 
             // interpolate & apply
-            TransformSnapshot computed = TransformSnapshot.Interpolate(from, to, t);
+            var computed = TransformSnapshot.Interpolate(from, to, t);
             Apply(computed, to);
         }
 
@@ -278,7 +251,7 @@ namespace Mirror
             {
                 if (syncPosition) writer.WriteVector3(GetPosition());
                 if (syncRotation) writer.WriteQuaternion(GetRotation());
-                if (syncScale)    writer.WriteVector3(GetScale());
+                if (syncScale) writer.WriteVector3(GetScale());
             }
         }
 
@@ -291,7 +264,7 @@ namespace Mirror
             {
                 if (syncPosition) SetPosition(reader.ReadVector3());
                 if (syncRotation) SetRotation(reader.ReadQuaternion());
-                if (syncScale)       SetScale(reader.ReadVector3());
+                if (syncScale) SetScale(reader.ReadVector3());
             }
         }
 
@@ -299,17 +272,19 @@ namespace Mirror
         // Returns true if position, rotation AND scale are unchanged, within given sensitivity range.
         protected virtual bool CompareSnapshots(TransformSnapshot currentSnapshot)
         {
-            positionChanged = Vector3.SqrMagnitude(lastSnapshot.position - currentSnapshot.position) > positionSensitivity * positionSensitivity;
+            positionChanged = Vector3.SqrMagnitude(lastSnapshot.position - currentSnapshot.position) >
+                              positionSensitivity * positionSensitivity;
             rotationChanged = Quaternion.Angle(lastSnapshot.rotation, currentSnapshot.rotation) > rotationSensitivity;
-            scaleChanged = Vector3.SqrMagnitude(lastSnapshot.scale - currentSnapshot.scale) > scaleSensitivity * scaleSensitivity;
+            scaleChanged = Vector3.SqrMagnitude(lastSnapshot.scale - currentSnapshot.scale) >
+                           scaleSensitivity * scaleSensitivity;
 
-            return (!positionChanged && !rotationChanged && !scaleChanged);
+            return !positionChanged && !rotationChanged && !scaleChanged;
         }
 #endif
         // cmd /////////////////////////////////////////////////////////////////
         // only unreliable. see comment above of this file.
         [Command(channel = Channels.Unreliable)]
-        void CmdClientToServerSync(Vector3? position, Quaternion? rotation, Vector3? scale)
+        private void CmdClientToServerSync(Vector3? position, Quaternion? rotation, Vector3? scale)
         {
             OnClientToServerSync(position, rotation, scale);
             //For client authority, immediately pass on the client snapshot to all other
@@ -329,24 +304,28 @@ namespace Mirror
 
             // only player owned objects (with a connection) can send to
             // server. we can get the timestamp from the connection.
-            double timestamp = connectionToClient.remoteTimeStamp;
+            var timestamp = connectionToClient.remoteTimeStamp;
 #if onlySyncOnChange_BANDWIDTH_SAVING
             if (onlySyncOnChange)
             {
                 double timeIntervalCheck = bufferResetMultiplier * sendIntervalMultiplier * NetworkClient.sendInterval;
 
-                if (serverSnapshots.Count > 0 && serverSnapshots.Values[serverSnapshots.Count - 1].remoteTime + timeIntervalCheck < timestamp)
+                if (serverSnapshots.Count > 0 &&
+                    serverSnapshots.Values[serverSnapshots.Count - 1].remoteTime + timeIntervalCheck < timestamp)
                     Reset();
             }
 #endif
-            AddSnapshot(serverSnapshots, connectionToClient.remoteTimeStamp + timeStampAdjustment + offset, position, rotation, scale);
+            AddSnapshot(serverSnapshots, connectionToClient.remoteTimeStamp + timeStampAdjustment + offset, position,
+                rotation, scale);
         }
 
         // rpc /////////////////////////////////////////////////////////////////
         // only unreliable. see comment above of this file.
         [ClientRpc(channel = Channels.Unreliable)]
-        void RpcServerToClientSync(Vector3? position, Quaternion? rotation, Vector3? scale) =>
+        private void RpcServerToClientSync(Vector3? position, Quaternion? rotation, Vector3? scale)
+        {
             OnServerToClientSync(position, rotation, scale);
+        }
 
         // server broadcasts sync message to all clients
         protected virtual void OnServerToClientSync(Vector3? position, Quaternion? rotation, Vector3? scale)
@@ -366,17 +345,49 @@ namespace Mirror
             // not all of them have a connectionToServer.
             // but all of them go through NetworkClient.connection.
             // we can get the timestamp from there.
-            double timestamp = NetworkClient.connection.remoteTimeStamp;
+            var timestamp = NetworkClient.connection.remoteTimeStamp;
 #if onlySyncOnChange_BANDWIDTH_SAVING
             if (onlySyncOnChange)
             {
                 double timeIntervalCheck = bufferResetMultiplier * sendIntervalMultiplier * NetworkServer.sendInterval;
 
-                if (clientSnapshots.Count > 0 && clientSnapshots.Values[clientSnapshots.Count - 1].remoteTime + timeIntervalCheck < timestamp)
+                if (clientSnapshots.Count > 0 &&
+                    clientSnapshots.Values[clientSnapshots.Count - 1].remoteTime + timeIntervalCheck < timestamp)
                     Reset();
             }
 #endif
-            AddSnapshot(clientSnapshots, NetworkClient.connection.remoteTimeStamp + timeStampAdjustment + offset, position, rotation, scale);
+            AddSnapshot(clientSnapshots, NetworkClient.connection.remoteTimeStamp + timeStampAdjustment + offset,
+                position, rotation, scale);
         }
+        // only sync when changed hack /////////////////////////////////////////
+#if onlySyncOnChange_BANDWIDTH_SAVING
+        [Header("Sync Only If Changed")]
+        [Tooltip("When true, changes are not sent unless greater than sensitivity values below.")]
+        public bool onlySyncOnChange = true;
+
+        private uint sendIntervalCounter;
+        private double lastSendIntervalTime = double.MinValue;
+
+        // Testing under really bad network conditions, 2%-5% packet loss and 250-1200ms ping, 5 proved to eliminate any twitching, however this should not be the default as it is a rare case Developers may want to cover.
+        [Tooltip(
+            "How much time, as a multiple of send interval, has passed before clearing buffers.\nA larger buffer means more delay, but results in smoother movement.\nExample: 1 for faster responses minimal smoothing, 5 covers bad pings but has noticable delay, 3 is recommended for balanced results,.")]
+        public float bufferResetMultiplier = 3;
+
+        [Header("Sensitivity")]
+        [Tooltip("Sensitivity of changes needed before an updated state is sent over the network")]
+        public float positionSensitivity = 0.01f;
+
+        public float rotationSensitivity = 0.01f;
+        public float scaleSensitivity = 0.01f;
+
+        protected bool positionChanged;
+        protected bool rotationChanged;
+        protected bool scaleChanged;
+
+        // Used to store last sent snapshots
+        protected TransformSnapshot lastSnapshot;
+        protected bool cachedSnapshotComparison;
+        protected bool hasSentUnchangedPosition;
+#endif
     }
 }

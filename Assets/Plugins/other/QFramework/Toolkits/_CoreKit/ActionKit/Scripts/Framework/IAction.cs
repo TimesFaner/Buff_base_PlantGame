@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -15,7 +15,7 @@ namespace QFramework
     {
         NotStart,
         Started,
-        Finished,
+        Finished
     }
 
     public interface IActionController
@@ -33,13 +33,13 @@ namespace QFramework
     {
         ulong ActionID { get; set; }
         TStatus Status { get; set; }
-        void OnStart();
-        void OnExecute(float dt);
-        void OnFinish();
 
         bool Deinited { get; set; }
 
         bool Paused { get; set; }
+        void OnStart();
+        void OnExecute(float dt);
+        void OnFinish();
         void Reset();
         void Deinit();
     }
@@ -62,18 +62,12 @@ namespace QFramework
 
         public void Reset()
         {
-            if (Action.ActionID == ActionID)
-            {
-                Action.Reset();
-            }
+            if (Action.ActionID == ActionID) Action.Reset();
         }
 
         public void Deinit()
         {
-            if (Action.ActionID == ActionID)
-            {
-                Action.Deinit();
-            }
+            if (Action.ActionID == ActionID) Action.Deinit();
         }
     }
 
@@ -85,10 +79,10 @@ namespace QFramework
         {
             monoBehaviour.ExecuteByUpdate(self, onFinish);
 
-            return new ActionController()
+            return new ActionController
             {
                 Action = self,
-                ActionID = self.ActionID,
+                ActionID = self.ActionID
             };
         }
 
@@ -97,10 +91,10 @@ namespace QFramework
         {
             monoBehaviour.ExecuteByUpdate(self, _ => onFinish());
 
-            return new ActionController()
+            return new ActionController
             {
                 Action = self,
-                ActionID = self.ActionID,
+                ActionID = self.ActionID
             };
         }
 
@@ -108,7 +102,7 @@ namespace QFramework
         {
             return self.Start(ActionKitMonoBehaviourEvents.Instance, onFinish);
         }
-        
+
         public static IActionController StartGlobal(this IAction self, Action onFinish)
         {
             return self.Start(ActionKitMonoBehaviourEvents.Instance, onFinish);
@@ -117,18 +111,12 @@ namespace QFramework
 
         public static void Pause(this IActionController self)
         {
-            if (self.ActionID == self.Action.ActionID)
-            {
-                self.Action.Paused = true;
-            }
+            if (self.ActionID == self.Action.ActionID) self.Action.Paused = true;
         }
 
         public static void Resume(this IActionController self)
         {
-            if (self.ActionID == self.Action.ActionID)
-            {
-                self.Action.Paused = false;
-            }
+            if (self.ActionID == self.Action.ActionID) self.Action.Paused = false;
         }
 
         public static void Finish(this IAction self)

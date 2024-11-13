@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -15,13 +15,28 @@ namespace QFramework
     [CustomEditor(typeof(GUISceneGraph), true)]
     public class GUISceneGraphInspector : Editor
     {
-        private GUISceneGraph sceneGraph;
-        private bool removeSafely;
         private Type graphType;
+        private bool removeSafely;
+        private GUISceneGraph sceneGraph;
+
+        private void OnEnable()
+        {
+            sceneGraph = target as GUISceneGraph;
+            var sceneGraphType = sceneGraph.GetType();
+            if (sceneGraphType == typeof(GUISceneGraph))
+            {
+                graphType = null;
+            }
+            else
+            {
+                var baseType = sceneGraphType.BaseType;
+                if (baseType.IsGenericType) graphType = sceneGraphType = baseType.GetGenericArguments()[0];
+            }
+        }
 
         /// <summary>
-        /// 在场景的 Inspector 上渲染
-        /// Render in scene obj's inspecotor
+        ///     在场景的 Inspector 上渲染
+        ///     Render in scene obj's inspecotor
         /// </summary>
         public override void OnInspectorGUI()
         {
@@ -31,11 +46,11 @@ namespace QFramework
                 {
                     if (graphType == null)
                     {
-                        Type[] graphTypes = GUIGraphReflection.GetDerivedTypes(typeof(GUIGraph));
-                        GenericMenu menu = new GenericMenu();
-                        for (int i = 0; i < graphTypes.Length; i++)
+                        var graphTypes = typeof(GUIGraph).GetDerivedTypes();
+                        var menu = new GenericMenu();
+                        for (var i = 0; i < graphTypes.Length; i++)
                         {
-                            Type graphType = graphTypes[i];
+                            var graphType = graphTypes[i];
                             menu.AddItem(new GUIContent(graphType.Name), false, () => CreateGraph(graphType));
                         }
 
@@ -50,9 +65,7 @@ namespace QFramework
             else
             {
                 if (GUILayout.Button("Open graph", GUILayout.Height(40)))
-                {
                     GUIGraphWindow.OpenWithGraph(sceneGraph.graph);
-                }
 
                 if (removeSafely)
                 {
@@ -67,40 +80,16 @@ namespace QFramework
                     }
 
                     GUI.color = Color.white;
-                    if (GUILayout.Button("Cancel"))
-                    {
-                        removeSafely = false;
-                    }
+                    if (GUILayout.Button("Cancel")) removeSafely = false;
 
                     GUILayout.EndHorizontal();
                 }
                 else
                 {
                     GUI.color = new Color(1, 0.8f, 0.8f);
-                    if (GUILayout.Button("Remove graph"))
-                    {
-                        removeSafely = true;
-                    }
+                    if (GUILayout.Button("Remove graph")) removeSafely = true;
 
                     GUI.color = Color.white;
-                }
-            }
-        }
-
-        private void OnEnable()
-        {
-            sceneGraph = target as GUISceneGraph;
-            Type sceneGraphType = sceneGraph.GetType();
-            if (sceneGraphType == typeof(GUISceneGraph))
-            {
-                graphType = null;
-            }
-            else
-            {
-                Type baseType = sceneGraphType.BaseType;
-                if (baseType.IsGenericType)
-                {
-                    graphType = sceneGraphType = baseType.GetGenericArguments()[0];
                 }
             }
         }
@@ -108,7 +97,7 @@ namespace QFramework
         public void CreateGraph(Type type)
         {
             Undo.RecordObject(sceneGraph, "Create graph");
-            sceneGraph.graph = ScriptableObject.CreateInstance(type) as GUIGraph;
+            sceneGraph.graph = CreateInstance(type) as GUIGraph;
             sceneGraph.graph.name = sceneGraph.name + "-graph";
         }
     }

@@ -20,12 +20,16 @@ namespace QFramework
     [CustomEditor(typeof(TextAsset))]
     public class MDEditor : Editor
     {
+        private static readonly List<string> mExtensions = new() { ".md", ".markdown" };
+
+
+        //------------------------------------------------------------------------------
+
+        private Editor mDefaultEditor;
+
+        private MDViewer mViewer;
         public GUISkin SkinDark => Resources.Load<GUISkin>("Skin/MarkdownViewerSkin");
         public GUISkin SkinLight => Resources.Load<GUISkin>("Skin/MarkdownSkinQS");
-
-        MDViewer mViewer;
-
-        private static List<string> mExtensions = new List<string> { ".md", ".markdown" };
 
         protected void OnEnable()
         {
@@ -50,12 +54,9 @@ namespace QFramework
             }
         }
 
-        void UpdateRequests()
+        private void UpdateRequests()
         {
-            if (mViewer != null && mViewer.Update())
-            {
-                Repaint();
-            }
+            if (mViewer != null && mViewer.Update()) Repaint();
         }
 
 
@@ -82,34 +83,20 @@ namespace QFramework
 #endif
         }
 
-
-        //------------------------------------------------------------------------------
-
-        private Editor mDefaultEditor;
-
-        void DrawEditor()
+        private void DrawEditor()
         {
             if (mViewer != null)
-            {
                 mViewer.Draw();
-            }
             else
-            {
                 DrawDefaultEditor();
-            }
         }
 
-        void DrawDefaultEditor()
+        private void DrawDefaultEditor()
         {
             if (mDefaultEditor == null)
-            {
                 mDefaultEditor = CreateEditor(target, Type.GetType("UnityEditor.TextAssetInspector, UnityEditor"));
-            }
 
-            if (mDefaultEditor != null)
-            {
-                mDefaultEditor.OnInspectorGUI();
-            }
+            if (mDefaultEditor != null) mDefaultEditor.OnInspectorGUI();
         }
     }
 }

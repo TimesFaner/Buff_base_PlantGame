@@ -6,15 +6,17 @@ namespace Mirror.Weaver
     // Processes [Rpc] methods in NetworkBehaviour
     public static class RpcProcessor
     {
-        public static MethodDefinition ProcessRpcInvoke(WeaverTypes weaverTypes, Writers writers, Readers readers, Logger Log, TypeDefinition td, MethodDefinition md, MethodDefinition rpcCallFunc, ref bool WeavingFailed)
+        public static MethodDefinition ProcessRpcInvoke(WeaverTypes weaverTypes, Writers writers, Readers readers,
+            Logger Log, TypeDefinition td, MethodDefinition md, MethodDefinition rpcCallFunc, ref bool WeavingFailed)
         {
-            string rpcName = Weaver.GenerateMethodName(Weaver.InvokeRpcPrefix, md);
+            var rpcName = Weaver.GenerateMethodName(Weaver.InvokeRpcPrefix, md);
 
-            MethodDefinition rpc = new MethodDefinition(rpcName, MethodAttributes.Family | MethodAttributes.Static | MethodAttributes.HideBySig,
-                                                        weaverTypes.Import(typeof(void)));
+            var rpc = new MethodDefinition(rpcName,
+                MethodAttributes.Family | MethodAttributes.Static | MethodAttributes.HideBySig,
+                weaverTypes.Import(typeof(void)));
 
-            ILProcessor worker = rpc.Body.GetILProcessor();
-            Instruction label = worker.Create(OpCodes.Nop);
+            var worker = rpc.Body.GetILProcessor();
+            var label = worker.Create(OpCodes.Nop);
 
             NetworkBehaviourProcessor.WriteClientActiveCheck(worker, weaverTypes, md.Name, label, "RPC");
 
@@ -22,7 +24,8 @@ namespace Mirror.Weaver
             worker.Emit(OpCodes.Ldarg_0);
             worker.Emit(OpCodes.Castclass, td);
 
-            if (!NetworkBehaviourProcessor.ReadArguments(md, readers, Log, worker, RemoteCallType.ClientRpc, ref WeavingFailed))
+            if (!NetworkBehaviourProcessor.ReadArguments(md, readers, Log, worker, RemoteCallType.ClientRpc,
+                    ref WeavingFailed))
                 return null;
 
             // invoke actual command function
@@ -56,11 +59,12 @@ namespace Mirror.Weaver
             This way we do not need to modify the code anywhere else,  and this works
             correctly in dependent assemblies
         */
-        public static MethodDefinition ProcessRpcCall(WeaverTypes weaverTypes, Writers writers, Logger Log, TypeDefinition td, MethodDefinition md, CustomAttribute clientRpcAttr, ref bool WeavingFailed)
+        public static MethodDefinition ProcessRpcCall(WeaverTypes weaverTypes, Writers writers, Logger Log,
+            TypeDefinition td, MethodDefinition md, CustomAttribute clientRpcAttr, ref bool WeavingFailed)
         {
-            MethodDefinition rpc = MethodProcessor.SubstituteMethod(Log, td, md, ref WeavingFailed);
+            var rpc = MethodProcessor.SubstituteMethod(Log, td, md, ref WeavingFailed);
 
-            ILProcessor worker = md.Body.GetILProcessor();
+            var worker = md.Body.GetILProcessor();
 
             NetworkBehaviourProcessor.WriteSetupLocals(worker, weaverTypes);
 
@@ -71,11 +75,12 @@ namespace Mirror.Weaver
             NetworkBehaviourProcessor.WriteGetWriter(worker, weaverTypes);
 
             // write all the arguments that the user passed to the Rpc call
-            if (!NetworkBehaviourProcessor.WriteArguments(worker, writers, Log, md, RemoteCallType.ClientRpc, ref WeavingFailed))
+            if (!NetworkBehaviourProcessor.WriteArguments(worker, writers, Log, md, RemoteCallType.ClientRpc,
+                    ref WeavingFailed))
                 return null;
 
-            int channel = clientRpcAttr.GetField("channel", 0);
-            bool includeOwner = clientRpcAttr.GetField("includeOwner", true);
+            var channel = clientRpcAttr.GetField("channel", 0);
+            var includeOwner = clientRpcAttr.GetField("includeOwner", true);
 
             // invoke SendInternal and return
             // this

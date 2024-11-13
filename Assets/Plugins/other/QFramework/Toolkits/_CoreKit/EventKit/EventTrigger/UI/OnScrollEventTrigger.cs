@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,10 +12,10 @@ using UnityEngine.EventSystems;
 
 namespace QFramework
 {
-    public class OnScrollEventTrigger: MonoBehaviour, IScrollHandler
+    public class OnScrollEventTrigger : MonoBehaviour, IScrollHandler
     {
-        public readonly EasyEvent<PointerEventData> OnScrollEvent = new EasyEvent<PointerEventData>();
-        
+        public readonly EasyEvent<PointerEventData> OnScrollEvent = new();
+
         public void OnScroll(PointerEventData eventData)
         {
             OnScrollEvent.Trigger(eventData);
@@ -29,7 +29,7 @@ namespace QFramework
         {
             return self.GetOrAddComponent<OnScrollEventTrigger>().OnScrollEvent.Register(onScroll);
         }
-        
+
         public static IUnRegister OnScrollEvent(this GameObject self, Action<PointerEventData> onScroll)
         {
             return self.GetOrAddComponent<OnScrollEventTrigger>().OnScrollEvent.Register(onScroll);

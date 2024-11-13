@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright 2019.1 ~ 2020.10 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  ****************************************************************************/
@@ -13,18 +13,9 @@ using UnityEngine;
 // ReSharper disable once CheckNamespace
 namespace QFramework
 {
-    
-  public class UIKitEditorWindow : EditorWindow
+    public class UIKitEditorWindow : EditorWindow
     {
-
-        [MenuItem("QFramework/Toolkits/UI Kit %#u")]
-        public static void OpenWindow()
-        {
-            var window = (UIKitEditorWindow)GetWindow(typeof(UIKitEditorWindow), true);
-            Debug.Log(Screen.width + " screen width*****");
-            window.position = new Rect(100, 100, 600, 400);
-            window.Show();
-        }
+        private UIKitSettingView mUIKitSettingView;
 
 
         private void OnEnable()
@@ -33,8 +24,6 @@ namespace QFramework
             mUIKitSettingView.Init();
         }
 
-        UIKitSettingView mUIKitSettingView = null;
-        
 
         public void OnDisable()
         {
@@ -52,19 +41,29 @@ namespace QFramework
 
             GUILayout.EndVertical();
             GUILayout.Space(50);
-            
-        }
-    }    
-    public class UIKitSettingView 
-    {
-        private UIKitSettingData mUiKitSettingData;
-        
-        public void Init()
-        {
-            mUiKitSettingData = UIKitSettingData.Load();
         }
 
-        private Lazy<GUIStyle> mLabelBold12 = new Lazy<GUIStyle>(() =>
+        [MenuItem("QFramework/Toolkits/UI Kit %#u")]
+        public static void OpenWindow()
+        {
+            var window = (UIKitEditorWindow)GetWindow(typeof(UIKitEditorWindow), true);
+            Debug.Log(Screen.width + " screen width*****");
+            window.position = new Rect(100, 100, 600, 400);
+            window.Show();
+        }
+    }
+
+    public class UIKitSettingView
+    {
+        private readonly Lazy<GUIStyle> mLabel12 = new(() =>
+        {
+            return new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12
+            };
+        });
+
+        private readonly Lazy<GUIStyle> mLabelBold12 = new(() =>
         {
             return new GUIStyle(GUI.skin.label)
             {
@@ -72,18 +71,16 @@ namespace QFramework
                 fontStyle = FontStyle.Bold
             };
         });
-        
-        private Lazy<GUIStyle> mLabel12 = new Lazy<GUIStyle>(() =>
+
+        private UIKitSettingData mUiKitSettingData;
+
+        public void Init()
         {
-            return new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 12,
-            };
-        });
+            mUiKitSettingData = UIKitSettingData.Load();
+        }
 
         public void OnGUI()
         {
-            
             GUILayout.BeginVertical("box");
             {
                 GUILayout.Label(LocaleText.UINamespace, mLabel12.Value, GUILayout.Width(200));
@@ -95,7 +92,6 @@ namespace QFramework
                     GUILayout.Label(LocaleText.UINamespace, mLabelBold12.Value, GUILayout.Width(200));
 
                     mUiKitSettingData.Namespace = EditorGUILayout.TextField(mUiKitSettingData.Namespace);
-
                 }
                 GUILayout.EndHorizontal();
 
@@ -106,10 +102,9 @@ namespace QFramework
                     GUILayout.Label(LocaleText.UIScriptGenerateDir, mLabelBold12.Value, GUILayout.Width(200));
 
                     mUiKitSettingData.UIScriptDir = EditorGUILayout.TextField(mUiKitSettingData.UIScriptDir);
-
                 }
                 GUILayout.EndHorizontal();
-                
+
                 GUILayout.Space(6);
 
                 GUILayout.BeginHorizontal();
@@ -117,7 +112,6 @@ namespace QFramework
                     GUILayout.Label(LocaleText.UIPanelPrefabDir, mLabelBold12.Value, GUILayout.Width(200));
 
                     mUiKitSettingData.UIPrefabDir = EditorGUILayout.TextField(mUiKitSettingData.UIPrefabDir);
-
                 }
                 GUILayout.EndHorizontal();
 
@@ -135,9 +129,9 @@ namespace QFramework
         public void OnDispose()
         {
         }
-        
 
-        class LocaleText
+
+        private class LocaleText
         {
             public static bool IsCN => LocaleKitEditor.IsCN.Value;
             public static string UINamespace => IsCN ? " UI 命名空间:" : "UI Namespace:";
@@ -145,7 +139,7 @@ namespace QFramework
             public static string UIScriptGenerateDir => IsCN ? " UI 脚本生成路径:" : " UI Scripts Generate Dir:";
 
             public static string UIPanelPrefabDir => IsCN ? " UIPanel Prefab 路径:" : " UIPanel Prefab Dir:";
-            
+
             public static string Apply => IsCN ? "保存" : "Apply";
         }
     }

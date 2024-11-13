@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2017 ~ 2018.7 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,20 +23,20 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using System;
+
 namespace QFramework
 {
-    using System;
-
     /// <summary>
-    /// Support Manager of Manager
+    ///     Support Manager of Manager
     /// </summary>
-    public interface IManager 
+    public interface IManager
     {
         void Init();
 
-        void RegisterEvent<T>(T msgId, Action<int,object[]> process) where T : IConvertible;
+        void RegisterEvent<T>(T msgId, Action<int, object[]> process) where T : IConvertible;
 
-        void UnRegisterEvent<T>(T msgEvent, Action<int,object[]> process) where T : IConvertible;
+        void UnRegisterEvent<T>(T msgEvent, Action<int, object[]> process) where T : IConvertible;
 
         void SendEvent<T>(T eventId) where T : IConvertible;
 

@@ -1,4 +1,0 @@
-repository "Remake@timelordshi@cloud.cn"
-  path "/"
-    smartbranch "/main" changeset "7"              
-     

@@ -1,12 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-
-using UnityEngine;
-
-namespace QFramework
+﻿namespace QFramework
 {
-	public abstract class UIElementList : UIElement
-	{
-
-	}
+    public abstract class UIElementList : UIElement
+    {
+    }
 }

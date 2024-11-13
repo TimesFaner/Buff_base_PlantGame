@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -16,7 +16,6 @@ namespace QFramework
     {
         protected override void Init()
         {
-            
         }
 
         [MenuItem("Assets/@QPM/Make Folder Package To Folder Same Path")]
@@ -29,7 +28,7 @@ namespace QFramework
             AssetDatabase.Refresh();
         }
 
-        [MenuItem("Assets/@QPM/Make Folder Package To Folder Same Path",true)]
+        [MenuItem("Assets/@QPM/Make Folder Package To Folder Same Path", true)]
         public static bool MakeFolderPackageToFolderSamePathCheck()
         {
             var activeObject = Selection.activeObject;
@@ -45,7 +44,6 @@ namespace QFramework
             var assetPath = AssetDatabase.GetAssetPath(activeObject);
             Debug.Log(assetPath);
             AssetDatabase.ImportPackage(assetPath, true);
-
         }
 
         [MenuItem("Assets/@QPM/Import Package", true)]

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -18,6 +18,8 @@ namespace QFramework
 
     internal class GenericMenuView : IGenericMenu
     {
+        private readonly GenericMenu mMenu = new();
+
         protected GenericMenuView()
         {
         }
@@ -26,8 +28,6 @@ namespace QFramework
         {
             return new GenericMenuView();
         }
-
-        private GenericMenu mMenu = new GenericMenu();
 
         public GenericMenuView Separator()
         {

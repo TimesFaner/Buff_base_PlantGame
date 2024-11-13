@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2018.7 ~ 2021.3 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,15 +29,29 @@ namespace QFramework
 {
     public class PanelInfo : IPoolType, IPoolable
     {
-        public IUIData UIData;
-
-        public UILevel Level = UILevel.Common;
-
         public string AssetBundleName;
 
         public string GameObjName;
 
+        public UILevel Level = UILevel.Common;
+
         public Type PanelType;
+        public IUIData UIData;
+
+        public void OnRecycled()
+        {
+            UIData = null;
+            AssetBundleName = null;
+            GameObjName = null;
+            PanelType = null;
+        }
+
+        public bool IsRecycled { get; set; }
+
+        public void Recycle2Cache()
+        {
+            SafeObjectPool<PanelInfo>.Instance.Recycle(this);
+        }
 
         public static PanelInfo Allocate(string gameObjName, UILevel level, IUIData uiData, Type panelType,
             string assetBundleName)
@@ -51,20 +65,5 @@ namespace QFramework
             panelInfo.AssetBundleName = assetBundleName;
             return panelInfo;
         }
-
-        public void Recycle2Cache()
-        {
-            SafeObjectPool<PanelInfo>.Instance.Recycle(this);
-        }
-
-        public void OnRecycled()
-        {
-            UIData = null;
-            AssetBundleName = null;
-            GameObjName = null;
-            PanelType = null;
-        }
-
-        public bool IsRecycled { get; set; }
     }
 }

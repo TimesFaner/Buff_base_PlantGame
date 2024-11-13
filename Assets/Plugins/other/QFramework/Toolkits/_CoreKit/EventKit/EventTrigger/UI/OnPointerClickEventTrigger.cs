@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -14,7 +14,7 @@ namespace QFramework
 {
     public class OnPointerClickEventTrigger : MonoBehaviour, IPointerClickHandler
     {
-        public readonly EasyEvent<PointerEventData> OnPointerClickEvent = new EasyEvent<PointerEventData>();
+        public readonly EasyEvent<PointerEventData> OnPointerClickEvent = new();
 
         public void OnPointerClick(PointerEventData eventData)
         {
@@ -29,7 +29,7 @@ namespace QFramework
         {
             return self.GetOrAddComponent<OnPointerClickEventTrigger>().OnPointerClickEvent.Register(onPointerClick);
         }
-        
+
         public static IUnRegister OnPointerClickEvent(this GameObject self, Action<PointerEventData> onPointerClick)
         {
             return self.GetOrAddComponent<OnPointerClickEventTrigger>().OnPointerClickEvent.Register(onPointerClick);

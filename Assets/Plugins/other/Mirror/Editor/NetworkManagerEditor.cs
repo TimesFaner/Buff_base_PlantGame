@@ -8,9 +8,9 @@ namespace Mirror
     [CanEditMultipleObjects]
     public class NetworkManagerEditor : Editor
     {
-        SerializedProperty spawnListProperty;
-        ReorderableList spawnList;
         protected NetworkManager networkManager;
+        private ReorderableList spawnList;
+        private SerializedProperty spawnListProperty;
 
         protected void Init()
         {
@@ -38,21 +38,18 @@ namespace Mirror
             DrawDefaultInspector();
             EditorGUI.BeginChangeCheck();
             spawnList.DoLayoutList();
-            if (EditorGUI.EndChangeCheck())
-            {
-                serializedObject.ApplyModifiedProperties();
-            }
+            if (EditorGUI.EndChangeCheck()) serializedObject.ApplyModifiedProperties();
         }
 
-        static void DrawHeader(Rect headerRect)
+        private static void DrawHeader(Rect headerRect)
         {
             GUI.Label(headerRect, "Registered Spawnable Prefabs:");
         }
 
         internal void DrawChild(Rect r, int index, bool isActive, bool isFocused)
         {
-            SerializedProperty prefab = spawnListProperty.GetArrayElementAtIndex(index);
-            GameObject go = (GameObject)prefab.objectReferenceValue;
+            var prefab = spawnListProperty.GetArrayElementAtIndex(index);
+            var go = (GameObject)prefab.objectReferenceValue;
 
             GUIContent label;
             if (go == null)
@@ -61,19 +58,22 @@ namespace Mirror
             }
             else
             {
-                NetworkIdentity identity = go.GetComponent<NetworkIdentity>();
-                label = new GUIContent(go.name, identity != null ? $"AssetId: [{identity.assetId}]" : "No Network Identity");
+                var identity = go.GetComponent<NetworkIdentity>();
+                label = new GUIContent(go.name,
+                    identity != null ? $"AssetId: [{identity.assetId}]" : "No Network Identity");
             }
 
-            GameObject newGameObject = (GameObject)EditorGUI.ObjectField(r, label, go, typeof(GameObject), false);
+            var newGameObject = (GameObject)EditorGUI.ObjectField(r, label, go, typeof(GameObject), false);
 
             if (newGameObject != go)
             {
                 if (newGameObject != null && !newGameObject.GetComponent<NetworkIdentity>())
                 {
-                    Debug.LogError($"Prefab {newGameObject} cannot be added as spawnable as it doesn't have a NetworkIdentity.");
+                    Debug.LogError(
+                        $"Prefab {newGameObject} cannot be added as spawnable as it doesn't have a NetworkIdentity.");
                     return;
                 }
+
                 prefab.objectReferenceValue = newGameObject;
             }
         }
@@ -88,7 +88,7 @@ namespace Mirror
             spawnListProperty.arraySize += 1;
             list.index = spawnListProperty.arraySize - 1;
 
-            SerializedProperty obj = spawnListProperty.GetArrayElementAtIndex(spawnListProperty.arraySize - 1);
+            var obj = spawnListProperty.GetArrayElementAtIndex(spawnListProperty.arraySize - 1);
             obj.objectReferenceValue = null;
 
             spawnList.index = spawnList.count - 1;
@@ -99,10 +99,7 @@ namespace Mirror
         internal void RemoveButton(ReorderableList list)
         {
             spawnListProperty.DeleteArrayElementAtIndex(spawnList.index);
-            if (list.index >= spawnListProperty.arraySize)
-            {
-                list.index = spawnListProperty.arraySize - 1;
-            }
+            if (list.index >= spawnListProperty.arraySize) list.index = spawnListProperty.arraySize - 1;
         }
     }
 }

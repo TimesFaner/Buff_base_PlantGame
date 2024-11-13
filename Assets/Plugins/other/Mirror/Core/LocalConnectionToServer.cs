@@ -8,20 +8,27 @@ namespace Mirror
     // send messages on this connection causes the server's handler function to be invoked directly.
     public class LocalConnectionToServer : NetworkConnectionToServer
     {
-        internal LocalConnectionToClient connectionToClient;
-
         // packet queue
-        internal readonly Queue<NetworkWriterPooled> queue = new Queue<NetworkWriterPooled>();
+        internal readonly Queue<NetworkWriterPooled> queue = new();
+
+        // see caller for comments on why we need this
+        private bool connectedEventPending;
+        internal LocalConnectionToClient connectionToClient;
+        private bool disconnectedEventPending;
 
         // Deprecated 2023-02-23
         [Obsolete("Use LocalConnectionToClient.address instead.")]
         public string address => "localhost";
 
-        // see caller for comments on why we need this
-        bool connectedEventPending;
-        bool disconnectedEventPending;
-        internal void QueueConnectedEvent() => connectedEventPending = true;
-        internal void QueueDisconnectedEvent() => disconnectedEventPending = true;
+        internal void QueueConnectedEvent()
+        {
+            connectedEventPending = true;
+        }
+
+        internal void QueueDisconnectedEvent()
+        {
+            disconnectedEventPending = true;
+        }
 
         // Send stage two: serialized NetworkMessage as ArraySegment<byte>
         internal override void Send(ArraySegment<byte> segment, int channelId = Channels.Reliable)
@@ -34,18 +41,16 @@ namespace Mirror
 
             // OnTransportData assumes batching.
             // so let's make a batch with proper timestamp prefix.
-            Batcher batcher = GetBatchForChannelId(channelId);
+            var batcher = GetBatchForChannelId(channelId);
             batcher.AddMessage(segment, NetworkTime.localTime);
 
             // flush it to the server's OnTransportData immediately.
             // local connection to server always invokes immediately.
-            using (NetworkWriterPooled writer = NetworkWriterPool.Get())
+            using (var writer = NetworkWriterPool.Get())
             {
                 // make a batch with our local time (double precision)
                 if (batcher.GetBatch(writer))
-                {
                     NetworkServer.OnTransportData(connectionId, writer.ToArraySegment(), channelId);
-                }
                 else Debug.LogError("Local connection failed to make batch. This should never happen.");
             }
         }
@@ -65,21 +70,19 @@ namespace Mirror
             while (queue.Count > 0)
             {
                 // call receive on queued writer's content, return to pool
-                NetworkWriterPooled writer = queue.Dequeue();
-                ArraySegment<byte> message = writer.ToArraySegment();
+                var writer = queue.Dequeue();
+                var message = writer.ToArraySegment();
 
                 // OnTransportData assumes a proper batch with timestamp etc.
                 // let's make a proper batch and pass it to OnTransportData.
-                Batcher batcher = GetBatchForChannelId(Channels.Reliable);
+                var batcher = GetBatchForChannelId(Channels.Reliable);
                 batcher.AddMessage(message, NetworkTime.localTime);
 
-                using (NetworkWriterPooled batchWriter = NetworkWriterPool.Get())
+                using (var batchWriter = NetworkWriterPool.Get())
                 {
                     // make a batch with our local time (double precision)
                     if (batcher.GetBatch(batchWriter))
-                    {
                         NetworkClient.OnTransportData(batchWriter.ToArraySegment(), Channels.Reliable);
-                    }
                 }
 
                 NetworkWriterPool.Return(writer);
@@ -123,6 +126,9 @@ namespace Mirror
         }
 
         // true because local connections never timeout
-        internal override bool IsAlive(float timeout) => true;
+        internal override bool IsAlive(float timeout)
+        {
+            return true;
+        }
     }
 }

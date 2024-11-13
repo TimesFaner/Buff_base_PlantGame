@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,9 +12,9 @@ using UnityEngine.EventSystems;
 
 namespace QFramework
 {
-    public class OnPointerUpEventTrigger : MonoBehaviour,IPointerUpHandler
+    public class OnPointerUpEventTrigger : MonoBehaviour, IPointerUpHandler
     {
-        public readonly EasyEvent<PointerEventData> OnPointerUpEvent = new EasyEvent<PointerEventData>();
+        public readonly EasyEvent<PointerEventData> OnPointerUpEvent = new();
 
         public void OnPointerUp(PointerEventData eventData)
         {
@@ -30,7 +30,7 @@ namespace QFramework
             return self.GetOrAddComponent<OnPointerUpEventTrigger>().OnPointerUpEvent
                 .Register(onPointerUpEvent);
         }
-        
+
         public static IUnRegister OnPointerUpEvent(this GameObject self, Action<PointerEventData> onPointerUpEvent)
         {
             return self.GetOrAddComponent<OnPointerUpEventTrigger>().OnPointerUpEvent

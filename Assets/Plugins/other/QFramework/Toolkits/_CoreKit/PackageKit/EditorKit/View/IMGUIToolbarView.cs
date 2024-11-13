@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -16,26 +16,26 @@ namespace QFramework
 {
     public interface IMGUIToolbar : IMGUIView
     {
+        BindableProperty<int> IndexProperty { get; }
         IMGUIToolbar Menus(List<string> menuNames);
         IMGUIToolbar AddMenu(string name, Action<string> onMenuSelected = null);
-
-        BindableProperty<int> IndexProperty { get; }
 
         IMGUIToolbar Index(int index);
     }
 
     internal class IMGUIIMGUIToolbarView : IMGUIAbstractView, IMGUIToolbar
     {
+        private List<string> MenuNames = new();
+
+        private List<Action<string>> MenuSelected = new();
+
         public IMGUIIMGUIToolbarView()
         {
-            IndexProperty = new BindableProperty<int>(0);
+            IndexProperty = new BindableProperty<int>();
 
             IndexProperty.Register(index =>
             {
-                if (MenuSelected.Count > index)
-                {
-                    MenuSelected[index].Invoke(MenuNames[index]);
-                }
+                if (MenuSelected.Count > index) MenuSelected[index].Invoke(MenuNames[index]);
             });
 
             Style = new FluentGUIStyle(() => GUI.skin.button);
@@ -43,9 +43,9 @@ namespace QFramework
 
         public IMGUIToolbar Menus(List<string> menuNames)
         {
-            this.MenuNames = menuNames;
+            MenuNames = menuNames;
             // empty
-            this.MenuSelected = MenuNames.Select(menuName => new Action<string>((str => { }))).ToList();
+            MenuSelected = MenuNames.Select(menuName => new Action<string>(str => { })).ToList();
             return this;
         }
 
@@ -53,22 +53,14 @@ namespace QFramework
         {
             MenuNames.Add(name);
             if (onMenuSelected == null)
-            {
-                MenuSelected.Add((item) => { });
-            }
+                MenuSelected.Add(item => { });
             else
-            {
                 MenuSelected.Add(onMenuSelected);
-            }
 
             return this;
         }
 
-        List<string> MenuNames = new List<string>();
-
-        List<Action<string>> MenuSelected = new List<Action<string>>();
-
-        public BindableProperty<int> IndexProperty { get; private set; }
+        public BindableProperty<int> IndexProperty { get; }
 
         public IMGUIToolbar Index(int index)
         {

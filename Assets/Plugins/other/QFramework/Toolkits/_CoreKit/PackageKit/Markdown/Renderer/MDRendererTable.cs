@@ -23,10 +23,7 @@ namespace QFramework
         {
             var layout = renderer.Layout;
 
-            if (table.Count == 0)
-            {
-                return;
-            }
+            if (table.Count == 0) return;
 
             layout.StartTable();
 
@@ -39,10 +36,7 @@ namespace QFramework
 
             foreach (TableRow row in table)
             {
-                if (row == null)
-                {
-                    continue;
-                }
+                if (row == null) continue;
 
                 layout.StartTableRow(row.IsHeader);
                 var consumeSpace = renderer.ConsumeSpace;
@@ -54,28 +48,19 @@ namespace QFramework
                 {
                     var cell = row[cellIndex] as TableCell;
 
-                    if (cell == null || cell.Count == 0)
-                    {
-                        continue;
-                    }
+                    if (cell == null || cell.Count == 0) continue;
 
                     if (cell[0].Span.IsEmpty)
                     {
                         renderer.Write(new LiteralInline(" "));
 
-                        if (cellIndex != row.Count - 1)
-                        {
-                            layout.NewLine();
-                        }
+                        if (cellIndex != row.Count - 1) layout.NewLine();
                     }
                     else
                     {
                         var consumeNewLine = renderer.ConsumeNewLine;
 
-                        if (cellIndex == numCols - 1)
-                        {
-                            renderer.ConsumeNewLine = true;
-                        }
+                        if (cellIndex == numCols - 1) renderer.ConsumeNewLine = true;
 
                         renderer.Write(new LiteralInline(" "));
                         renderer.WriteChildren(cell);

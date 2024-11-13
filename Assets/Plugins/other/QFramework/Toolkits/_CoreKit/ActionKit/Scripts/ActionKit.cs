@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -20,7 +20,7 @@ namespace QFramework
     public class ActionKit : Architecture<ActionKit>
     {
         public static ulong ID_GENERATOR = 0;
-        
+
 #if UNITY_EDITOR
         [MethodAPI]
         [APIDescriptionCN("延时回调")]
@@ -111,7 +111,7 @@ ActionKit.Sequence()
         }
 
 
-        public static IAction Lerp(float a,float b,float duration,Action<float> onLerp,Action onLerpFinish = null)
+        public static IAction Lerp(float a, float b, float duration, Action<float> onLerp, Action onLerpFinish = null)
         {
             return QFramework.Lerp.Allocate(a, b, duration, onLerp, onLerpFinish);
         }
@@ -139,7 +139,7 @@ ActionKit.Sequence()
 // Mouse Clicked
 ")]
 #endif
-        void ConditionAPI()
+        private void ConditionAPI()
         {
         }
 
@@ -354,7 +354,7 @@ ActionKit.Sequence()
 
 
         #region Events
-        
+
 #if UNITY_EDITOR
         [PropertyAPI]
         [APIDescriptionCN("Update 生命周期支持")]
@@ -371,7 +371,7 @@ ActionKit.OnUpdate.Register(() =>
 #endif
 
         public static EasyEvent OnUpdate => ActionKitMonoBehaviourEvents.Instance.OnUpdate;
-        
+
 #if UNITY_EDITOR
         [PropertyAPI]
         [APIDescriptionCN("FixedUpdate 生命周期支持")]
@@ -385,7 +385,7 @@ ActionKit.OnFixedUpdate.Register(() =>
 ")]
 #endif
         public static EasyEvent OnFixedUpdate => ActionKitMonoBehaviourEvents.Instance.OnFixedUpdate;
-        
+
 #if UNITY_EDITOR
         [PropertyAPI]
         [APIDescriptionCN("LateUpdate 生命周期支持")]
@@ -399,7 +399,7 @@ ActionKit.OnLateUpdate.Register(() =>
 ")]
 #endif
         public static EasyEvent OnLateUpdate => ActionKitMonoBehaviourEvents.Instance.OnLateUpdate;
-        
+
 #if UNITY_EDITOR
         [PropertyAPI]
         [APIDescriptionCN("OnGUI 生命周期支持")]
@@ -413,7 +413,7 @@ ActionKit.OnGUI.Register(() =>
 ")]
 #endif
         public static EasyEvent OnGUI => ActionKitMonoBehaviourEvents.Instance.OnGUIEvent;
-        
+
 #if UNITY_EDITOR
         [PropertyAPI]
         [APIDescriptionCN("OnApplicationQuit 生命周期支持")]
@@ -441,7 +441,7 @@ ActionKit.OnApplicationQuit.Register(() =>
         public static EasyEvent<bool> OnApplicationPause =>
             ActionKitMonoBehaviourEvents.Instance.OnApplicationPauseEvent;
 
-        
+
 #if UNITY_EDITOR
         [PropertyAPI]
         [APIDescriptionCN("OnApplicationFocus 生命周期支持")]

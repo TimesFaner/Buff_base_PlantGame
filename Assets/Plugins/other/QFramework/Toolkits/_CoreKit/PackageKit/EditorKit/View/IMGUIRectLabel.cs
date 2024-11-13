@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -24,7 +24,7 @@ namespace QFramework
 
         public Rect Rect { get; set; }
 
-        public BindableProperty<string> Content { get; private set; }
+        public BindableProperty<string> Content { get; }
 
         protected override void OnGUI()
         {

@@ -2,35 +2,81 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Buff_system_timesfaner.TBuff_base;
-using Buff_system_timesfaner.TModule;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Buff_system_timesfaner.TBuffHandler
 {
-    public class Buffhandler : MonoBehaviour,IBuffHandler
+    public class Buffhandler : MonoBehaviour, IBuffHandler
     {
-        //linked增删性能优于列表
-        public LinkedList<Buffinfo> Bufflist = new LinkedList<Buffinfo>();
-        public List<Buffinfo> Removelist = new List<Buffinfo>();
         private Action addAction;
-        private Action removeAction;
-        private Action forOnBuffDestroy;    
+
+        //linked增删性能优于列表
+        public LinkedList<Buffinfo> Bufflist = new();
+        private Action forOnBuffDestroy;
         private Action forOnBuffStart;
+        private Action removeAction;
+        public List<Buffinfo> Removelist = new();
+
+        #region mono
+
+        private void Update()
+        {
+            BufftickandRemove();
+        }
+
+        #endregion
+
+        public void BufftickandRemove()
+        {
+            foreach (var buffinfo in Bufflist)
+            {
+                if (buffinfo.buffData.OnTick is not null)
+                {
+                    if (buffinfo.tickTimer < 0)
+                    {
+                        buffinfo.buffData.OnTick.CallandInvoke(buffinfo);
+                        buffinfo.tickTimer = buffinfo.buffData.TickMaxTime;
+                    }
+                    else
+                    {
+                        buffinfo.tickTimer -= Time.deltaTime;
+                    }
+                }
+
+                //永久性
+                if (buffinfo.buffData.IsForever)
+                {
+                }
+                else
+                {
+                    if (buffinfo.durationTimer < 0)
+                        Removelist.Add(buffinfo);
+                    else
+                        buffinfo.durationTimer -= Time.deltaTime;
+                }
+            }
+
+            foreach (var buff in Removelist) RemoveBuff(buff);
+        }
+
         #region 增删查改
-        public Buffinfo FindBuff(int buffId) => Bufflist.FirstOrDefault(buffInfo => buffId == buffInfo.buffData.Id);
+
+        public Buffinfo FindBuff(int buffId)
+        {
+            return Bufflist.FirstOrDefault(buffInfo => buffId == buffInfo.buffData.Id);
+        }
+
         /// <summary>
-        /// 按照优先级降序,大的在前
+        ///     按照优先级降序,大的在前
         /// </summary>
         private void SortBuff()
         {
-            LinkedList<Buffinfo> result = new LinkedList<Buffinfo>();
- 
+            var result = new LinkedList<Buffinfo>();
+
             foreach (var node in Bufflist)
             {
-                LinkedListNode<Buffinfo> lln = result.First;
+                var lln = result.First;
                 while (true)
-                {
                     if (lln == null)
                     {
                         result.AddLast(node);
@@ -45,23 +91,20 @@ namespace Buff_system_timesfaner.TBuffHandler
                     {
                         lln = lln.Next;
                     }
-                }
             }
+
             Bufflist = result;
         }
+
         public void AddBuff(Buffinfo buffinfo)
         {
             var findbuffinfo = FindBuff(buffinfo.buffData.Id);
             if (findbuffinfo != null)
             {
                 Debug.Log("is");
-                if (findbuffinfo.curLevel < buffinfo.buffData.MaxLevel)
-                {
-                    findbuffinfo.curLevel++;
-                }
-                
+                if (findbuffinfo.curLevel < buffinfo.buffData.MaxLevel) findbuffinfo.curLevel++;
+
                 if (findbuffinfo.curLevel > 0)
-                {
                     switch (findbuffinfo.buffData.AddandSubType)
                     {
                         case AddType.addsub:
@@ -81,13 +124,13 @@ namespace Buff_system_timesfaner.TBuffHandler
                         case AddType.keep:
                             break;
                     }
-                }
-                findbuffinfo.buffData.OnCreate.CallandInvoke(findbuffinfo);
 
+                findbuffinfo.buffData.OnCreate.CallandInvoke(findbuffinfo);
             }
             //无此buff时
             else
-            {Debug.Log("isno");
+            {
+                Debug.Log("isno");
                 buffinfo.durationTimer = buffinfo.buffData.Duration;
                 buffinfo.curLevel = 1;
                 Bufflist.AddLast(buffinfo);
@@ -95,19 +138,22 @@ namespace Buff_system_timesfaner.TBuffHandler
                 SortBuff();
             }
         }
-        
+
         public void RemoveBuff(Buffinfo buffinfo)
         {
             buffinfo.buffData.OnRemove.CallandInvoke(buffinfo);
             switch (buffinfo.buffData.AddandSubType)
-            { case AddType.addsub:
-                {//直接删除
+            {
+                case AddType.addsub:
+                {
+                    //直接删除
                     buffinfo.buffData.OnDestroy.CallandInvoke(buffinfo);
                     Removelist.Add(buffinfo);
                     break;
                 }
                 case AddType.replace:
-                {//减少层次，时间重置
+                {
+                    //减少层次，时间重置
                     buffinfo.curLevel--;
                     buffinfo.durationTimer = buffinfo.buffData.Duration;
                     if (buffinfo.curLevel <= 0)
@@ -115,6 +161,7 @@ namespace Buff_system_timesfaner.TBuffHandler
                         buffinfo.buffData.OnDestroy.CallandInvoke(buffinfo);
                         Bufflist.Remove(buffinfo);
                     }
+
                     break;
                 }
                 case AddType.indepent:
@@ -123,30 +170,34 @@ namespace Buff_system_timesfaner.TBuffHandler
                     Bufflist.Remove(buffinfo);
                     break;
                 case AddType.keep:
-                {//减少层次，时间保持
+                {
+                    //减少层次，时间保持
                     buffinfo.curLevel--;
                     if (buffinfo.curLevel <= 0)
                     {
                         buffinfo.buffData.OnDestroy.CallandInvoke(buffinfo);
                         Bufflist.Remove(buffinfo);
                     }
+
                     break;
                 }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
-        
+
         #endregion
+
         #region 注册其他事件
+
         public void RegisterOnAddBuff(Action act)
         {
-          addAction+= act;
+            addAction += act;
         }
 
         public void RemoveOnAddBuff(Action act)
         {
-            addAction-= act;
+            addAction -= act;
         }
 
         public void RegisterOnRemoveBuff(Action act)
@@ -156,60 +207,9 @@ namespace Buff_system_timesfaner.TBuffHandler
 
         public void RemoveOnRemoveBuff(Action act)
         {
-            removeAction-= act;
-        }
-        
-
-        #endregion
-
-        #region mono
-
-        private void Update()
-        {
-            BufftickandRemove();
+            removeAction -= act;
         }
 
         #endregion
-
-        public void BufftickandRemove()
-        {
-            foreach (var buffinfo in Bufflist)  
-            {
-                if (buffinfo.buffData.OnTick is not null)
-                {
-                    if (buffinfo.tickTimer < 0)
-                    {
-                        buffinfo.buffData.OnTick.CallandInvoke(buffinfo);
-                        buffinfo.tickTimer = buffinfo.buffData.TickMaxTime;
-                    }
-                    else
-                    {
-                        buffinfo.tickTimer -= Time.deltaTime;
-                    }
-                }
-                //永久性
-                if (buffinfo.buffData.IsForever)
-                {
-                    
-                }
-                else
-                {
-                    if (buffinfo.durationTimer < 0)
-                    {
-                        Removelist.Add(buffinfo);
-                    }
-                    else
-                    {
-                        buffinfo.durationTimer -= Time.deltaTime;
-                    }
-                }
-                
-            }
-
-            foreach (var buff in Removelist)
-            {
-                RemoveBuff(buff);
-            }
-        }
     }
 }

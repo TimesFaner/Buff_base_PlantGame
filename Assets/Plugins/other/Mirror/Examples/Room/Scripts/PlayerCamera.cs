@@ -7,9 +7,9 @@ namespace Mirror.Examples.NetworkRoom
 {
     public class PlayerCamera : NetworkBehaviour
     {
-        Camera mainCam;
+        private Camera mainCam;
 
-        void Awake()
+        private void Awake()
         {
             mainCam = Camera.main;
         }
@@ -25,7 +25,9 @@ namespace Mirror.Examples.NetworkRoom
                 mainCam.transform.localEulerAngles = new Vector3(10f, 0f, 0f);
             }
             else
+            {
                 Debug.LogWarning("PlayerCamera: Could not find a camera in scene with 'MainCamera' tag.");
+            }
         }
 
         public override void OnStopLocalPlayer()

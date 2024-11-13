@@ -1,12 +1,13 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
 #if UNITY_EDITOR
+using System;
 using System.Xml;
 using UnityEngine;
 
@@ -19,17 +20,13 @@ namespace QFramework
 
     public class IMGUIRectLabelView : IMGUIAbstractView, IMGUIRectLabel
     {
+        private Rect mRect = new(0, 0, 200, 100);
+
+        private string mText = string.Empty;
+
         public IMGUIRectLabelView()
         {
             mStyle = new FluentGUIStyle(() => new GUIStyle(GUI.skin.label));
-        }
-
-        private string mText = string.Empty;
-        private Rect mRect = new Rect(0, 0, 200, 100);
-
-        protected override void OnGUI()
-        {
-            GUI.Label(mRect, mText, mStyle.Value);
         }
 
         public IMGUIRectLabel Text(string labelText)
@@ -41,7 +38,7 @@ namespace QFramework
 
         public T Convert<T>(XmlNode node) where T : class
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public IMGUIRectLabel Rect(Rect rect)
@@ -86,6 +83,11 @@ namespace QFramework
         {
             mRect.height = height;
             return this;
+        }
+
+        protected override void OnGUI()
+        {
+            GUI.Label(mRect, mText, mStyle.Value);
         }
     }
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2017 ~ 2020.1 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,7 +24,6 @@
  ****************************************************************************/
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -33,15 +32,14 @@ namespace QFramework
 {
     public class UIKitConfig
     {
-        public virtual UIRoot Root
-        {
-            get { return UIRoot.Instance; }
-        }
-        
+        public IPanelLoaderPool PanelLoaderPool = new DefaultPanelLoaderPool();
+
+        public virtual UIRoot Root => UIRoot.Instance;
+
         public virtual IPanel LoadPanel(PanelSearchKeys panelSearchKeys)
         {
             var panelLoader = PanelLoaderPool.AllocateLoader();
-            
+
             // panelLoader.LoadPanelPrefab 感谢 NormalKatt、高跟鞋提供为反馈
             var panelPrefab = panelLoader.LoadPanelPrefab(panelSearchKeys);
 
@@ -60,7 +58,7 @@ namespace QFramework
         {
             var panelLoader = PanelLoaderPool.AllocateLoader();
 
-            panelLoader.LoadPanelPrefabAsync(panelSearchKeys, (panelPrefab) =>
+            panelLoader.LoadPanelPrefabAsync(panelSearchKeys, panelPrefab =>
             {
                 var obj = Object.Instantiate(panelPrefab);
 
@@ -72,9 +70,6 @@ namespace QFramework
                 onPanelLoad?.Invoke(retScript);
             });
         }
-
-
-        public IPanelLoaderPool PanelLoaderPool = new DefaultPanelLoaderPool();
 
         public virtual void SetDefaultSizeOfPanel(IPanel panel)
         {
@@ -91,7 +86,7 @@ namespace QFramework
     }
 
     /// <summary>
-    /// 如果想要定制自己的加载器，自定义 IPanelLoader 以及
+    ///     如果想要定制自己的加载器，自定义 IPanelLoader 以及
     /// </summary>
     public interface IPanelLoader
     {
@@ -111,25 +106,30 @@ namespace QFramework
 
     public abstract class AbstractPanelLoaderPool : IPanelLoaderPool
     {
-        private Stack<IPanelLoader> mPool = new Stack<IPanelLoader>(16);
+        private readonly Stack<IPanelLoader> mPool = new(16);
 
         public IPanelLoader AllocateLoader()
         {
             return mPool.Count > 0 ? mPool.Pop() : CreatePanelLoader();
         }
 
-        protected abstract IPanelLoader CreatePanelLoader();
-
         public void RecycleLoader(IPanelLoader panelLoader)
         {
             mPool.Push(panelLoader);
         }
+
+        protected abstract IPanelLoader CreatePanelLoader();
     }
 
     public class DefaultPanelLoaderPool : AbstractPanelLoaderPool
     {
+        protected override IPanelLoader CreatePanelLoader()
+        {
+            return new DefaultPanelLoader();
+        }
+
         /// <summary>
-        /// Default
+        ///     Default
         /// </summary>
         public class DefaultPanelLoader : IPanelLoader
         {
@@ -152,11 +152,6 @@ namespace QFramework
             {
                 mPanelPrefab = null;
             }
-        }
-
-        protected override IPanelLoader CreatePanelLoader()
-        {
-            return new DefaultPanelLoader();
         }
     }
 }

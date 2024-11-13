@@ -1,4 +1,3 @@
-
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -26,11 +25,8 @@ namespace QFramework
             {
                 var depends = AssetDatabase.GetAssetBundleDependencies(abName, false);
                 AssetDataGroup group;
-                var abIndex = assetBundleConfigFile.AddAssetBundleName(abName, depends, out @group);
-                if (abIndex < 0)
-                {
-                    continue;
-                }
+                var abIndex = assetBundleConfigFile.AddAssetBundleName(abName, depends, out group);
+                if (abIndex < 0) continue;
 
                 var assets = AssetDatabase.GetAssetPathsFromAssetBundle(abName);
                 foreach (var cell in assets)
@@ -39,14 +35,14 @@ namespace QFramework
 
                     var code = type.ToCode();
 
-                    @group.AddAssetData(cell.EndsWith(".unity")
+                    group.AddAssetData(cell.EndsWith(".unity")
                         ? new AssetData(AssetPath2Name(cell), ResLoadType.ABScene, abIndex, abName, code)
                         : new AssetData(AssetPath2Name(cell), ResLoadType.ABAsset, abIndex, abName, code));
                 }
             }
-#endif   
+#endif
         }
-        
+
         public static string AssetPath2Name(string assetPath)
         {
             var startIndex = assetPath.LastIndexOf("/") + 1;

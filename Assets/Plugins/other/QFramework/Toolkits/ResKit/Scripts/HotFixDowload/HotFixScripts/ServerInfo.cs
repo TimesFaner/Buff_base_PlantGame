@@ -1,61 +1,49 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Xml.Serialization;
 
 namespace QFramework
 {
-    [System.Serializable]
+    [Serializable]
     public class ServerInfo
     {
-        [XmlElement("GameVersion")]
-        public VersionInfo[] GameVersion;
+        [XmlElement("GameVersion")] public VersionInfo[] GameVersion;
     }
 
     //当前游戏版本对应的所有补丁
-    [System.Serializable]
+    [Serializable]
     public class VersionInfo
     {
-        [XmlAttribute]
-        public string Version;
-        [XmlElement]
-        public Pathces[] Pathces;
+        [XmlAttribute] public string Version;
+
+        [XmlElement] public Pathces[] Pathces;
     }
 
     //一个总补丁包
-    [System.Serializable]
+    [Serializable]
     public class Pathces
     {
-        [XmlAttribute]
-        public int Version;
+        [XmlAttribute] public int Version;
 
-        [XmlAttribute]
-        public string Des;
+        [XmlAttribute] public string Des;
 
-        [XmlElement]
-        public List<Patch> Files;
+        [XmlElement] public List<Patch> Files;
     }
 
     /// <summary>
-    /// 单个补丁包
+    ///     单个补丁包
     /// </summary>
-    [System.Serializable]
+    [Serializable]
     public class Patch
     {
-        [XmlAttribute]
-        public string Name;
+        [XmlAttribute] public string Name;
 
-        [XmlAttribute]
-        public string Url;
+        [XmlAttribute] public string Url;
 
-        [XmlAttribute]
-        public string Platform;
+        [XmlAttribute] public string Platform;
 
-        [XmlAttribute]
-        public string Md5;
+        [XmlAttribute] public string Md5;
 
-        [XmlAttribute]
-        public float Size;
+        [XmlAttribute] public float Size;
     }
-
 }

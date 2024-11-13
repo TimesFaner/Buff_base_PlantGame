@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
@@ -18,7 +19,7 @@ namespace Mirror
         // => 2 bytes is enough to avoid collisions.
         //    registering a messageId twice will log a warning anyway.
         public static readonly ushort Id =
-            (ushort)(typeof(T).FullName.GetStableHashCode());
+            (ushort)typeof(T).FullName.GetStableHashCode();
     }
 
     // message packing all in one place, instead of constructing headers in all
@@ -33,18 +34,14 @@ namespace Mirror
 
         // Id <> Type lookup for debugging, profiler, etc.
         // important when debugging messageId errors!
-        public static readonly Dictionary<ushort, Type> Lookup =
-            new Dictionary<ushort, Type>();
+        public static readonly Dictionary<ushort, Type> Lookup = new();
 
         // dump all types for debugging
         public static void LogTypes()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             builder.AppendLine("NetworkMessageIds:");
-            foreach (KeyValuePair<ushort, Type> kvp in Lookup)
-            {
-                builder.AppendLine($"  Id={kvp.Key} = {kvp.Value}");
-            }
+            foreach (var kvp in Lookup) builder.AppendLine($"  Id={kvp.Key} = {kvp.Value}");
             Debug.Log(builder.ToString());
         }
 
@@ -58,13 +55,15 @@ namespace Mirror
         public static int MaxContentSize(int channelId)
         {
             // calculate the max possible size that can fit in a batch
-            int transportMax = Transport.active.GetMaxPacketSize(channelId);
+            var transportMax = Transport.active.GetMaxPacketSize(channelId);
             return transportMax - IdSize - Batcher.MaxMessageOverhead(transportMax);
         }
 
         // max message size which includes header + content.
-        public static int MaxMessageSize(int channelId) =>
-            MaxContentSize(channelId) + IdSize;
+        public static int MaxMessageSize(int channelId)
+        {
+            return MaxContentSize(channelId) + IdSize;
+        }
 
         // automated message id from type hash.
         // platform independent via stable hashcode.
@@ -74,8 +73,10 @@ namespace Mirror
         //    registering a messageId twice will log a warning anyway.
         // keep this for convenience. easier to use than NetworkMessageId<T>.Id.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ushort GetId<T>() where T : struct, NetworkMessage =>
-            NetworkMessageId<T>.Id;
+        public static ushort GetId<T>() where T : struct, NetworkMessage
+        {
+            return NetworkMessageId<T>.Id;
+        }
 
         // pack message before sending
         // -> NetworkWriter passed as arg so that we can use .ToArraySegment
@@ -98,7 +99,7 @@ namespace Mirror
                 messageId = reader.ReadUShort();
                 return true;
             }
-            catch (System.IO.EndOfStreamException)
+            catch (EndOfStreamException)
             {
                 messageId = 0;
                 return false;
@@ -110,7 +111,8 @@ namespace Mirror
         internal static NetworkMessageDelegate WrapHandler<T, C>(Action<C, T, int> handler, bool requireAuthentication)
             where T : struct, NetworkMessage
             where C : NetworkConnection
-            => (conn, reader, channelId) =>
+        {
+            return (conn, reader, channelId) =>
             {
                 // protect against DOS attacks if attackers try to send invalid
                 // data packets to crash the server/client. there are a thousand
@@ -126,13 +128,14 @@ namespace Mirror
                 // further attacks.
                 T message = default;
                 // record start position for NetworkDiagnostics because reader might contain multiple messages if using batching
-                int startPos = reader.Position;
+                var startPos = reader.Position;
                 try
                 {
                     if (requireAuthentication && !conn.isAuthenticated)
                     {
                         // message requires authentication, but the connection was not authenticated
-                        Debug.LogWarning($"Disconnecting connection: {conn}. Received message {typeof(T)} that required authentication, but the user has not authenticated yet");
+                        Debug.LogWarning(
+                            $"Disconnecting connection: {conn}. Received message {typeof(T)} that required authentication, but the user has not authenticated yet");
                         conn.Disconnect();
                         return;
                     }
@@ -145,13 +148,14 @@ namespace Mirror
                 }
                 catch (Exception exception)
                 {
-                    Debug.LogError($"Disconnecting connection: {conn}. This can happen if the other side accidentally (or an attacker intentionally) sent invalid data. Reason: {exception}");
+                    Debug.LogError(
+                        $"Disconnecting connection: {conn}. This can happen if the other side accidentally (or an attacker intentionally) sent invalid data. Reason: {exception}");
                     conn.Disconnect();
                     return;
                 }
                 finally
                 {
-                    int endPos = reader.Position;
+                    var endPos = reader.Position;
                     // TODO: Figure out the correct channel
                     NetworkDiagnostics.OnReceive(message, channelId, endPos - startPos);
                 }
@@ -164,10 +168,12 @@ namespace Mirror
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Disconnecting connId={conn.connectionId} to prevent exploits from an Exception in MessageHandler: {e.GetType().Name} {e.Message}\n{e.StackTrace}");
+                    Debug.LogError(
+                        $"Disconnecting connId={conn.connectionId} to prevent exploits from an Exception in MessageHandler: {e.GetType().Name} {e.Message}\n{e.StackTrace}");
                     conn.Disconnect();
                 }
             };
+        }
 
         // version for handlers without channelId
         // TODO obsolete this some day to always use the channelId version.
@@ -178,7 +184,11 @@ namespace Mirror
             where C : NetworkConnection
         {
             // wrap action as channelId version, call original
-            void Wrapped(C conn, T msg, int _) => handler(conn, msg);
+            void Wrapped(C conn, T msg, int _)
+            {
+                handler(conn, msg);
+            }
+
             return WrapHandler((Action<C, T, int>)Wrapped, requireAuthentication);
         }
     }

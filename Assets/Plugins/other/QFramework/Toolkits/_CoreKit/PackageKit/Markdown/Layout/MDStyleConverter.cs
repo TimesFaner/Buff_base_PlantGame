@@ -14,16 +14,11 @@ namespace QFramework
 {
     public class MDStyleConverter
     {
-        private MDStyle mCurrentStyle = MDStyle.Default;
-        private GUIStyle[] mWorking;
-        private GUIStyle[] mReference;
+        private const int Variable = 0;
+        private const int FixedInline = 7;
+        private const int FixedBlock = 8;
 
-        Color linkColor = new Color(0.41f, 0.71f, 1.0f, 1.0f);
-        const int Variable = 0;
-        const int FixedInline = 7;
-        const int FixedBlock = 8;
-
-        static readonly string[] CustomStyles = new string[]
+        private static readonly string[] CustomStyles =
         {
             "variable",
             "h1",
@@ -33,8 +28,13 @@ namespace QFramework
             "h5",
             "h6",
             "fixed_inline",
-            "fixed_block",
+            "fixed_block"
         };
+
+        private readonly Color linkColor = new(0.41f, 0.71f, 1.0f, 1.0f);
+        private readonly GUIStyle[] mReference;
+        private readonly GUIStyle[] mWorking;
+        private MDStyle mCurrentStyle = MDStyle.Default;
 
         public MDStyleConverter(GUISkin skin)
         {
@@ -53,10 +53,7 @@ namespace QFramework
 
         public GUIStyle Apply(MDStyle src)
         {
-            if (src.Block)
-            {
-                return mWorking[FixedBlock];
-            }
+            if (src.Block) return mWorking[FixedBlock];
 
             var style = mWorking[src.Size];
 

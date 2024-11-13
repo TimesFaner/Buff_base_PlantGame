@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -12,7 +12,7 @@ namespace QFramework
     {
         void Write(ICodeTemplateData data);
     }
-    
+
     public interface ICodeTemplate<TData> : ICodeTemplate where TData : ICodeTemplateData
     {
         void Write(TData data);
@@ -30,6 +30,5 @@ namespace QFramework
 
     public interface ICodeTemplateData
     {
-        
     }
 }

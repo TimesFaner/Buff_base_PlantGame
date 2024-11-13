@@ -1,61 +1,54 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using Object = System.Object;
 
 namespace Remake
 {
-    public class EnemyAttackState: IState
+    public class EnemyAttackState : IState
     {
-        
-        private EnemyStateMachine _enemyStateMachine;
-        private Transform[] playerTransform;
-        
-        public Transform nearestPlayer ;
-        private float distance;
+        private readonly EnemyStateMachine _enemyStateMachine;
+
         //速度·
-        protected float baseSpeed =1f;
-        public float speedModifier= All_Data.EnemySpeedModify;
+        protected float baseSpeed = 1f;
+        private float distance;
+
+        public Transform nearestPlayer;
+        private Transform[] playerTransform;
+
+        public float speedModifier = All_Data.EnemySpeedModify;
+
         //TODO
-        public float stopDistance = All_Data.EnemyStopDistance;//改为统一数值
+        public float stopDistance = All_Data.EnemyStopDistance; //改为统一数值
+
         public EnemyAttackState(EnemyStateMachine enemyStateMachine)
         {
             _enemyStateMachine = enemyStateMachine;
         }
-     
+
         public void Enter()
         {
-         //   nearestPlayer.position = new Vector3(0, 0, 0);
-           _enemyStateMachine.Enemy._EnemyAttack = _enemyStateMachine.Enemy.GetComponent<EnemyAttack>();
+            //   nearestPlayer.position = new Vector3(0, 0, 0);
+            _enemyStateMachine.Enemy._EnemyAttack = _enemyStateMachine.Enemy.GetComponent<EnemyAttack>();
         }
 
         public void Handleinput()
         {
-            
         }
 
         public void Update()
         {
-            
             GetTransformofPlayer();
-            
         }
 
         public void PhysicsUpdate()
         {
-            
         }
 
         public void Exit()
         {
-            
         }
 
         #region mainfunc
 
-        void GetTransformofPlayer()
+        private void GetTransformofPlayer()
         {
             var theplayer = GameObject.FindGameObjectsWithTag("Player");
             if (theplayer.Length < 1)
@@ -65,41 +58,38 @@ namespace Remake
             else
             {
                 playerTransform = new Transform[theplayer.Length];
-                for (int i = 0; i < theplayer.Length; i++)
-                {
-                    playerTransform[i]= theplayer[i].transform;
-                  //  Debug.Log("Find the Player"+theplayer[i].transform.position);
-                } 
+                for (var i = 0; i < theplayer.Length; i++) playerTransform[i] = theplayer[i].transform;
+                //  Debug.Log("Find the Player"+theplayer[i].transform.position);
             }
+
             GoWhichPlayer();
-           
         }
 
-        void GoWhichPlayer()
+        private void GoWhichPlayer()
         {
-            distance = Mathf.Infinity;//(_enemyStateMachine.Enemy.transform.position-playerTransform[0].position).sqrMagnitude;
+            distance = Mathf
+                .Infinity; //(_enemyStateMachine.Enemy.transform.position-playerTransform[0].position).sqrMagnitude;
             foreach (var player in playerTransform)
             {
-                var temp = (_enemyStateMachine.Enemy.transform.position-player.position).sqrMagnitude;
-                
+                var temp = (_enemyStateMachine.Enemy.transform.position - player.position).sqrMagnitude;
+
                 if (temp <= distance)
                 {
                     distance = temp;
                     nearestPlayer = player;
-                    
                 }
             }
+
             GoThePlayer();
-            
         }
 
-        void GoThePlayer()
+        private void GoThePlayer()
         {
             _enemyStateMachine.Enemy.transform.Translate
-            ((nearestPlayer.position - _enemyStateMachine.Enemy.transform.position).normalized 
-             * (baseSpeed * speedModifier*Time.deltaTime));
+            ((nearestPlayer.position - _enemyStateMachine.Enemy.transform.position).normalized
+             * (baseSpeed * speedModifier * Time.deltaTime));
             _enemyStateMachine.Enemy.erb.velocity = new Vector2(0, 0);
-            
+
             //TODO
             if (Vector3.Distance(_enemyStateMachine.Enemy.transform.position, nearestPlayer.position) < stopDistance)
             {
@@ -112,11 +102,11 @@ namespace Remake
             }
         }
 
-        void Attack()
+        private void Attack()
         {
             //TODO
         }
-        
+
         #endregion
     }
 }

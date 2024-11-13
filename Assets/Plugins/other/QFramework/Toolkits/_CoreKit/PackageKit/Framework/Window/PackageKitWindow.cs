@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 ~ 2023 liangxie UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -20,24 +20,22 @@ namespace QFramework
     [InitializeOnLoad]
     public class PackageKitWindow : EasyEditorWindow
     {
+        private const float toolbarHeight = 20;
+
+        private const string URL_FEEDBACK = "https://qframework.cn/community";
+
+        private static List<IPackageKitView> mViews;
+
+        [SerializeField] private VerticalSplitView mSplitView;
+
+        private Dictionary<MutableTuple<string, bool>, List<PackageKitViewRenderInfo>>
+            mPackageKitViewRenderInfos;
+
+        private PackageKitViewRenderInfo mSelectedViewRender;
+
         static PackageKitWindow()
         {
             mViews = null;
-        }
-
-        [DidReloadScripts]
-        public static void Reload()
-        {
-            var editorWindows = Resources.FindObjectsOfTypeAll<EditorWindow>();
-            if (editorWindows.Any(w => w.GetType() == typeof(PackageKitWindow) && w.As<PackageKitWindow>().Openning))
-            {
-                GetWindow<PackageKitWindow>().ReInitNextFrame();
-            }
-        }
-
-        private void OnEnable()
-        {
-            var _ = LocaleKitEditor.IsCN;
         }
 
         private static List<IPackageKitView> Views
@@ -52,6 +50,97 @@ namespace QFramework
             set => mViews = value;
         }
 
+        public static string SelectedViewName
+        {
+            get => EditorPrefs.GetString("QF_SELECTED_DISPLAY_NAME", string.Empty);
+            set => EditorPrefs.SetString("QF_SELECTED_DISPLAY_NAME", value);
+        }
+
+        private void OnEnable()
+        {
+            var _ = LocaleKitEditor.IsCN;
+        }
+
+        public override void OnGUI()
+        {
+            if (EditorApplication.isCompiling)
+            {
+                GUILayout.Label(LocaleText.Compiling);
+                return;
+            }
+
+            if (!mInited)
+            {
+                GUILayout.Label(LocaleText.Reloading);
+                base.OnGUI();
+                return;
+            }
+
+            if (mSplitView == null)
+                mSplitView = new VerticalSplitView
+                {
+                    FirstPan = rect =>
+                    {
+                        GUILayout.BeginArea(rect);
+                        GUILayout.BeginHorizontal();
+                        GUILayout.BeginVertical();
+                        GUILayout.Space(toolbarHeight);
+                        GUILayout.EndVertical();
+                        if (mSplitView.Expand.Value)
+                        {
+                            GUILayout.FlexibleSpace();
+
+                            if (GUILayout.Button("<")) mSplitView.Expand.Value = false;
+                        }
+
+                        GUILayout.EndHorizontal();
+                        LeftSelectView("");
+                        GUILayout.EndArea();
+                    },
+                    SecondPan = rect =>
+                    {
+                        GUILayout.BeginArea(rect);
+                        GUILayout.BeginHorizontal();
+                        if (!mSplitView.Expand.Value)
+                        {
+                            if (GUILayout.Button(">")) mSplitView.Expand.Value = true;
+
+                            GUILayout.FlexibleSpace();
+                        }
+
+                        GUILayout.BeginVertical();
+                        GUILayout.Space(toolbarHeight);
+                        GUILayout.EndVertical();
+                        GUILayout.EndHorizontal();
+
+                        if (mSelectedViewRender != null) mSelectedViewRender.Interface.OnGUI();
+
+                        GUILayout.EndArea();
+                    }
+                };
+
+            base.OnGUI();
+
+            GUILayout.BeginHorizontal();
+            LocaleKitEditor.DrawSwitchToggle(GUI.skin.label.normal.textColor);
+            GUILayout.EndHorizontal();
+
+            var r = GUILayoutUtility.GetLastRect();
+            mSplitView?.OnGUI(new Rect(new Vector2(0, r.yMax),
+                new Vector2(position.width, position.height - r.height)));
+
+            mSelectedViewRender?.Interface?.OnWindowGUIEnd();
+            RenderEndCommandExecutor.ExecuteCommand();
+        }
+
+        [DidReloadScripts]
+        public static void Reload()
+        {
+            var editorWindows = Resources.FindObjectsOfTypeAll<EditorWindow>();
+            if (editorWindows.Any(w => w.GetType() == typeof(PackageKitWindow) && w.As<PackageKitWindow>().Openning))
+                GetWindow<PackageKitWindow>().ReInitNextFrame();
+        }
+
         private static void InitializeViews(List<IPackageKitView> views)
         {
             views.Clear();
@@ -59,44 +148,18 @@ namespace QFramework
             var viewTypes = PackageKitAssemblyCache.GetDerivedTypes<IPackageKitView>(false, false).ToArray();
 
             foreach (var view in viewTypes)
-            {
-                if (view.GetAttribute<PackageKitIgnoreAttribute>(false) == null)
+                if (view.GetAttribute<PackageKitIgnoreAttribute>() == null)
                 {
                     var viewInstance = Activator.CreateInstance(view) as IPackageKitView;
                     if (viewInstance == null) continue;
                     views.Add(viewInstance);
                 }
-            }
 
             foreach (var view in views)
             {
-                view.EditorWindow = EditorWindow.GetWindow<PackageKitWindow>();
+                view.EditorWindow = GetWindow<PackageKitWindow>();
                 view.Init();
             }
-        }
-
-        private static List<IPackageKitView> mViews;
-
-        class LocaleText
-        {
-            public static string QFrameworkSettings =>
-                LocaleKitEditor.IsCN.Value ? "QFramework 设置" : "QFramework Settings";
-
-            public static string Compiling => LocaleKitEditor.IsCN.Value ? "编译中..." : "Compiling...";
-            public static string Reloading => LocaleKitEditor.IsCN.Value ? "重载中..." : "Reloading...";
-        }
-
-        private const float toolbarHeight = 20;
-
-        class Styles
-        {
-            public static GUIStyle box = "box";
-            public static GUIStyle toolbarSeachTextFieldPopup = "ToolbarSeachTextFieldPopup";
-            public static GUIStyle searchCancelButton = "ToolbarSeachCancelButton";
-            public static GUIStyle searchCancelButtonEmpty = "ToolbarSeachCancelButtonEmpty";
-            public static GUIStyle foldout = "Foldout";
-            public static GUIStyle toolbarDropDown = "ToolbarDropDown";
-            public static GUIStyle selectionRect = "SelectionRect";
         }
 
         [MenuItem(FrameworkMenuItems.Preferences, false, FrameworkMenuItemsPriorities.Preferences)]
@@ -117,21 +180,10 @@ namespace QFramework
             }
         }
 
-        private const string URL_FEEDBACK = "https://qframework.cn/community";
-
         [MenuItem(FrameworkMenuItems.Feedback, false, FrameworkMenuItemsPriorities.Feedback)]
         private static void Feedback()
         {
             Application.OpenURL(URL_FEEDBACK);
-        }
-
-        private Dictionary<MutableTuple<string, bool>, List<PackageKitViewRenderInfo>>
-            mPackageKitViewRenderInfos = null;
-
-        public static string SelectedViewName
-        {
-            get => EditorPrefs.GetString("QF_SELECTED_DISPLAY_NAME", string.Empty);
-            set => EditorPrefs.SetString("QF_SELECTED_DISPLAY_NAME", value);
         }
 
         protected override void Init()
@@ -183,104 +235,15 @@ namespace QFramework
                 .ToDictionary(p => p.Key, p => p.Value);
 
             if (string.IsNullOrEmpty(SelectedViewName))
-            {
                 mSelectedViewRender = mPackageKitViewRenderInfos.FirstOrDefault().Value.FirstOrDefault();
-            }
             else
-            {
                 mSelectedViewRender = mPackageKitViewRenderInfos
                                           .SelectMany(p => p.Value)
                                           .FirstOrDefault(p => p.Interface.ToString() == SelectedViewName) ??
                                       mPackageKitViewRenderInfos.FirstOrDefault().Value.FirstOrDefault();
-            }
 
             mSelectedViewRender.Interface.OnShow();
         }
-
-        [SerializeField] private VerticalSplitView mSplitView;
-
-        public override void OnGUI()
-        {
-            if (EditorApplication.isCompiling)
-            {
-                GUILayout.Label(LocaleText.Compiling);
-                return;
-            }
-
-            if (!mInited)
-            {
-                GUILayout.Label(LocaleText.Reloading);
-                base.OnGUI();
-                return;
-            }
-
-            if (mSplitView == null)
-            {
-                mSplitView = new VerticalSplitView
-                {
-                    FirstPan = rect =>
-                    {
-                        GUILayout.BeginArea(rect);
-                        GUILayout.BeginHorizontal();
-                        GUILayout.BeginVertical();
-                        GUILayout.Space(toolbarHeight);
-                        GUILayout.EndVertical();
-                        if (mSplitView.Expand.Value)
-                        {
-                            GUILayout.FlexibleSpace();
-
-                            if (GUILayout.Button("<"))
-                            {
-                                mSplitView.Expand.Value = false;
-                            }
-                        }
-                        GUILayout.EndHorizontal();
-                        LeftSelectView("");
-                        GUILayout.EndArea();
-                    },
-                    SecondPan = rect =>
-                    {
-                        GUILayout.BeginArea(rect);
-                        GUILayout.BeginHorizontal();
-                        if (!mSplitView.Expand.Value)
-                        {
-                            if (GUILayout.Button(">"))
-                            {
-                                mSplitView.Expand.Value = true;
-                            }
-
-                            GUILayout.FlexibleSpace();
-                        }
-                        GUILayout.BeginVertical();
-                        GUILayout.Space(toolbarHeight);
-                        GUILayout.EndVertical();
-                        GUILayout.EndHorizontal();
-
-                        if (mSelectedViewRender != null)
-                        {
-                            mSelectedViewRender.Interface.OnGUI();
-                        }
-
-                        GUILayout.EndArea();
-                    }
-                };
-            }
-
-            base.OnGUI();
-
-            GUILayout.BeginHorizontal();
-            LocaleKitEditor.DrawSwitchToggle(GUI.skin.label.normal.textColor);
-            GUILayout.EndHorizontal();
-
-            var r = GUILayoutUtility.GetLastRect();
-            mSplitView?.OnGUI(new Rect(new Vector2(0, r.yMax),
-                new Vector2(position.width, position.height - r.height)));
-
-            mSelectedViewRender?.Interface?.OnWindowGUIEnd();
-            RenderEndCommandExecutor.ExecuteCommand();
-        }
-
-        private PackageKitViewRenderInfo mSelectedViewRender = null;
 
         private void LeftSelectView(string search)
         {
@@ -304,10 +267,7 @@ namespace QFramework
                         GUILayout.EndHorizontal();
                         var rect = GUILayoutUtility.GetLastRect();
 
-                        if (mSelectedViewRender == drawer)
-                        {
-                            GUI.Box(rect, "", Styles.selectionRect);
-                        }
+                        if (mSelectedViewRender == drawer) GUI.Box(rect, "", Styles.selectionRect);
 
                         if (rect.Contains(Event.current.mousePosition) && Event.current.type == EventType.MouseUp)
                         {
@@ -332,28 +292,43 @@ namespace QFramework
         public override void OnClose()
         {
             if (mPackageKitViewRenderInfos != null)
-            {
                 mPackageKitViewRenderInfos.SelectMany(r => r.Value)
                     .Where(view => view != null)
                     .ToList()
                     .ForEach(view => view.Interface.OnDispose());
-            }
 
             RemoveAllChildren();
         }
 
         public override void OnUpdate()
         {
-            if (mSelectedViewRender != null)
-            {
-                mSelectedViewRender.Interface.OnUpdate();
-            }
+            if (mSelectedViewRender != null) mSelectedViewRender.Interface.OnUpdate();
         }
 
         public static void OpenWindowWithViewType<T>()
         {
             SelectedViewName = typeof(T).FullName;
             OpenWindow();
+        }
+
+        private class LocaleText
+        {
+            public static string QFrameworkSettings =>
+                LocaleKitEditor.IsCN.Value ? "QFramework 设置" : "QFramework Settings";
+
+            public static string Compiling => LocaleKitEditor.IsCN.Value ? "编译中..." : "Compiling...";
+            public static string Reloading => LocaleKitEditor.IsCN.Value ? "重载中..." : "Reloading...";
+        }
+
+        private class Styles
+        {
+            public static GUIStyle box = "box";
+            public static GUIStyle toolbarSeachTextFieldPopup = "ToolbarSeachTextFieldPopup";
+            public static GUIStyle searchCancelButton = "ToolbarSeachCancelButton";
+            public static GUIStyle searchCancelButtonEmpty = "ToolbarSeachCancelButtonEmpty";
+            public static GUIStyle foldout = "Foldout";
+            public static GUIStyle toolbarDropDown = "ToolbarDropDown";
+            public static readonly GUIStyle selectionRect = "SelectionRect";
         }
     }
 }

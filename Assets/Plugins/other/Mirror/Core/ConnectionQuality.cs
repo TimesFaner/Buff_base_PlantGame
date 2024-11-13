@@ -1,16 +1,17 @@
 // standalone, Unity-independent connection-quality algorithm & enum.
 // don't need to use this directly, it's built into Mirror's NetworkClient.
+
 using UnityEngine;
 
 namespace Mirror
 {
     public enum ConnectionQuality : byte
     {
-        EXCELLENT,  // ideal experience for high level competitors
-        GOOD,       // very playable for everyone but high level competitors
-        FAIR,       // very noticeable latency, not very enjoyable anymore
-        POOR,       // unplayable
-        ESTIMATING, // still estimating
+        EXCELLENT, // ideal experience for high level competitors
+        GOOD, // very playable for everyone but high level competitors
+        FAIR, // very noticeable latency, not very enjoyable anymore
+        POOR, // unplayable
+        ESTIMATING // still estimating
     }
 
     // provide different heuristics for users to choose from.
@@ -23,11 +24,11 @@ namespace Mirror
         {
             switch (quality)
             {
-                case ConnectionQuality.EXCELLENT:  return Color.green;
-                case ConnectionQuality.GOOD:       return Color.yellow;
-                case ConnectionQuality.FAIR:       return new Color(1.0f, 0.647f, 0.0f);
-                case ConnectionQuality.POOR:       return Color.red;
-                default:                           return Color.gray;
+                case ConnectionQuality.EXCELLENT: return Color.green;
+                case ConnectionQuality.GOOD: return Color.yellow;
+                case ConnectionQuality.FAIR: return new Color(1.0f, 0.647f, 0.0f);
+                case ConnectionQuality.POOR: return Color.red;
+                default: return Color.gray;
             }
         }
 
@@ -53,7 +54,7 @@ namespace Mirror
             // estimating in multiples is a great way to be game independent.
             // for example, a fast paced shooter and a slow paced RTS will both
             // have poor connection if the multiplier is >10.
-            double multiplier = currentBufferTime / targetBufferTime;
+            var multiplier = currentBufferTime / targetBufferTime;
 
             // empirically measured with Tanks demo + LatencySimulation.
             // it's not obvious to estimate on paper.

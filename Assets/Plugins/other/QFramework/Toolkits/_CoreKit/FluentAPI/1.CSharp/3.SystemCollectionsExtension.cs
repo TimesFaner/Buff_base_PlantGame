@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -42,10 +42,7 @@ new Dictionary<string, string>()
 #endif
         public static IEnumerable<T> ForEach<T>(this IEnumerable<T> self, Action<T> action)
         {
-            foreach (var item in self)
-            {
-                action(item);
-            }
+            foreach (var item in self) action(item);
 
             return self;
         }
@@ -68,8 +65,8 @@ testList.ForEachReverse(number => number.LogInfo());
 
             return selfList;
         }
-        
-        
+
+
 #if UNITY_EDITOR
         // v1 No.6
         [MethodAPI]
@@ -83,13 +80,10 @@ testList.Foreach((c,index)=>Debug.Log(index));
 #endif
         public static void ForEach<T>(this List<T> list, Action<int, T> action)
         {
-            for (var i = 0; i < list.Count; i++)
-            {
-                action(i, list[i]);
-            }
+            for (var i = 0; i < list.Count; i++) action(i, list[i]);
         }
-        
-        
+
+
 #if UNITY_EDITOR
         // v1 No.7
         [MethodAPI]
@@ -114,8 +108,8 @@ infos.ForEach((key,value)=> Debug.LogFormat(""{0}:{1}"",key,value);
 
             dictE.Dispose();
         }
-        
-        
+
+
 #if UNITY_EDITOR
         // v1 No.8
         [MethodAPI]
@@ -177,19 +171,42 @@ dictionary3.ForEach(pair => Debug.LogFormat(""{0}:{1}"", pair.Key, pair.Value));
 
             enumerator.Dispose();
         }
-        
-        
+
+
         // TODO:
-        public static bool IsNullOrEmpty<T>(this T[] collection) => collection == null || collection.Length == 0;
+        public static bool IsNullOrEmpty<T>(this T[] collection)
+        {
+            return collection == null || collection.Length == 0;
+        }
+
         // TODO:
-        public static bool IsNullOrEmpty<T>(this IList<T> collection) => collection == null || collection.Count == 0;
+        public static bool IsNullOrEmpty<T>(this IList<T> collection)
+        {
+            return collection == null || collection.Count == 0;
+        }
+
         // TODO:
-        public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection) => collection == null || !collection.Any();
+        public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection)
+        {
+            return collection == null || !collection.Any();
+        }
+
         // TODO:
-        public static bool IsNotNullAndEmpty<T>(this T[] collection) => !IsNullOrEmpty(collection);
+        public static bool IsNotNullAndEmpty<T>(this T[] collection)
+        {
+            return !IsNullOrEmpty(collection);
+        }
+
         // TODO:
-        public static bool IsNotNullAndEmpty<T>(this IList<T> collection) => !IsNullOrEmpty(collection);
+        public static bool IsNotNullAndEmpty<T>(this IList<T> collection)
+        {
+            return !IsNullOrEmpty(collection);
+        }
+
         // TODO:
-        public static bool IsNotNullAndEmpty<T>(this IEnumerable<T> collection) => !IsNullOrEmpty(collection);
+        public static bool IsNotNullAndEmpty<T>(this IEnumerable<T> collection)
+        {
+            return !IsNullOrEmpty(collection);
+        }
     }
 }

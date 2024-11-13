@@ -1,19 +1,19 @@
 ﻿/****************************************************************************
  * Copyright (c) 2018.5 ~ 8 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,22 +24,23 @@
  ****************************************************************************/
 
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
 namespace QFramework
 {
-    using System.Collections;
-    using System.Collections.Generic;
-    using UnityEngine;
-    
-    [System.Serializable]
+    [Serializable]
     public class UIPanelTesterInfo
     {
         /// <summary>
-        /// 页面的名字
+        ///     页面的名字
         /// </summary>
         public string PanelName;
 
         /// <summary>
-        /// 层级名字
+        ///     层级名字
         /// </summary>
         public UILevel Level;
     }
@@ -47,12 +48,12 @@ namespace QFramework
     public class UIPanelTester : MonoBehaviour
     {
         /// <summary>
-        /// 页面的名字
+        ///     页面的名字
         /// </summary>
         public string PanelName;
 
         /// <summary>
-        /// 层级名字
+        ///     层级名字
         /// </summary>
         public UILevel Level;
 
@@ -66,10 +67,13 @@ namespace QFramework
         private IEnumerator Start()
         {
             yield return new WaitForSeconds(0.2f);
-			
+
             UIKit.OpenPanel(PanelName, Level);
 
-            mOtherPanels.ForEach(panelTesterInfo => { UIKit.OpenPanel(panelTesterInfo.PanelName, panelTesterInfo.Level); });
+            mOtherPanels.ForEach(panelTesterInfo =>
+            {
+                UIKit.OpenPanel(panelTesterInfo.PanelName, panelTesterInfo.Level);
+            });
         }
     }
 }

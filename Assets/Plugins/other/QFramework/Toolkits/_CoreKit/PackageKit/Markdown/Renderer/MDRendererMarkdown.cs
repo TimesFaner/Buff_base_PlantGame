@@ -17,39 +17,14 @@ namespace QFramework
 {
     internal class MDRendererMarkdown : RendererBase
     {
-        internal IMDLayoutBuilder Layout;
-        internal MDStyle Style = new MDStyle();
-        internal string ToolTip = null;
-
-        internal string Link
-        {
-            get { return mLink; }
-
-            set
-            {
-                mLink = value;
-                Style.Link = !string.IsNullOrEmpty(mLink);
-            }
-        }
-
-        public bool ConsumeSpace = false;
         public bool ConsumeNewLine = false;
 
-        private string mLink = null;
+        public bool ConsumeSpace = false;
+        internal IMDLayoutBuilder Layout;
 
-        internal void Text(string text)
-        {
-            Layout.Text(text, Style, Link, ToolTip);
-        }
-
-
-        //------------------------------------------------------------------------------
-
-        public override object Render(MarkdownObject document)
-        {
-            Write(document);
-            return this;
-        }
+        private string mLink;
+        internal MDStyle Style;
+        internal string ToolTip = null;
 
         public MDRendererMarkdown(IMDLayoutBuilder doc)
         {
@@ -75,10 +50,35 @@ namespace QFramework
             ObjectRenderers.Add(new MDRendererInlineLiteral());
         }
 
+        internal string Link
+        {
+            get => mLink;
+
+            set
+            {
+                mLink = value;
+                Style.Link = !string.IsNullOrEmpty(mLink);
+            }
+        }
+
+        internal void Text(string text)
+        {
+            Layout.Text(text, Style, Link, ToolTip);
+        }
+
+
+        //------------------------------------------------------------------------------
+
+        public override object Render(MarkdownObject document)
+        {
+            Write(document);
+            return this;
+        }
+
 
         ////////////////////////////////////////////////////////////////////////////////
 
-        /// <see cref="Markdig.Renderers.TextRendererBase.WriteLeafInline"/>
+        /// <see cref="Markdig.Renderers.TextRendererBase.WriteLeafInline" />
         internal void WriteLeafBlockInline(LeafBlock block)
         {
             var inline = block.Inline as Inline;
@@ -91,20 +91,17 @@ namespace QFramework
         }
 
         /// <summary>
-        /// Output child nodes as raw text
+        ///     Output child nodes as raw text
         /// </summary>
-        /// <see cref="Markdig.Renderers.HtmlRenderer.WriteLeafRawLines"/>
+        /// <see cref="Markdig.Renderers.HtmlRenderer.WriteLeafRawLines" />
         internal void WriteLeafRawLines(LeafBlock block)
         {
-            if (block.Lines.Lines == null)
-            {
-                return;
-            }
+            if (block.Lines.Lines == null) return;
 
             var lines = block.Lines;
             var slices = lines.Lines;
 
-            for (int i = 0; i < lines.Count; i++)
+            for (var i = 0; i < lines.Count; i++)
             {
                 Text(slices[i].ToString());
                 Layout.NewLine();
@@ -113,12 +110,7 @@ namespace QFramework
 
         internal void WriteCode(LeafBlock block)
         {
-            if (block.Lines.Lines == null)
-            {
-                return;
-            }
-
-   
+            if (block.Lines.Lines == null) return;
 
 
             // var parser = new LanguageParser(new LanguageCompiler(Languages.CompiledLanguages, Languages.CompileLock), Languages.LanguageRepository);
@@ -145,13 +137,13 @@ namespace QFramework
             //     // Debug.Log(list.Count);
             //     
             // });
-            
+
             var lines = block.Lines;
             var slices = lines.Lines;
-            
-            var code  = string.Join("@\n@", slices);
 
-            
+            var code = string.Join("@\n@", slices);
+
+
             foreach (var line in code
                          .Replace(" public ", " <color=#4ec9b0>public</color> ")
                          .Replace(" class ", " <color=#4ec9b0>class</color> ")
@@ -169,23 +161,18 @@ namespace QFramework
                 Text(line);
                 Layout.NewLine();
             }
-            
+
             // for (int i = 0; i < lines.Count; i++)
             // {
-                // Text(slices[i].ToString());
-                // Layout.NewLine();
+            // Text(slices[i].ToString());
+            // Layout.NewLine();
             // }
-            
-            
         }
 
         internal string GetContents(ContainerInline node)
         {
-            if (node == null)
-            {
-                return string.Empty;
-            }
-            
+            if (node == null) return string.Empty;
+
             var inline = node.FirstChild;
             var content = string.Empty;
 
@@ -193,10 +180,7 @@ namespace QFramework
             {
                 var lit = inline as LiteralInline;
 
-                if (lit != null)
-                {
-                    content += lit.Content.ToString();
-                }
+                if (lit != null) content += lit.Content.ToString();
 
                 inline = inline.NextSibling;
             }
@@ -209,13 +193,8 @@ namespace QFramework
         internal void FinishBlock(bool space = false)
         {
             if (space && !ConsumeSpace)
-            {
                 Layout.Space();
-            }
-            else if (!ConsumeNewLine)
-            {
-                Layout.NewLine();
-            }
+            else if (!ConsumeNewLine) Layout.NewLine();
         }
     }
 }

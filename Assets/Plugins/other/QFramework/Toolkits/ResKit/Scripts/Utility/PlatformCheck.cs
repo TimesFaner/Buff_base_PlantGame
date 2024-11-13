@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2021 ~ 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -16,7 +16,7 @@ namespace QFramework
         {
             get
             {
-                bool retValue = false;
+                var retValue = false;
 #if UNITY_ANDROID
                 retValue = true;
 #endif
@@ -28,7 +28,7 @@ namespace QFramework
         {
             get
             {
-                bool retValue = false;
+                var retValue = false;
 #if UNITY_EDITOR
                 retValue = true;
 #endif
@@ -40,7 +40,7 @@ namespace QFramework
         {
             get
             {
-                bool retValue = false;
+                var retValue = false;
 #if UNITY_IOS
 				retValue = true;
 #endif
@@ -52,7 +52,7 @@ namespace QFramework
         {
             get
             {
-                bool retValue = false;
+                var retValue = false;
 #if UNITY_STANDALONE
                 retValue = true;
 #endif
@@ -64,7 +64,7 @@ namespace QFramework
         {
             get
             {
-                bool retValue = false;
+                var retValue = false;
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
                 retValue = true;
 #endif
@@ -72,9 +72,6 @@ namespace QFramework
             }
         }
 
-        public static bool IsWebGL
-        {
-            get { return Application.platform == RuntimePlatform.WebGLPlayer; }
-        }
+        public static bool IsWebGL => Application.platform == RuntimePlatform.WebGLPlayer;
     }
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 - 2023 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -19,14 +19,15 @@ namespace QFramework
 #endif
     public class ResKit
     {
+        private static readonly Lazy<ResKit> mInstance = new(() => new ResKit().InternalInit());
+
+        internal IOCContainer Container = new();
+        internal static ResKit Get => mInstance.Value;
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod]
         public static void CheckAutoInit()
         {
-            if (PlatformCheck.IsEditor && AssetBundlePathHelper.SimulationMode)
-            {
-                Init();
-            }
+            if (PlatformCheck.IsEditor && AssetBundlePathHelper.SimulationMode) Init();
         }
 #endif
 
@@ -65,12 +66,7 @@ ResKit.InitAsync().ToAction().Start(this,()=>
             yield return ResMgr.InitAsync();
         }
 
-        private static readonly Lazy<ResKit> mInstance = new Lazy<ResKit>(() => new ResKit().InternalInit());
-        internal static ResKit Get => mInstance.Value;
-
-        internal IOCContainer Container = new IOCContainer();
-
-        ResKit InternalInit()
+        private ResKit InternalInit()
         {
             Container.Register<IZipFileHelper>(new ZipFileHelper());
             Container.Register<IBinarySerializer>(new BinarySerializer());

@@ -28,14 +28,11 @@ namespace QFramework
 
             var prefixStyle = renderer.Style;
 
-            if (!block.IsOrdered)
-            {
-                prefixStyle.Bold = true;
-            }
+            if (!block.IsOrdered) prefixStyle.Bold = true;
 
             for (var i = 0; i < block.Count; i++)
             {
-                layout.Prefix(block.IsOrdered ? (i + 1).ToString() + "." : "\u2022", prefixStyle);
+                layout.Prefix(block.IsOrdered ? i + 1 + "." : "\u2022", prefixStyle);
                 renderer.WriteChildren(block[i] as ListItemBlock);
             }
 

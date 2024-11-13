@@ -7,7 +7,8 @@ namespace Mirror.Weaver
     {
         // generates code like:
         // this.InitSyncObject(m_sizes);
-        public static void GenerateSyncObjectInitializer(ILProcessor worker, WeaverTypes weaverTypes, FieldDefinition fd)
+        public static void GenerateSyncObjectInitializer(ILProcessor worker, WeaverTypes weaverTypes,
+            FieldDefinition fd)
         {
             // register syncobject in network behaviour
             worker.Emit(OpCodes.Ldarg_0);
@@ -21,10 +22,7 @@ namespace Mirror.Weaver
             try
             {
                 // value types cant inherit from SyncObject
-                if (typeRef.IsValueType)
-                {
-                    return false;
-                }
+                if (typeRef.IsValueType) return false;
 
                 return typeRef.Resolve().IsDerivedFrom<SyncObject>();
             }

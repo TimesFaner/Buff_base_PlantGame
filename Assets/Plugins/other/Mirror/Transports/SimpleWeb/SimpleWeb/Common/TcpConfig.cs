@@ -1,13 +1,14 @@
+using System;
 using System.Net.Sockets;
 
 namespace Mirror.SimpleWeb
 {
-    [System.Serializable]
+    [Serializable]
     public struct TcpConfig
     {
         public readonly bool noDelay;
-        public readonly int sendTimeout;
         public readonly int receiveTimeout;
+        public readonly int sendTimeout;
 
         public TcpConfig(bool noDelay, int sendTimeout, int receiveTimeout)
         {

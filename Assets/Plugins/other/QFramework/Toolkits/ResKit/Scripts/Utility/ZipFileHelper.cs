@@ -1,21 +1,21 @@
 /****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 ~ 2020.10 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,18 +32,11 @@ using UnityEngine;
 
 namespace QFramework
 {
-
-
     public class ZipFileHelper : IZipFileHelper
     {
-        private List<string> mSearchDirList = new List<string>();
+        private readonly List<string> mSearchDirList = new();
+        private readonly ZipFile mZipFile = null;
         private string mStreamingAssetsPath;
-        private ZipFile mZipFile = null;
-
-        public ZipFile GetZipFile()
-        {
-            return mZipFile;
-        }
 
         public ZipFileHelper()
         {
@@ -55,6 +48,39 @@ namespace QFramework
 			mZipFile = new ZipFile(File.Open(UnityEngine.Application.dataPath, FileMode.Open, FileAccess.Read));
 			}
 #endif
+        }
+
+        public Stream OpenReadStream(string absFilePath)
+        {
+            if (string.IsNullOrEmpty(absFilePath)) return null;
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+			//Android 包内
+			if (absFilePath.Contains(".apk/"))
+			{
+			return OpenStreamInZip(absFilePath);
+			}
+#endif
+            var fileInfo = new FileInfo(absFilePath);
+
+            if (!fileInfo.Exists) return null;
+
+            return fileInfo.OpenRead();
+        }
+
+        public void GetFileInInner(string fileName, List<string> outResult)
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+			//Android 包内
+			GetFileInZip(mZipFile, fileName, outResult);
+			return;
+#endif
+            AssetBundlePathHelper.GetFileInFolder(AssetBundlePathHelper.StreamingAssetsPath, fileName, outResult);
+        }
+
+        public ZipFile GetZipFile()
+        {
+            return mZipFile;
         }
 
 
@@ -84,7 +110,7 @@ namespace QFramework
 			int entryIndex = mZipFile.FindEntry(string.Format("assets/{0}", fileRelativePath), false);
 			return entryIndex != -1;
 #else
-            string absoluteFilePath = string.Format("{0}{1}", mStreamingAssetsPath, fileRelativePath);
+            var absoluteFilePath = string.Format("{0}{1}", mStreamingAssetsPath, fileRelativePath);
             return File.Exists(absoluteFilePath);
 #endif
         }
@@ -116,52 +142,15 @@ namespace QFramework
 			return mZipFile.FindEntry(string.Format("assets/{0}", fileRelativePath), true) >= 0;
 			}
 #else
-            string filePathStandalone = string.Format("{0}{1}", mStreamingAssetsPath, fileRelativePath);
-            return (!string.IsNullOrEmpty(filePathStandalone) && File.Exists(filePathStandalone));
+            var filePathStandalone = string.Format("{0}{1}", mStreamingAssetsPath, fileRelativePath);
+            return !string.IsNullOrEmpty(filePathStandalone) && File.Exists(filePathStandalone);
 #endif
-        }
-
-        public Stream OpenReadStream(string absFilePath)
-        {
-            if (string.IsNullOrEmpty(absFilePath))
-            {
-                return null;
-            }
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-			//Android 包内
-			if (absFilePath.Contains(".apk/"))
-			{
-			return OpenStreamInZip(absFilePath);
-			}
-#endif
-            FileInfo fileInfo = new FileInfo(absFilePath);
-
-            if (!fileInfo.Exists)
-            {
-                return null;
-            }
-
-            return fileInfo.OpenRead();
-        }
-
-        public void GetFileInInner(string fileName, List<string> outResult)
-        {
-#if UNITY_ANDROID && !UNITY_EDITOR
-			//Android 包内
-			GetFileInZip(mZipFile, fileName, outResult);
-			return;
-#endif
-            AssetBundlePathHelper.GetFileInFolder(AssetBundlePathHelper.StreamingAssetsPath, fileName, outResult);
         }
 
         public byte[] ReadSync(string fileRelativePath)
         {
-            string absoluteFilePath = FindFilePathInExteral(fileRelativePath);
-            if (!string.IsNullOrEmpty(absoluteFilePath))
-            {
-                return ReadSyncExtenal(fileRelativePath);
-            }
+            var absoluteFilePath = FindFilePathInExteral(fileRelativePath);
+            if (!string.IsNullOrEmpty(absoluteFilePath)) return ReadSyncExtenal(fileRelativePath);
 
             return ReadSyncInternal(fileRelativePath);
         }
@@ -170,22 +159,20 @@ namespace QFramework
         {
             if (File.Exists(absoluteFilePath))
             {
-                FileInfo fileInfo = new FileInfo(absoluteFilePath);
+                var fileInfo = new FileInfo(absoluteFilePath);
                 return ReadFile(fileInfo);
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         private byte[] ReadSyncExtenal(string fileRelativePath)
         {
-            string absoluteFilePath = FindFilePathInExteral(fileRelativePath);
+            var absoluteFilePath = FindFilePathInExteral(fileRelativePath);
 
             if (!string.IsNullOrEmpty(absoluteFilePath))
             {
-                FileInfo fileInfo = new FileInfo(absoluteFilePath);
+                var fileInfo = new FileInfo(absoluteFilePath);
                 return ReadFile(fileInfo);
             }
 
@@ -197,11 +184,11 @@ namespace QFramework
 #if UNITY_ANDROID && !UNITY_EDITOR
 			return ReadDataInAndriodApk(fileRelativePath);
 #else
-            string absoluteFilePath = FindFilePathInternal(fileRelativePath);
+            var absoluteFilePath = FindFilePathInternal(fileRelativePath);
 
             if (!string.IsNullOrEmpty(absoluteFilePath))
             {
-                FileInfo fileInfo = new FileInfo(absoluteFilePath);
+                var fileInfo = new FileInfo(absoluteFilePath);
                 return ReadFile(fileInfo);
             }
 #endif
@@ -212,9 +199,9 @@ namespace QFramework
 
         private byte[] ReadFile(FileInfo fileInfo)
         {
-            using (FileStream fileStream = fileInfo.OpenRead())
+            using (var fileStream = fileInfo.OpenRead())
             {
-                byte[] byteData = new byte[fileStream.Length];
+                var byteData = new byte[fileStream.Length];
                 fileStream.Read(byteData, 0, byteData.Length);
                 return byteData;
             }
@@ -223,13 +210,10 @@ namespace QFramework
         private string FindFilePathInExteral(string file)
         {
             string filePath;
-            for (int i = 0; i < mSearchDirList.Count; ++i)
+            for (var i = 0; i < mSearchDirList.Count; ++i)
             {
                 filePath = string.Format("{0}/{1}", mSearchDirList[i], file);
-                if (File.Exists(filePath))
-                {
-                    return filePath;
-                }
+                if (File.Exists(filePath)) return filePath;
             }
 
             return string.Empty;
@@ -238,30 +222,21 @@ namespace QFramework
         private string FindFilePath(string file)
         {
             // 先到搜索列表里找
-            string filePath = FindFilePathInExteral(file);
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                return filePath;
-            }
+            var filePath = FindFilePathInExteral(file);
+            if (!string.IsNullOrEmpty(filePath)) return filePath;
 
             // 在包内找
             filePath = FindFilePathInternal(file);
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                return filePath;
-            }
+            if (!string.IsNullOrEmpty(filePath)) return filePath;
 
             return null;
         }
 
         private string FindFilePathInternal(string file)
         {
-            string filePath = string.Format("{0}{1}", mStreamingAssetsPath, file);
+            var filePath = string.Format("{0}{1}", mStreamingAssetsPath, file);
 
-            if (File.Exists(filePath))
-            {
-                return filePath;
-            }
+            if (File.Exists(filePath)) return filePath;
 
             return null;
         }
@@ -269,44 +244,33 @@ namespace QFramework
 
         private Stream OpenStreamInZip(string absPath)
         {
-            string tag = "!/assets/";
-            string androidFolder = absPath.Substring(0, absPath.IndexOf(tag));
+            var tag = "!/assets/";
+            var androidFolder = absPath.Substring(0, absPath.IndexOf(tag));
 
-            int startIndex = androidFolder.Length + tag.Length;
-            string relativePath = absPath.Substring(startIndex, absPath.Length - startIndex);
+            var startIndex = androidFolder.Length + tag.Length;
+            var relativePath = absPath.Substring(startIndex, absPath.Length - startIndex);
 
-            ZipEntry zipEntry = mZipFile.GetEntry(string.Format("assets/{0}", relativePath));
+            var zipEntry = mZipFile.GetEntry(string.Format("assets/{0}", relativePath));
 
             if (zipEntry != null)
-            {
                 return mZipFile.GetInputStream(zipEntry);
-            }
-            else
-            {
-                Debug.LogError($"Can't Find File {absPath}");
-            }
+            Debug.LogError($"Can't Find File {absPath}");
 
             return null;
         }
 
         public void GetFileInZip(ZipFile zipFile, string fileName, List<string> outResult)
         {
-            int totalCount = 0;
+            var totalCount = 0;
 
             foreach (var entry in zipFile)
             {
                 ++totalCount;
-                ICSharpCode.SharpZipLib.Zip.ZipEntry e = entry as ICSharpCode.SharpZipLib.Zip.ZipEntry;
+                var e = entry as ZipEntry;
                 if (e != null)
-                {
                     if (e.IsFile)
-                    {
                         if (e.Name.EndsWith(fileName))
-                        {
                             outResult.Add(zipFile.Name + "/!/" + e.Name);
-                        }
-                    }
-                }
             }
         }
 
@@ -322,7 +286,7 @@ namespace QFramework
             }
 
             //Log.I("Begin Open Zip...");
-            ZipEntry zipEntry = mZipFile.GetEntry(string.Format("assets/{0}", fileRelativePath));
+            var zipEntry = mZipFile.GetEntry(string.Format("assets/{0}", fileRelativePath));
             //Log.I("End Open Zip...");
             if (zipEntry != null)
             {

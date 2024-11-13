@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2016 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -13,10 +13,11 @@ namespace QFramework
 {
     public class OnTriggerStay2DEventTrigger : MonoBehaviour
     {
-        public readonly EasyEvent<Collider2D> OnTriggerStay2DEvent = new EasyEvent<Collider2D>();
+        public readonly EasyEvent<Collider2D> OnTriggerStay2DEvent = new();
+
         private void OnTriggerStay2D(Collider2D collider)
         {
-            OnTriggerStay2DEvent.Trigger(collider);         
+            OnTriggerStay2DEvent.Trigger(collider);
         }
     }
 
@@ -28,7 +29,7 @@ namespace QFramework
             return self.GetOrAddComponent<OnTriggerStay2DEventTrigger>().OnTriggerStay2DEvent
                 .Register(onTriggerStay2D);
         }
-        
+
         public static IUnRegister OnTriggerStay2DEvent(this GameObject self, Action<Collider2D> onTriggerStay2D)
         {
             return self.GetOrAddComponent<OnTriggerStay2DEventTrigger>().OnTriggerStay2DEvent

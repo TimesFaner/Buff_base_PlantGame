@@ -1,16 +1,13 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Remake
 {
     public class EnemyCtrl : MonoBehaviour
     {
-        private EnemyStateMachine _enemyStateMachine;
         public Rigidbody2D erb;
         public EnemyAttack _EnemyAttack;
-        
+        private EnemyStateMachine _enemyStateMachine;
+
 
         private void Awake()
         {

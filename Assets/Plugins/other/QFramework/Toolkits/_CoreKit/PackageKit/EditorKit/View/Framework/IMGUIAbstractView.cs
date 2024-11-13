@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -14,29 +14,29 @@ namespace QFramework
 {
     public abstract class IMGUIAbstractView : IMGUIView
     {
+        private readonly Queue<Action> mCommands = new();
+        private bool mBeforeDrawCalled;
+
+
+        private Color mPreviousBackgroundColor;
+
+
+        protected FluentGUIStyle mStyle = new(() => new GUIStyle());
         private bool mVisible = true;
+
+        private List<GUILayoutOption> mLayoutOptions { get; } = new();
+
+        protected GUILayoutOption[] LayoutStyles { get; private set; }
 
         public string Id { get; set; }
 
         public bool Visible
         {
-            get { return VisibleCondition == null ? mVisible : VisibleCondition(); }
-            set { mVisible = value; }
+            get => VisibleCondition == null ? mVisible : VisibleCondition();
+            set => mVisible = value;
         }
 
         public Func<bool> VisibleCondition { get; set; }
-
-        private readonly List<GUILayoutOption> mPrivateLayoutOptions = new List<GUILayoutOption>();
-
-        private List<GUILayoutOption> mLayoutOptions
-        {
-            get { return mPrivateLayoutOptions; }
-        }
-
-        protected GUILayoutOption[] LayoutStyles { get; private set; }
-
-
-        protected FluentGUIStyle mStyle = new FluentGUIStyle(() => new GUIStyle());
 
         public FluentGUIStyle Style
         {
@@ -44,17 +44,11 @@ namespace QFramework
             protected set => mStyle = value;
         }
 
-        private Color mBackgroundColor = GUI.backgroundColor;
-
-        public Color BackgroundColor
-        {
-            get { return mBackgroundColor; }
-            set { mBackgroundColor = value; }
-        }
+        public Color BackgroundColor { get; set; } = GUI.backgroundColor;
 
         public void RefreshNextFrame()
         {
-            this.PushCommand(Refresh);
+            PushCommand(Refresh);
         }
 
         public void AddLayoutOption(GUILayoutOption option)
@@ -68,22 +62,11 @@ namespace QFramework
             OnShow();
         }
 
-        protected virtual void OnShow()
-        {
-        }
-
         public void Hide()
         {
             Visible = false;
             OnHide();
         }
-
-        protected virtual void OnHide()
-        {
-        }
-
-
-        private Color mPreviousBackgroundColor;
 
         public void DrawGUI()
         {
@@ -97,10 +80,32 @@ namespace QFramework
                 GUI.backgroundColor = mPreviousBackgroundColor;
             }
 
-            if (mCommands.Count > 0)
-            {
-                mCommands.Dequeue().Invoke();
-            }
+            if (mCommands.Count > 0) mCommands.Dequeue().Invoke();
+        }
+
+        public IMGUILayout Parent { get; set; }
+
+        public void RemoveFromParent()
+        {
+            Parent.RemoveChild(this);
+        }
+
+        public virtual void Refresh()
+        {
+            OnRefresh();
+        }
+
+        public void Dispose()
+        {
+            OnDisposed();
+        }
+
+        protected virtual void OnShow()
+        {
+        }
+
+        protected virtual void OnHide()
+        {
         }
 
         protected void PushCommand(Action command)
@@ -108,11 +113,7 @@ namespace QFramework
             mCommands.Enqueue(command);
         }
 
-        Queue<Action> mCommands = new Queue<Action>();
-
-        private bool mBeforeDrawCalled = false;
-
-        void BeforeDraw()
+        private void BeforeDraw()
         {
             if (!mBeforeDrawCalled)
             {
@@ -128,28 +129,11 @@ namespace QFramework
         {
         }
 
-        public IMGUILayout Parent { get; set; }
-
-        public void RemoveFromParent()
-        {
-            Parent.RemoveChild(this);
-        }
-
-        public virtual void Refresh()
-        {
-            OnRefresh();
-        }
-
         protected virtual void OnRefresh()
         {
         }
 
         protected abstract void OnGUI();
-
-        public void Dispose()
-        {
-            OnDisposed();
-        }
 
         protected virtual void OnDisposed()
         {

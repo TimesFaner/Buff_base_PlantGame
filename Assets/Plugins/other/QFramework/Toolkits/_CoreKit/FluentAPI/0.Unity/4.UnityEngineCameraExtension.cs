@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -40,7 +40,7 @@ Camera.main.CaptureCamera(new Rect(0, 0, Screen.width, Screen.height));
 
             camera.targetTexture = null;
             RenderTexture.active = null;
-            UnityEngine.Object.Destroy(renderTexture);
+            Object.Destroy(renderTexture);
 
             return screenShot;
         }

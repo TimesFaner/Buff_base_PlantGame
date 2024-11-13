@@ -1,19 +1,19 @@
 ﻿/****************************************************************************
  * Copyright (c) 2018.3 ~ 2019.1 liangxie
- * 
+ *
  * http://liangxiegame.com
  * https://github.com/liangxiegame/QFramework
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,151 +25,58 @@
 
 
 using System;
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace QFramework
 {
     public class AssetDataGroup
     {
-        public IEnumerable<AssetData> AssetDatas
-        {
-            get { return mAssetDataMap.Values; }
-        }
-
-        public IEnumerable<ABUnit> AssetBundleDatas
-        {
-            get
-            {
-                return mABUnitArray;
-            }
-        }
-
-        /// <summary>
-        /// 代表依赖关系的类
-        /// </summary>
-        [Serializable]
-        public class ABUnit
-        {
-            public string abName;
-            public string[] abDepends;
-
-            public ABUnit(string name, string[] depends)
-            {
-                abName = name;
-                if (depends == null || depends.Length == 0)
-                {
-
-                }
-                else
-                {
-                    abDepends = depends;
-                }
-            }
-
-            public override string ToString()
-            {
-                var result = string.Format("ABName:" + abName);
-                if (abDepends == null)
-                {
-                    return result;
-                }
-
-                foreach (var abDepend in abDepends)
-                {
-                    result += string.Format(" #:{0}", abDepend);
-                }
-
-                return result;
-            }
-        }
-
-        [Serializable]
-        public class SerializeData
-        {
-            private string mKey;
-            private ABUnit[] mAbUnitArray;
-            private AssetData[] mAssetDataArray;
-
-            public string key
-            {
-                get { return mKey; }
-                set { mKey = value; }
-            }
-
-            public ABUnit[] abUnitArray
-            {
-                get { return mAbUnitArray; }
-                set { mAbUnitArray = value; }
-            }
-
-            public AssetData[] assetDataArray
-            {
-                get { return mAssetDataArray; }
-                set { mAssetDataArray = value; }
-            }
-        }
-
-        private string m_Key;
-
         private List<ABUnit> mABUnitArray;
         private Dictionary<string, AssetData> mAssetDataMap;
         private Dictionary<string, AssetData> mUUID4AssetData;
-        public string key
-        {
-            get { return m_Key; }
-        }
 
         public AssetDataGroup(string key)
         {
-            m_Key = key;
+            this.key = key;
         }
 
         public AssetDataGroup(SerializeData data)
         {
-            m_Key = data.key;
+            key = data.key;
             SetSerializeData(data);
         }
 
+        public IEnumerable<AssetData> AssetDatas => mAssetDataMap.Values;
+
+        public IEnumerable<ABUnit> AssetBundleDatas => mABUnitArray;
+
+        public string key { get; }
+
         public void Reset()
         {
-            if (mABUnitArray != null)
-            {
-                mABUnitArray.Clear();
-            }
+            if (mABUnitArray != null) mABUnitArray.Clear();
 
-            if (mAssetDataMap != null)
-            {
-                mAssetDataMap.Clear();
-            }
+            if (mAssetDataMap != null) mAssetDataMap.Clear();
         }
 
         public int AddAssetBundleName(string name, string[] depends)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                return -1;
-            }
+            if (string.IsNullOrEmpty(name)) return -1;
 
-            if (mABUnitArray == null)
-            {
-                mABUnitArray = new List<ABUnit>();
-            }
+            if (mABUnitArray == null) mABUnitArray = new List<ABUnit>();
 
             var resSearchRule = ResSearchKeys.Allocate(name);
-            AssetData config = GetAssetData(resSearchRule);
+            var config = GetAssetData(resSearchRule);
             resSearchRule.Recycle2Cache();
 
-            if (config != null)
-            {
-                return config.AssetBundleIndex;
-            }
+            if (config != null) return config.AssetBundleIndex;
 
             mABUnitArray.Add(new ABUnit(name, depends));
 
-            int index = mABUnitArray.Count - 1;
+            var index = mABUnitArray.Count - 1;
 
-            AddAssetData(new AssetData(name, ResLoadType.AssetBundle, index,null));
+            AddAssetData(new AssetData(name, ResLoadType.AssetBundle, index, null));
 
             return index;
         }
@@ -178,15 +85,9 @@ namespace QFramework
         {
             result = null;
 
-            if (mABUnitArray == null)
-            {
-                return false;
-            }
+            if (mABUnitArray == null) return false;
 
-            if (index >= mABUnitArray.Count)
-            {
-                return false;
-            }
+            if (index >= mABUnitArray.Count) return false;
 
             if (mAssetDataMap.ContainsKey(assetName))
             {
@@ -201,19 +102,13 @@ namespace QFramework
         {
             var resSearchRule = ResSearchKeys.Allocate(assetName);
 
-            AssetData data = GetAssetData(resSearchRule);
-            
+            var data = GetAssetData(resSearchRule);
+
             resSearchRule.Recycle2Cache();
 
-            if (data == null)
-            {
-                return null;
-            }
+            if (data == null) return null;
 
-            if (mABUnitArray == null)
-            {
-                return null;
-            }
+            if (mABUnitArray == null) return null;
 
             return mABUnitArray[data.AssetBundleIndex];
         }
@@ -222,12 +117,9 @@ namespace QFramework
         {
             result = null;
 
-            ABUnit unit = GetABUnit(abName);
+            var unit = GetABUnit(abName);
 
-            if (unit == null)
-            {
-                return false;
-            }
+            if (unit == null) return false;
 
             result = unit.abDepends;
 
@@ -239,31 +131,23 @@ namespace QFramework
             AssetData result = null;
 
             if (resSearchRule.OwnerBundle != null && mUUID4AssetData != null)
-            {
-                return mUUID4AssetData.TryGetValue(resSearchRule.OwnerBundle + resSearchRule.AssetName, out result) ? result : null;
-            }
+                return mUUID4AssetData.TryGetValue(resSearchRule.OwnerBundle + resSearchRule.AssetName, out result)
+                    ? result
+                    : null;
 
             if (resSearchRule.OwnerBundle == null && mAssetDataMap != null)
-            {
                 return mAssetDataMap.TryGetValue(resSearchRule.AssetName, out result) ? result : null;
-            }
 
             return result;
         }
 
         public bool AddAssetData(AssetData data)
         {
-            if (mAssetDataMap == null)
-            {
-                mAssetDataMap = new Dictionary<string, AssetData>();
-            }
+            if (mAssetDataMap == null) mAssetDataMap = new Dictionary<string, AssetData>();
 
-            if (mUUID4AssetData == null)
-            {
-                mUUID4AssetData = new Dictionary<string, AssetData>();
-            }
- 
-            string key = data.AssetName.ToLower();
+            if (mUUID4AssetData == null) mUUID4AssetData = new Dictionary<string, AssetData>();
+
+            var key = data.AssetName.ToLower();
 
             if (mAssetDataMap.ContainsKey(key))
             {
@@ -288,7 +172,7 @@ namespace QFramework
 
             if (mUUID4AssetData.ContainsKey(data.UUID))
             {
-                var resSearchRule = ResSearchKeys.Allocate(data.AssetName,data.OwnerBundleName);
+                var resSearchRule = ResSearchKeys.Allocate(data.AssetName, data.OwnerBundleName);
 
                 var old = GetAssetData(resSearchRule);
                 resSearchRule.Recycle2Cache();
@@ -298,25 +182,23 @@ namespace QFramework
             }
             else
             {
-                mUUID4AssetData.Add(data.UUID,data);
+                mUUID4AssetData.Add(data.UUID, data);
             }
+
             return true;
         }
 
         public SerializeData GetSerializeData()
         {
             var sd = new SerializeData();
-            sd.key = m_Key;
+            sd.key = key;
             sd.abUnitArray = mABUnitArray.ToArray();
             if (mAssetDataMap != null)
             {
                 var acArray = new AssetData[mAssetDataMap.Count];
 
-                int index = 0;
-                foreach (var item in mAssetDataMap)
-                {
-                    acArray[index++] = item.Value;
-                }
+                var index = 0;
+                foreach (var item in mAssetDataMap) acArray[index++] = item.Value;
 
                 sd.assetDataArray = acArray;
             }
@@ -327,10 +209,7 @@ namespace QFramework
 
         private void SetSerializeData(SerializeData data)
         {
-            if (data == null)
-            {
-                return;
-            }
+            if (data == null) return;
 
             mABUnitArray = new List<ABUnit>(data.abUnitArray);
 
@@ -338,10 +217,65 @@ namespace QFramework
             {
                 mAssetDataMap = new Dictionary<string, AssetData>();
 
-                foreach (var config in data.assetDataArray)
+                foreach (var config in data.assetDataArray) AddAssetData(config);
+            }
+        }
+
+        /// <summary>
+        ///     代表依赖关系的类
+        /// </summary>
+        [Serializable]
+        public class ABUnit
+        {
+            public string abName;
+            public string[] abDepends;
+
+            public ABUnit(string name, string[] depends)
+            {
+                abName = name;
+                if (depends == null || depends.Length == 0)
                 {
-                    AddAssetData(config);
                 }
+                else
+                {
+                    abDepends = depends;
+                }
+            }
+
+            public override string ToString()
+            {
+                var result = string.Format("ABName:" + abName);
+                if (abDepends == null) return result;
+
+                foreach (var abDepend in abDepends) result += string.Format(" #:{0}", abDepend);
+
+                return result;
+            }
+        }
+
+        [Serializable]
+        public class SerializeData
+        {
+            private ABUnit[] mAbUnitArray;
+            private AssetData[] mAssetDataArray;
+            private string mKey;
+
+            public string key
+            {
+                get => mKey;
+                set => mKey = value;
+            }
+
+            public ABUnit[] abUnitArray
+            {
+                get => mAbUnitArray;
+                set => mAbUnitArray = value;
+            }
+
+            public AssetData[] assetDataArray
+            {
+                get => mAssetDataArray;
+                set => mAssetDataArray = value;
             }
         }
     }

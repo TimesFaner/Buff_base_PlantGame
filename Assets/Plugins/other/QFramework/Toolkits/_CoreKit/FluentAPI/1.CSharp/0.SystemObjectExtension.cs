@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -36,7 +36,7 @@ new GameObject()
             onDo?.Invoke(self);
             return self;
         }
-        
+
 #if UNITY_EDITOR
         // v1 No.1.1
         [MethodAPI]
@@ -50,7 +50,7 @@ new GameObject()
         });"
         )]
 #endif
-        public static T Self<T>(this T self, Func<T,T> onDo)
+        public static T Self<T>(this T self, Func<T, T> onDo)
         {
             return onDo.Invoke(self);
         }
@@ -91,7 +91,7 @@ if (simpleObject.IsNotNull()) // simpleObject != null
         {
             return null != selfObj;
         }
-      
+
 #if UNITY_EDITOR
         // v1 No.36
         [MethodAPI]

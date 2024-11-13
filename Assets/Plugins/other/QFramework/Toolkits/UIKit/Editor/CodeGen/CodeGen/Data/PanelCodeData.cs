@@ -4,13 +4,13 @@ namespace QFramework
 {
     public class PanelCodeInfo
     {
-        public          string                     GameObjectName;
-        public          Dictionary<string, string> DicNameToFullName = new Dictionary<string, string>();
-        public readonly List<BindInfo>             BindInfos         = new List<BindInfo>();
-        public readonly List<ElementCodeInfo>      ElementCodeDatas  = new List<ElementCodeInfo>();
+        public readonly List<BindInfo> BindInfos = new();
+        public readonly List<ElementCodeInfo> ElementCodeDatas = new();
+        public Dictionary<string, string> DicNameToFullName = new();
+        public string GameObjectName;
 
-        public string              Identifier  { get; set; }
-        public bool                Changed     { get; set; }
-        public IEnumerable<string> ForeignKeys { get; private set; }
+        public string Identifier { get; set; }
+        public bool Changed { get; set; }
+        public IEnumerable<string> ForeignKeys { get; }
     }
 }

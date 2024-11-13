@@ -1,19 +1,19 @@
 ﻿/****************************************************************************
  * Copyright (c) 2018.3 ~ 2021.4 liangxie
- * 
+ *
  * http://liangxiegame.com
  * https://github.com/liangxiegame/QFramework
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,51 +32,29 @@ using UnityEngine;
 namespace QFramework
 {
     /// <summary>
-    /// 默认的 ResData 支持
+    ///     默认的 ResData 支持
     /// </summary>
     public class ResDatas : IResDatas
     {
-        public string AESKey = string.Empty;
-
-        [Serializable]
-        public class SerializeData
-        {
-            private AssetDataGroup.SerializeData[] mAssetDataGroup;
-
-            public AssetDataGroup.SerializeData[] AssetDataGroup
-            {
-                get { return mAssetDataGroup; }
-                set { mAssetDataGroup = value; }
-            }
-        }
-
         /// <summary>
-        /// 如果是以前的命名错误版本，大家可以通过设置 ResDatas.FileName = "asset_bindle_config.bin" 来兼容以前的代码; 
+        ///     如果是以前的命名错误版本，大家可以通过设置 ResDatas.FileName = "asset_bindle_config.bin" 来兼容以前的代码;
         /// </summary>
         public static string FileName = "asset_bundle_config.bin";
 
-        public IList<AssetDataGroup> AllAssetDataGroups
-        {
-            get { return mAllAssetDataGroup; }
-        }
+        private readonly List<AssetDataGroup> mAllAssetDataGroup = new();
+        public string AESKey = string.Empty;
 
-        private readonly List<AssetDataGroup> mAllAssetDataGroup = new List<AssetDataGroup>();
+        private AssetDataTable mAssetDataTable;
 
-        private AssetDataTable mAssetDataTable = null;
+        public IList<AssetDataGroup> AllAssetDataGroups => mAllAssetDataGroup;
 
         public void Reset()
         {
-            for (int i = mAllAssetDataGroup.Count - 1; i >= 0; --i)
-            {
-                mAllAssetDataGroup[i].Reset();
-            }
+            for (var i = mAllAssetDataGroup.Count - 1; i >= 0; --i) mAllAssetDataGroup[i].Reset();
 
             mAllAssetDataGroup.Clear();
 
-            if (mAssetDataTable != null)
-            {
-                mAssetDataTable.Dispose();
-            }
+            if (mAssetDataTable != null) mAssetDataTable.Dispose();
 
             mAssetDataTable = null;
         }
@@ -85,17 +63,11 @@ namespace QFramework
         {
             group = null;
 
-            if (string.IsNullOrEmpty(name))
-            {
-                return -1;
-            }
+            if (string.IsNullOrEmpty(name)) return -1;
 
             var key = GetKeyFromABName(name);
 
-            if (key == null)
-            {
-                return -1;
-            }
+            if (key == null) return -1;
 
             group = GetAssetDataGroup(key);
 
@@ -116,10 +88,7 @@ namespace QFramework
             for (var i = mAllAssetDataGroup.Count - 1; i >= 0; --i)
             {
                 string[] depends;
-                if (!mAllAssetDataGroup[i].GetAssetBundleDepends(abName, out depends))
-                {
-                    continue;
-                }
+                if (!mAllAssetDataGroup[i].GetAssetBundleDepends(abName, out depends)) continue;
 
                 return depends;
             }
@@ -135,12 +104,8 @@ namespace QFramework
                 mAssetDataTable = new AssetDataTable();
 
                 for (var i = mAllAssetDataGroup.Count - 1; i >= 0; --i)
-                {
                     foreach (var assetData in mAllAssetDataGroup[i].AssetDatas)
-                    {
                         mAssetDataTable.Add(assetData);
-                    }
-                }
             }
 
             return mAssetDataTable.GetAssetDataByResSearchKeys(resSearchKeys);
@@ -151,32 +116,31 @@ namespace QFramework
             var binarySerializer = ResKit.Get.Container.Get<IBinarySerializer>();
             var zipFileHelper = ResKit.Get.Container.Get<IZipFileHelper>();
 
-            
 
             object data;
 
-           //  if (File.ReadAllText(path).Contains(AES.AESHead))
-           //  {
-           //      if (AESKey == string.Empty)
-           //      {
-           //         AESKey=JsonUtility.FromJson<EncryptConfig>( Resources.Load<TextAsset>("EncryptConfig").text).AESKey;
-           //      }
-           //      data = binarySerializer
-           // .DeserializeBinary((AES.AESFileByteDecrypt(path, AESKey)));
-           //      //try
-           //      //{
-           //
-           //      //}
-           //      //catch (Exception e)
-           //      //{
-           //      //    Log.E("解密AB包失败,请检查秘钥!!当前使用的秘钥:" + AESKey);
-           //      //}
-           //
-           //  }
-           //  else
-           //  {
-                data = binarySerializer
-           .DeserializeBinary(zipFileHelper.OpenReadStream(path));
+            //  if (File.ReadAllText(path).Contains(AES.AESHead))
+            //  {
+            //      if (AESKey == string.Empty)
+            //      {
+            //         AESKey=JsonUtility.FromJson<EncryptConfig>( Resources.Load<TextAsset>("EncryptConfig").text).AESKey;
+            //      }
+            //      data = binarySerializer
+            // .DeserializeBinary((AES.AESFileByteDecrypt(path, AESKey)));
+            //      //try
+            //      //{
+            //
+            //      //}
+            //      //catch (Exception e)
+            //      //{
+            //      //    Log.E("解密AB包失败,请检查秘钥!!当前使用的秘钥:" + AESKey);
+            //      //}
+            //
+            //  }
+            //  else
+            //  {
+            data = binarySerializer
+                .DeserializeBinary(zipFileHelper.OpenReadStream(path));
             // }
 
 
@@ -247,45 +211,29 @@ namespace QFramework
             };
 
             for (var i = 0; i < mAllAssetDataGroup.Count; ++i)
-            {
                 sd.AssetDataGroup[i] = mAllAssetDataGroup[i].GetSerializeData();
-            }
 
             if (ResKit.Get.Container.Get<IBinarySerializer>()
                 .SerializeBinary(outPath, sd))
-            {
                 Debug.Log("Success Save AssetDataTable:" + outPath);
-            }
             else
-            {
                 Debug.LogError("Failed Save AssetDataTable:" + outPath);
-            }
         }
 
         private void SetSerializeData(SerializeData data)
         {
+            if (data == null || data.AssetDataGroup == null) return;
 
-            if (data == null || data.AssetDataGroup == null)
-            {
-                return;
-            }
-
-            for (int i = data.AssetDataGroup.Length - 1; i >= 0; --i)
-            {
+            for (var i = data.AssetDataGroup.Length - 1; i >= 0; --i)
                 mAllAssetDataGroup.Add(BuildAssetDataGroup(data.AssetDataGroup[i]));
-            }
 
             if (mAssetDataTable == null)
             {
                 mAssetDataTable = new AssetDataTable();
 
                 foreach (var serializeData in data.AssetDataGroup)
-                {
-                    foreach (var assetData in serializeData.assetDataArray)
-                    {
-                        mAssetDataTable.Add(assetData);
-                    }
-                }
+                foreach (var assetData in serializeData.assetDataArray)
+                    mAssetDataTable.Add(assetData);
             }
         }
 
@@ -296,13 +244,9 @@ namespace QFramework
 
         private AssetDataGroup GetAssetDataGroup(string key)
         {
-            for (int i = mAllAssetDataGroup.Count - 1; i >= 0; --i)
-            {
+            for (var i = mAllAssetDataGroup.Count - 1; i >= 0; --i)
                 if (mAllAssetDataGroup[i].key.Equals(key))
-                {
                     return mAllAssetDataGroup[i];
-                }
-            }
 
             return null;
         }
@@ -311,14 +255,23 @@ namespace QFramework
         {
             var pIndex = name.IndexOf('/');
 
-            if (pIndex < 0)
-            {
-                return name;
-            }
+            if (pIndex < 0) return name;
 
             var key = name.Substring(0, pIndex);
 
             return key;
+        }
+
+        [Serializable]
+        public class SerializeData
+        {
+            private AssetDataGroup.SerializeData[] mAssetDataGroup;
+
+            public AssetDataGroup.SerializeData[] AssetDataGroup
+            {
+                get => mAssetDataGroup;
+                set => mAssetDataGroup = value;
+            }
         }
     }
 }

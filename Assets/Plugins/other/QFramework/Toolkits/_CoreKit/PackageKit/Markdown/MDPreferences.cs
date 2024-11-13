@@ -27,7 +27,7 @@ namespace QFramework
         private static bool mPipedTables = true;
         private static bool mPipedTablesRequireHeaderSeparator = true;
         private static bool mStripHTML = true;
-        private static bool mPrefsLoaded = false;
+        private static bool mPrefsLoaded;
         private static bool mDarkSkin = EditorGUIUtility.isProSkin;
 
         public static string JIRA
@@ -91,22 +91,22 @@ namespace QFramework
 #if UNITY_2019_1_OR_NEWER
         public class MarkownSettings : SettingsProvider
         {
-            public MarkownSettings( string path, SettingsScope scopes = SettingsScope.User, IEnumerable<string> keywords
- = null )
-                : base( path, scopes, keywords )
+            public MarkownSettings(string path, SettingsScope scopes = SettingsScope.User, IEnumerable<string> keywords
+                = null)
+                : base(path, scopes, keywords)
             {
             }
 
-            public override void OnGUI( string searchContext )
+            public override void OnGUI(string searchContext)
             {
                 DrawPreferences();
             }
         }
 
         [SettingsProvider]
-        static SettingsProvider MarkdownPreferences()
+        private static SettingsProvider MarkdownPreferences()
         {
-            return new MarkownSettings( "Preferences/Markdown" );
+            return new MarkownSettings("Preferences/Markdown");
         }
 #else
         [PreferenceItem("Markdown")]

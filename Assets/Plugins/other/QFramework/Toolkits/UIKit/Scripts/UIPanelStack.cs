@@ -3,11 +3,11 @@ using System.Collections.Generic;
 namespace QFramework
 {
     /// <summary>
-    /// UI 界面的堆栈
+    ///     UI 界面的堆栈
     /// </summary>
     public class UIPanelStack
     {
-        private Stack<PanelInfo> mUIStack = new Stack<PanelInfo>();
+        private readonly Stack<PanelInfo> mUIStack = new();
 
         public void Push<T>() where T : UIPanel
         {
@@ -42,9 +42,9 @@ namespace QFramework
             panelSearchKeys.UIData = previousPanelInfo.UIData;
             panelSearchKeys.AssetBundleName = previousPanelInfo.AssetBundleName;
             panelSearchKeys.PanelType = previousPanelInfo.PanelType;
-    
+
             UIManager.Instance.OpenUI(panelSearchKeys);
-            
+
             panelSearchKeys.Recycle2Cache();
         }
     }

@@ -1,6 +1,7 @@
 // interest management component for custom solutions like
 // distance based, spatial hashing, raycast based, etc.
 // low level base class allows for low level spatial hashing etc., which is 3-5x faster.
+
 using UnityEngine;
 
 namespace Mirror
@@ -9,6 +10,11 @@ namespace Mirror
     [HelpURL("https://mirror-networking.gitbook.io/docs/guides/interest-management")]
     public abstract class InterestManagementBase : MonoBehaviour
     {
+        [ServerCallback]
+        public virtual void Reset()
+        {
+        }
+
         // Configures InterestManagementBase in NetworkServer/Client
         // Do NOT check for active server or client here.
         // OnEnable must always set the static aoi references.
@@ -17,20 +23,17 @@ namespace Mirror
         protected virtual void OnEnable()
         {
             if (NetworkServer.aoi == null)
-            {
                 NetworkServer.aoi = this;
-            }
-            else Debug.LogError($"Only one InterestManagement component allowed. {NetworkServer.aoi.GetType()} has been set up already.");
+            else
+                Debug.LogError(
+                    $"Only one InterestManagement component allowed. {NetworkServer.aoi.GetType()} has been set up already.");
 
             if (NetworkClient.aoi == null)
-            {
                 NetworkClient.aoi = this;
-            }
-            else Debug.LogError($"Only one InterestManagement component allowed. {NetworkClient.aoi.GetType()} has been set up already.");
+            else
+                Debug.LogError(
+                    $"Only one InterestManagement component allowed. {NetworkClient.aoi.GetType()} has been set up already.");
         }
-
-        [ServerCallback]
-        public virtual void Reset() {}
 
         // Callback used by the visibility system to determine if an observer
         // (player) can see the NetworkIdentity. If this function returns true,
@@ -51,19 +54,23 @@ namespace Mirror
         [ServerCallback]
         public virtual void SetHostVisibility(NetworkIdentity identity, bool visible)
         {
-            foreach (Renderer rend in identity.GetComponentsInChildren<Renderer>())
+            foreach (var rend in identity.GetComponentsInChildren<Renderer>())
                 rend.enabled = visible;
         }
 
         /// <summary>Called on the server when a new networked object is spawned.</summary>
         // (useful for 'only rebuild if changed' interest management algorithms)
         [ServerCallback]
-        public virtual void OnSpawned(NetworkIdentity identity) {}
+        public virtual void OnSpawned(NetworkIdentity identity)
+        {
+        }
 
         /// <summary>Called on the server when a networked object is destroyed.</summary>
         // (useful for 'only rebuild if changed' interest management algorithms)
         [ServerCallback]
-        public virtual void OnDestroyed(NetworkIdentity identity) {}
+        public virtual void OnDestroyed(NetworkIdentity identity)
+        {
+        }
 
         public abstract void Rebuild(NetworkIdentity identity, bool initialize);
 

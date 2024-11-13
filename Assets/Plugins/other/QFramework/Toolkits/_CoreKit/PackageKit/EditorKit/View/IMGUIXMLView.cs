@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -15,10 +15,10 @@ using UnityEngine;
 
 namespace QFramework
 {
- // ReSharper disable once InconsistentNaming
+    // ReSharper disable once InconsistentNaming
     public class EasyIMGUIXMLModule : IConvertModule
     {
-        private Dictionary<string, IXMLToObjectConverter> mConverters = new Dictionary<string, IXMLToObjectConverter>();
+        private readonly Dictionary<string, IXMLToObjectConverter> mConverters = new();
 
         public EasyIMGUIXMLModule()
         {
@@ -35,33 +35,21 @@ namespace QFramework
 
         public IXMLToObjectConverter GetConverter(string name)
         {
-            if (mConverters.ContainsKey(name))
-            {
-                return mConverters[name];
-            }
-            else
-            {
-                foreach (var xmlToObjectConverter in mConverters)
-                {
-                    Debug.Log(xmlToObjectConverter.Key);
-                }
-                
-                Debug.Log(name);
+            if (mConverters.ContainsKey(name)) return mConverters[name];
 
-                throw new Exception("不存在");
-            }
+            foreach (var xmlToObjectConverter in mConverters) Debug.Log(xmlToObjectConverter.Key);
+
+            Debug.Log(name);
+
+            throw new Exception("不存在");
         }
 
         public void RegisterConverter(string name, IXMLToObjectConverter converter)
         {
             if (mConverters.ContainsKey(name))
-            {
                 mConverters[name] = converter;
-            }
             else
-            {
                 mConverters.Add(name, converter);
-            }
         }
     }
 
@@ -76,7 +64,11 @@ namespace QFramework
 
     internal class XMLView : VerticalLayout, IXMLView
     {
-        private readonly Dictionary<string, IMGUIView> mIdIndex = new Dictionary<string, IMGUIView>();
+        private readonly Lazy<IConvertModule> mConverter = new(() => XMLKit.Get.SystemLayer
+            .Get<IXMLToObjectConvertSystem>()
+            .GetConvertModule("EasyIMGUI"));
+
+        private readonly Dictionary<string, IMGUIView> mIdIndex = new();
 
         public T GetById<T>(string id) where T : class, IMGUIView
         {
@@ -106,7 +98,7 @@ namespace QFramework
             return this;
         }
 
-        void GenView(IMGUIView parentLayout, XmlNode parentNode)
+        private void GenView(IMGUIView parentLayout, XmlNode parentNode)
         {
             foreach (XmlNode childNode in parentNode)
             {
@@ -117,25 +109,15 @@ namespace QFramework
                 var layout = parentLayout as IMGUILayout;
 
                 if (layout != null)
-                {
                     layout.AddChild(view);
-                }
                 else
-                {
                     break;
-                }
 
-                if (!string.IsNullOrEmpty(view.Id))
-                {
-                    mIdIndex.Add(view.Id, view);
-                }
+                if (!string.IsNullOrEmpty(view.Id)) mIdIndex.Add(view.Id, view);
 
                 GenView(view, childNode);
             }
         }
-
-        private Lazy<IConvertModule> mConverter = new Lazy<IConvertModule>(() => XMLKit.Get.SystemLayer.Get<IXMLToObjectConvertSystem>()
-            .GetConvertModule("EasyIMGUI"));
     }
 
     public interface IConvertModule
@@ -176,8 +158,7 @@ namespace QFramework
 
     internal class XMLToObjectConvertSystem : IXMLToObjectConvertSystem
     {
-        private Dictionary<string, IConvertModule> mModules =
-            new Dictionary<string, IConvertModule>();
+        private readonly Dictionary<string, IConvertModule> mModules = new();
 
         public IConvertModule GetConvertModule(string moduleName)
         {
@@ -187,13 +168,9 @@ namespace QFramework
         public void AddModule(string key, IConvertModule module)
         {
             if (mModules.ContainsKey(key))
-            {
                 mModules[key] = module;
-            }
             else
-            {
                 mModules.Add(key, module);
-            }
         }
 
         public bool ContainsModule(string key)
@@ -204,16 +181,16 @@ namespace QFramework
 
     public class XMLKit
     {
-        private static Lazy<XMLKit> mInstance = new Lazy<XMLKit>(() =>
+        private static readonly Lazy<XMLKit> mInstance = new(() =>
         {
             var xmlKit = new XMLKit();
             xmlKit.Init();
             return xmlKit;
         });
 
-        public static XMLKit Get => mInstance.Value;
+        public readonly IOCContainer SystemLayer = new();
 
-        public readonly IOCContainer SystemLayer = new IOCContainer();
+        public static XMLKit Get => mInstance.Value;
 
         private void Init()
         {

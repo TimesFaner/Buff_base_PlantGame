@@ -1,24 +1,25 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
+
+using System.Linq;
+using UnityEngine;
 #if UNITY_EDITOR
 using System;
 using UnityEditor;
 #endif
-using System.Linq;
-using UnityEngine;
 
 namespace QFramework
 {
-    [System.Serializable]
+    [Serializable]
     public class LanguageText
     {
-        [SerializeField] public int LanguageIndex = 0;
+        [SerializeField] public int LanguageIndex;
         [HideInInspector] public Language Language;
 
         [TextArea(1, int.MaxValue)] public string Text;
@@ -49,10 +50,7 @@ namespace QFramework
                     languageIndex.intValue = EditorGUILayout.Popup(languageIndex.intValue,
                         languages.Select(l => l.Language.ToString()).ToArray());
 
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        language.intValue = (int)languages[languageIndex.intValue].Language;
-                    }
+                    if (EditorGUI.EndChangeCheck()) language.intValue = (int)languages[languageIndex.intValue].Language;
 
                     GUILayout.EndHorizontal();
                 }

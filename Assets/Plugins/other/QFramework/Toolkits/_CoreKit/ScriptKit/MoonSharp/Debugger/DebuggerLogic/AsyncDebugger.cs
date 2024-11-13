@@ -4,313 +4,306 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Debugging;
-using MoonSharp.VsCodeDebugger;
-using MoonSharp.VsCodeDebugger.SDK;
 
 namespace MoonSharp.VsCodeDebugger.DebuggerLogic
 {
-	internal class AsyncDebugger : IDebugger
-	{
-		private static object s_AsyncDebuggerIdLock = new object();
-		private static int s_AsyncDebuggerIdCounter = 0;
+    internal class AsyncDebugger : IDebugger
+    {
+        private static readonly object s_AsyncDebuggerIdLock = new();
+        private static int s_AsyncDebuggerIdCounter;
 
-		object m_Lock = new object();
-		private IAsyncDebuggerClient m_Client__;
-		DebuggerAction m_PendingAction = null;
+        private readonly object m_Lock = new();
+        private readonly Func<SourceCode, string> m_SourceFinder;
+        private readonly Dictionary<int, SourceCode> m_SourcesMap = new();
+        private readonly Dictionary<int, string> m_SourcesOverride = new();
 
-		List<WatchItem>[] m_WatchItems;
-		Dictionary<int, SourceCode> m_SourcesMap = new Dictionary<int, SourceCode>();
-		Dictionary<int, string> m_SourcesOverride = new Dictionary<int, string>();
-		Func<SourceCode, string> m_SourceFinder;
-
-
-		public DebugService DebugService { get; private set; }
-
-		public Regex ErrorRegex { get; set; }
-
-		public Script Script { get; private set; }
-
-		public bool PauseRequested { get; set; }
-
-		public string Name { get; set; }
-
-		public int Id { get; private set; }
+        private readonly List<WatchItem>[] m_WatchItems;
+        private IAsyncDebuggerClient m_Client__;
+        private DebuggerAction m_PendingAction;
 
 
-		public AsyncDebugger(Script script, Func<SourceCode, string> sourceFinder, string name)
-		{
-			lock (s_AsyncDebuggerIdLock)
-				Id = s_AsyncDebuggerIdCounter++;
+        public AsyncDebugger(Script script, Func<SourceCode, string> sourceFinder, string name)
+        {
+            lock (s_AsyncDebuggerIdLock)
+            {
+                Id = s_AsyncDebuggerIdCounter++;
+            }
 
-			m_SourceFinder = sourceFinder;
-			ErrorRegex = new Regex(@"\A.*\Z");
-			Script = script;
-			m_WatchItems = new List<WatchItem>[(int)WatchType.MaxValue];
-			Name = name;
+            m_SourceFinder = sourceFinder;
+            ErrorRegex = new Regex(@"\A.*\Z");
+            Script = script;
+            m_WatchItems = new List<WatchItem>[(int)WatchType.MaxValue];
+            Name = name;
 
-			for (int i = 0; i < m_WatchItems.Length; i++)
-				m_WatchItems[i] = new List<WatchItem>(64);
-		}
-
-
-		public IAsyncDebuggerClient Client
-		{
-			get { return m_Client__; }
-			set
-			{
-				lock (m_Lock)
-				{
-					if (m_Client__ != null && m_Client__ != value)
-					{
-						m_Client__.Unbind();
-					}
-
-					if (value != null)
-					{
-						for (int i = 0; i < Script.SourceCodeCount; i++)
-							if (m_SourcesMap.ContainsKey(i))
-								value.OnSourceCodeChanged(i);
-					}
-
-					m_Client__ = value;
-				}
-			}
-		}
-
-		DebuggerAction IDebugger.GetAction(int ip, SourceRef sourceref)
-		{
-			PauseRequested = false;
-
-			lock (m_Lock)
-				if (Client != null)
-				{
-					Client.SendStopEvent();
-				}
-
-			while (true)
-			{
-				lock (m_Lock)
-				{
-					if (Client == null)
-					{
-						return new DebuggerAction() { Action = DebuggerAction.ActionType.Run };
-					}
-
-					if (m_PendingAction != null)
-					{
-						var action = m_PendingAction;
-						m_PendingAction = null;
-						return action;
-					}
-				}
-
-				Sleep(10);
-			}
-		}
+            for (var i = 0; i < m_WatchItems.Length; i++)
+                m_WatchItems[i] = new List<WatchItem>(64);
+        }
 
 
-		public void QueueAction(DebuggerAction action)
-		{
-			while (true)
-			{
-				lock (m_Lock)
-					if (m_PendingAction == null)
-					{
-						m_PendingAction = action;
-						break;
-					}
+        public DebugService DebugService { get; private set; }
 
-				Sleep(10);
-			}
-		}
+        public Regex ErrorRegex { get; set; }
 
-		private void Sleep(int v)
-		{
+        public Script Script { get; }
+
+        public bool PauseRequested { get; set; }
+
+        public string Name { get; set; }
+
+        public int Id { get; private set; }
+
+
+        public IAsyncDebuggerClient Client
+        {
+            get => m_Client__;
+            set
+            {
+                lock (m_Lock)
+                {
+                    if (m_Client__ != null && m_Client__ != value) m_Client__.Unbind();
+
+                    if (value != null)
+                        for (var i = 0; i < Script.SourceCodeCount; i++)
+                            if (m_SourcesMap.ContainsKey(i))
+                                value.OnSourceCodeChanged(i);
+
+                    m_Client__ = value;
+                }
+            }
+        }
+
+        DebuggerAction IDebugger.GetAction(int ip, SourceRef sourceref)
+        {
+            PauseRequested = false;
+
+            lock (m_Lock)
+            {
+                if (Client != null)
+                    Client.SendStopEvent();
+            }
+
+            while (true)
+            {
+                lock (m_Lock)
+                {
+                    if (Client == null) return new DebuggerAction { Action = DebuggerAction.ActionType.Run };
+
+                    if (m_PendingAction != null)
+                    {
+                        var action = m_PendingAction;
+                        m_PendingAction = null;
+                        return action;
+                    }
+                }
+
+                Sleep(10);
+            }
+        }
+
+        List<DynamicExpression> IDebugger.GetWatchItems()
+        {
+            return new List<DynamicExpression>();
+        }
+
+        bool IDebugger.IsPauseRequested()
+        {
+            return PauseRequested;
+        }
+
+        void IDebugger.RefreshBreakpoints(IEnumerable<SourceRef> refs)
+        {
+        }
+
+        void IDebugger.SetByteCode(string[] byteCode)
+        {
+        }
+
+        void IDebugger.SetSourceCode(SourceCode sourceCode)
+        {
+            m_SourcesMap[sourceCode.SourceID] = sourceCode;
+
+            var invalidFile = false;
+
+            var file = m_SourceFinder(sourceCode);
+
+            if (!string.IsNullOrEmpty(file))
+                try
+                {
+                    if (!File.Exists(file))
+                        invalidFile = true;
+                }
+                catch
+                {
+                    invalidFile = true;
+                }
+            else
+                invalidFile = true;
+
+            if (invalidFile)
+            {
+                file = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".lua");
+                File.WriteAllText(file, sourceCode.Code + GetFooterForTempFile());
+                m_SourcesOverride[sourceCode.SourceID] = file;
+            }
+            else if (file != sourceCode.Name)
+            {
+                m_SourcesOverride[sourceCode.SourceID] = file;
+            }
+
+
+            lock (m_Lock)
+            {
+                if (Client != null)
+                    Client.OnSourceCodeChanged(sourceCode.SourceID);
+            }
+        }
+
+
+        void IDebugger.SignalExecutionEnded()
+        {
+            lock (m_Lock)
+            {
+                if (Client != null)
+                    Client.OnExecutionEnded();
+            }
+        }
+
+        bool IDebugger.SignalRuntimeException(ScriptRuntimeException ex)
+        {
+            lock (m_Lock)
+            {
+                if (Client == null)
+                    return false;
+            }
+
+            Client.OnException(ex);
+            PauseRequested = ErrorRegex.IsMatch(ex.Message);
+            return PauseRequested;
+        }
+
+        void IDebugger.Update(WatchType watchType, IEnumerable<WatchItem> items)
+        {
+            var list = m_WatchItems[(int)watchType];
+
+            list.Clear();
+            list.AddRange(items);
+
+            lock (m_Lock)
+            {
+                if (Client != null)
+                    Client.OnWatchesUpdated(watchType);
+            }
+        }
+
+        void IDebugger.SetDebugService(DebugService debugService)
+        {
+            DebugService = debugService;
+        }
+
+        DebuggerCaps IDebugger.GetDebuggerCaps()
+        {
+            return DebuggerCaps.CanDebugSourceCode | DebuggerCaps.HasLineBasedBreakpoints;
+        }
+
+
+        public void QueueAction(DebuggerAction action)
+        {
+            while (true)
+            {
+                lock (m_Lock)
+                {
+                    if (m_PendingAction == null)
+                    {
+                        m_PendingAction = action;
+                        break;
+                    }
+                }
+
+                Sleep(10);
+            }
+        }
+
+        private void Sleep(int v)
+        {
 #if DOTNET_CORE
 			System.Threading.Tasks.Task.Delay(10).Wait();
 #else
-				System.Threading.Thread.Sleep(10);
+            Thread.Sleep(10);
 #endif
-		}
+        }
 
-		private DynamicExpression CreateDynExpr(string code)
-		{
-			try
-			{
-				return Script.CreateDynamicExpression(code);
-			}
-			catch (Exception ex)
-			{
-				return Script.CreateConstantDynamicExpression(code, DynValue.NewString(ex.Message));
-			}
-		}
+        private DynamicExpression CreateDynExpr(string code)
+        {
+            try
+            {
+                return Script.CreateDynamicExpression(code);
+            }
+            catch (Exception ex)
+            {
+                return Script.CreateConstantDynamicExpression(code, DynValue.NewString(ex.Message));
+            }
+        }
 
-		List<DynamicExpression> IDebugger.GetWatchItems()
-		{
-			return new List<DynamicExpression>();
-		}
+        private string GetFooterForTempFile()
+        {
+            return "\n\n" +
+                   "----------------------------------------------------------------------------------------------------------\n" +
+                   "-- This file has been generated by the debugger as a placeholder for a script snippet stored in memory. --\n" +
+                   "-- If you restart the host process, the contents of this file are not valid anymore.                    --\n" +
+                   "----------------------------------------------------------------------------------------------------------\n";
+        }
 
-		bool IDebugger.IsPauseRequested()
-		{
-			return PauseRequested;
-		}
+        public string GetSourceFile(int sourceId)
+        {
+            if (m_SourcesOverride.ContainsKey(sourceId))
+                return m_SourcesOverride[sourceId];
+            if (m_SourcesMap.ContainsKey(sourceId))
+                return m_SourcesMap[sourceId].Name;
+            return null;
+        }
 
-		void IDebugger.RefreshBreakpoints(IEnumerable<SourceRef> refs)
-		{
-
-		}
-
-		void IDebugger.SetByteCode(string[] byteCode)
-		{
-
-		}
-
-		void IDebugger.SetSourceCode(SourceCode sourceCode)
-		{
-			m_SourcesMap[sourceCode.SourceID] = sourceCode;
-
-			bool invalidFile = false;
-
-			string file = m_SourceFinder(sourceCode);
-
-			if (!string.IsNullOrEmpty(file))
-			{
-				try
-				{
-					if (!File.Exists(file))
-						invalidFile = true;
-				}
-				catch
-				{
-					invalidFile = true;
-				}
-			}
-			else
-			{
-				invalidFile = true;
-			}
-
-			if (invalidFile)
-			{
-				file = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".lua");
-				File.WriteAllText(file, sourceCode.Code + GetFooterForTempFile());
-				m_SourcesOverride[sourceCode.SourceID] = file;
-			}
-			else if (file != sourceCode.Name)
-			{
-				m_SourcesOverride[sourceCode.SourceID] = file;
-			}
+        public bool IsSourceOverride(int sourceId)
+        {
+            return m_SourcesOverride.ContainsKey(sourceId);
+        }
 
 
-			lock (m_Lock)
-				if (Client != null)
-					Client.OnSourceCodeChanged(sourceCode.SourceID);
-		}
+        public List<WatchItem> GetWatches(WatchType watchType)
+        {
+            return m_WatchItems[(int)watchType];
+        }
 
-		private string GetFooterForTempFile()
-		{
-			return "\n\n" +
-				"----------------------------------------------------------------------------------------------------------\n" +
-				"-- This file has been generated by the debugger as a placeholder for a script snippet stored in memory. --\n" +
-				"-- If you restart the host process, the contents of this file are not valid anymore.                    --\n" +
-				"----------------------------------------------------------------------------------------------------------\n";
-		}
+        public SourceCode GetSource(int id)
+        {
+            if (m_SourcesMap.ContainsKey(id))
+                return m_SourcesMap[id];
 
-		public string GetSourceFile(int sourceId)
-		{
-			if (m_SourcesOverride.ContainsKey(sourceId))
-				return m_SourcesOverride[sourceId];
-			else if (m_SourcesMap.ContainsKey(sourceId))
-				return m_SourcesMap[sourceId].Name;
-			return null;
-		}
+            return null;
+        }
 
-		public bool IsSourceOverride(int sourceId)
-		{
-			return (m_SourcesOverride.ContainsKey(sourceId));
-		}
+        public SourceCode FindSourceByName(string path)
+        {
+            // we use case insensitive match - be damned if you have files which differ only by 
+            // case in the same directory on Unix.
+            path = path.Replace('\\', '/').ToUpperInvariant();
 
+            foreach (var kvp in m_SourcesOverride)
+                if (kvp.Value.Replace('\\', '/').ToUpperInvariant() == path)
+                    return m_SourcesMap[kvp.Key];
 
-		void IDebugger.SignalExecutionEnded()
-		{
-			lock (m_Lock)
-				if (Client != null)
-					Client.OnExecutionEnded();
-		}
+            return m_SourcesMap.Values.FirstOrDefault(s => s.Name.Replace('\\', '/').ToUpperInvariant() == path);
+        }
 
-		bool IDebugger.SignalRuntimeException(ScriptRuntimeException ex)
-		{
-			lock (m_Lock)
-				if (Client == null)
-					return false;
-
-			Client.OnException(ex);
-			PauseRequested = ErrorRegex.IsMatch(ex.Message);
-			return PauseRequested;
-		}
-
-		void IDebugger.Update(WatchType watchType, IEnumerable<WatchItem> items)
-		{
-			var list = m_WatchItems[(int)watchType];
-
-			list.Clear();
-			list.AddRange(items);
-
-			lock (m_Lock)
-				if (Client != null)
-					Client.OnWatchesUpdated(watchType);
-		}
-
-
-		public List<WatchItem> GetWatches(WatchType watchType)
-		{
-			return m_WatchItems[(int)watchType];
-		}
-
-		public SourceCode GetSource(int id)
-		{
-			if (m_SourcesMap.ContainsKey(id))
-				return m_SourcesMap[id];
-
-			return null;
-		}
-
-		public SourceCode FindSourceByName(string path)
-		{
-			// we use case insensitive match - be damned if you have files which differ only by 
-			// case in the same directory on Unix.
-			path = path.Replace('\\', '/').ToUpperInvariant();
-
-			foreach (var kvp in m_SourcesOverride)
-			{
-				if (kvp.Value.Replace('\\', '/').ToUpperInvariant() == path)
-					return m_SourcesMap[kvp.Key];
-			}
-
-			return m_SourcesMap.Values.FirstOrDefault(s => s.Name.Replace('\\', '/').ToUpperInvariant() == path);
-		}
-
-		void IDebugger.SetDebugService(DebugService debugService)
-		{
-			DebugService = debugService;
-		}
-
-		public DynValue Evaluate(string expression)
-		{
-			DynamicExpression expr = CreateDynExpr(expression);
-			return expr.Evaluate();
-		}
-
-		DebuggerCaps IDebugger.GetDebuggerCaps()
-		{
-			return DebuggerCaps.CanDebugSourceCode | DebuggerCaps.HasLineBasedBreakpoints;
-		}
-	}
+        public DynValue Evaluate(string expression)
+        {
+            var expr = CreateDynExpr(expression);
+            return expr.Evaluate();
+        }
+    }
 }
 
 #endif

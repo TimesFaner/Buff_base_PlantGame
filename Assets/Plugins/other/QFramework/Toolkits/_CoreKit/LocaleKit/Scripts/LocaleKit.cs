@@ -1,6 +1,6 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -13,6 +13,21 @@ namespace QFramework
 {
     public class LocaleKit : Architecture<LocaleKit>
     {
+        public static Action<string, int> SaveCommand = (key, languageIndex) =>
+            PlayerPrefs.SetInt(key, languageIndex);
+
+        public static Func<string, int, int> LoadCommand = (key, defaultLanguageIndex) =>
+            PlayerPrefs.GetInt(key, defaultLanguageIndex);
+
+        public static readonly EasyEvent OnLanguageChanged = new();
+
+
+        private static LanguageDefineConfig mConfig;
+
+        public static Language CurrentLanguage { get; private set; }
+
+        public static LanguageDefineConfig Config =>
+            mConfig ? mConfig : mConfig = Resources.Load<LanguageDefineConfig>(nameof(LanguageDefineConfig));
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void AutoInit()
@@ -21,38 +36,19 @@ namespace QFramework
             // if config is created
             if (Config)
             {
-                var @interface = LocaleKit.Interface;
+                var @interface = Interface;
                 Debug.Log(@interface + ": inited");
             }
         }
-        
+
         protected override void Init()
         {
             var languageIndex = LoadCommand("CURRENT_LANGUAGE_INDEX", 0);
 
-            if (languageIndex >= Config.LanguageDefines.Count)
-            {
-                languageIndex = 0;
-            }
+            if (languageIndex >= Config.LanguageDefines.Count) languageIndex = 0;
 
             CurrentLanguage = Config.LanguageDefines[languageIndex].Language;
         }
-
-        public static Language CurrentLanguage { get; private set; }
-
-        public static Action<string, int> SaveCommand = (key, languageIndex) =>
-            PlayerPrefs.SetInt(key, languageIndex);
-
-        public static Func<string, int, int> LoadCommand = (key, defaultLanguageIndex) =>
-            PlayerPrefs.GetInt(key, defaultLanguageIndex);
-
-        public static readonly EasyEvent OnLanguageChanged = new EasyEvent();
-
-
-        private static LanguageDefineConfig mConfig;
-
-        public static LanguageDefineConfig Config =>
-            mConfig ? mConfig : mConfig = Resources.Load<LanguageDefineConfig>(nameof(LanguageDefineConfig));
 
 
         public static Language GetNextLanguage()
@@ -60,10 +56,7 @@ namespace QFramework
             var languageIndex = (int)CurrentLanguage;
             languageIndex++;
 
-            if (languageIndex >= Config.LanguageDefines.Count)
-            {
-                languageIndex = 0;
-            }
+            if (languageIndex >= Config.LanguageDefines.Count) languageIndex = 0;
 
             return (Language)languageIndex;
         }

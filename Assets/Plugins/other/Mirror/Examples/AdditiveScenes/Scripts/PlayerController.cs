@@ -8,82 +8,46 @@ namespace Mirror.Examples.AdditiveScenes
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerController : NetworkBehaviour
     {
-        public enum GroundState : byte { Jumping, Falling, Grounded }
+        public enum GroundState : byte
+        {
+            Jumping,
+            Falling,
+            Grounded
+        }
 
-        [Header("Avatar Components")]
-        public CharacterController characterController;
+        [Header("Avatar Components")] public CharacterController characterController;
 
-        [Header("Movement")]
-        [Range(1, 20)]
-        public float moveSpeedMultiplier = 8f;
+        [Header("Movement")] [Range(1, 20)] public float moveSpeedMultiplier = 8f;
 
-        [Header("Turning")]
-        [Range(1f, 200f)]
-        public float maxTurnSpeed = 100f;
-        [Range(.5f, 5f)]
-        public float turnDelta = 3f;
+        [Header("Turning")] [Range(1f, 200f)] public float maxTurnSpeed = 100f;
 
-        [Header("Jumping")]
-        [Range(0.1f, 1f)]
-        public float initialJumpSpeed = 0.2f;
-        [Range(1f, 10f)]
-        public float maxJumpSpeed = 5f;
-        [Range(0.1f, 1f)]
-        public float jumpDelta = 0.2f;
+        [Range(.5f, 5f)] public float turnDelta = 3f;
+
+        [Header("Jumping")] [Range(0.1f, 1f)] public float initialJumpSpeed = 0.2f;
+
+        [Range(1f, 10f)] public float maxJumpSpeed = 5f;
+
+        [Range(0.1f, 1f)] public float jumpDelta = 0.2f;
 
         [Header("Diagnostics - Do Not Modify")]
         public GroundState groundState = GroundState.Grounded;
 
-        [Range(-1f, 1f)]
-        public float horizontal;
-        [Range(-1f, 1f)]
-        public float vertical;
+        [Range(-1f, 1f)] public float horizontal;
 
-        [Range(-200f, 200f)]
-        public float turnSpeed;
+        [Range(-1f, 1f)] public float vertical;
 
-        [Range(-10f, 10f)]
-        public float jumpSpeed;
+        [Range(-200f, 200f)] public float turnSpeed;
 
-        [Range(-1.5f, 1.5f)]
-        public float animVelocity;
+        [Range(-10f, 10f)] public float jumpSpeed;
 
-        [Range(-1.5f, 1.5f)]
-        public float animRotation;
+        [Range(-1.5f, 1.5f)] public float animVelocity;
+
+        [Range(-1.5f, 1.5f)] public float animRotation;
 
         public Vector3Int velocity;
         public Vector3 direction;
 
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-
-            if (characterController == null)
-                characterController = GetComponent<CharacterController>();
-
-            // Override CharacterController default values
-            characterController.enabled = false;
-            characterController.skinWidth = 0.02f;
-            characterController.minMoveDistance = 0f;
-
-            GetComponent<Rigidbody>().isKinematic = true;
-
-            this.enabled = false;
-        }
-
-        public override void OnStartAuthority()
-        {
-            characterController.enabled = true;
-            this.enabled = true;
-        }
-
-        public override void OnStopAuthority()
-        {
-            this.enabled = false;
-            characterController.enabled = false;
-        }
-
-        void Update()
+        private void Update()
         {
             if (!characterController.enabled)
                 return;
@@ -102,8 +66,37 @@ namespace Mirror.Examples.AdditiveScenes
             velocity = Vector3Int.FloorToInt(characterController.velocity);
         }
 
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+
+            if (characterController == null)
+                characterController = GetComponent<CharacterController>();
+
+            // Override CharacterController default values
+            characterController.enabled = false;
+            characterController.skinWidth = 0.02f;
+            characterController.minMoveDistance = 0f;
+
+            GetComponent<Rigidbody>().isKinematic = true;
+
+            enabled = false;
+        }
+
+        public override void OnStartAuthority()
+        {
+            characterController.enabled = true;
+            enabled = true;
+        }
+
+        public override void OnStopAuthority()
+        {
+            enabled = false;
+            characterController.enabled = false;
+        }
+
         // TODO: Turning works while airborne...feature?
-        void HandleTurning()
+        private void HandleTurning()
         {
             // Q and E cancel each other out, reducing the turn to zero.
             if (Input.GetKey(KeyCode.Q))
@@ -122,7 +115,7 @@ namespace Mirror.Examples.AdditiveScenes
             transform.Rotate(0f, turnSpeed * Time.deltaTime, 0f);
         }
 
-        void HandleJumping()
+        private void HandleJumping()
         {
             // Handle variable force jumping.
             // Jump starts with initial power on takeoff, and jumps higher / longer
@@ -139,7 +132,9 @@ namespace Mirror.Examples.AdditiveScenes
                 }
                 else
                     // Jumping has already started...increase power toward maxJumpSpeed over time.
+                {
                     jumpSpeed = Mathf.MoveTowards(jumpSpeed, maxJumpSpeed, jumpDelta);
+                }
 
                 // If power has reached maxJumpSpeed, change to falling until grounded.
                 // This prevents over-applying jump power while already in the air.
@@ -154,11 +149,13 @@ namespace Mirror.Examples.AdditiveScenes
                 jumpSpeed += Physics.gravity.y * Time.deltaTime;
             }
             else
+            {
                 jumpSpeed = Physics.gravity.y * Time.deltaTime;
+            }
         }
 
         // TODO: Directional input works while airborne...feature?
-        void HandleMove()
+        private void HandleMove()
         {
             // Capture inputs
             horizontal = Input.GetAxis("Horizontal");

@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -29,13 +29,9 @@ namespace QFramework
             var description = string.Empty;
 
             if (LocaleKitEditor.IsCN.Value)
-            {
                 description = mPropertyInfo.GetAttribute<APIDescriptionCNAttribute>().Description;
-            }
             else
-            {
-                description = mPropertyInfo.GetAttribute<APIDescriptionENAttribute>(false).Description;
-            }
+                description = mPropertyInfo.GetAttribute<APIDescriptionENAttribute>().Description;
 
             builder
                 .Append("|").Append(mPropertyInfo.PropertyType.Name + " " + mPropertyInfo.Name).Append("|")

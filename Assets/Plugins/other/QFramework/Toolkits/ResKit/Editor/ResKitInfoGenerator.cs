@@ -1,19 +1,18 @@
 ﻿/****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
 using System.CodeDom;
-using System.IO;
 using System.CodeDom.Compiler;
-using Microsoft.CSharp;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Microsoft.CSharp;
 using UnityEditor;
-using UnityEngine;
 
 namespace QFramework
 {
@@ -45,10 +44,7 @@ namespace QFramework
             {
                 var className = assetBundleInfo.Name;
                 var bundleName = className.Substring(0, 1).ToLower() + className.Substring(1);
-                if (int.TryParse(bundleName[0].ToString(), out _))
-                {
-                    continue;
-                }
+                if (int.TryParse(bundleName[0].ToString(), out _)) continue;
 
                 className = className.Substring(0, 1).ToUpper() +
                             className.Substring(1)
@@ -61,7 +57,7 @@ namespace QFramework
                 {
                     Attributes = MemberAttributes.Public | MemberAttributes.Const,
                     Name = "BundleName",
-                    Type = new CodeTypeReference(typeof(System.String))
+                    Type = new CodeTypeReference(typeof(string))
                 };
                 codeType.Members.Add(bundleNameField);
                 bundleNameField.InitExpression = new CodePrimitiveExpression(bundleName.ToLowerInvariant());
@@ -75,15 +71,12 @@ namespace QFramework
                     var content = Path.GetFileNameWithoutExtension(asset);
 
                     if (ResKitView.GenerateClassNameStyle == ResKitView.GENERATE_NAME_STYLE_UPPERCASE)
-                    {
                         assetField.Name = content.ToUpperInvariant()
                             .RemoveInvalidateChars();
-                    } else if (ResKitView.GenerateClassNameStyle == ResKitView.GENERATE_NAME_STYLE_KeepOriginal)
-                    {
+                    else if (ResKitView.GenerateClassNameStyle == ResKitView.GENERATE_NAME_STYLE_KeepOriginal)
                         assetField.Name = content.RemoveInvalidateChars();
-                    }
 
-                    assetField.Type = new CodeTypeReference(typeof(System.String));
+                    assetField.Type = new CodeTypeReference(typeof(string));
                     if (!assetField.Name.StartsWith("[") && !assetField.Name.StartsWith(" [") &&
                         !checkRepeatDict.ContainsKey(assetField.Name))
                     {
@@ -107,7 +100,7 @@ namespace QFramework
             provider.GenerateCodeFromCompileUnit(compileUnit, writer, options);
         }
 
-        static string RemoveInvalidateChars(this string name)
+        private static string RemoveInvalidateChars(this string name)
         {
             return name.Replace("/", "")
                 .Replace("@", "")

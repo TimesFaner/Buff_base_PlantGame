@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using UnityEditor;
+using UnityEngine;
 
 namespace QFramework
 {
@@ -6,15 +7,16 @@ namespace QFramework
     {
         public readonly string DisplayName;
 
-        public DisplayLabelAttribute(string displayName) => DisplayName = displayName;
+        public DisplayLabelAttribute(string displayName)
+        {
+            DisplayName = displayName;
+        }
     }
 }
 
 #if UNITY_EDITOR
 namespace QFramework
 {
-    using UnityEditor;
-
     [CustomPropertyDrawer(typeof(DisplayLabelAttribute))]
     public class DisplayLabelDrawer : PropertyDrawer
     {
@@ -25,21 +27,6 @@ namespace QFramework
 
             return EditorGUI.GetPropertyHeight(property, label);
         }
-
-#if UNITY_EDITOR
-        public static void LogWarning(Object owner, string message, Object target = null)
-            => Debug.LogWarning($"<color=brown>{owner.name}</color> caused: " + message, target);
-
-        public static void LogWarning(UnityEditor.SerializedProperty property, string message, Object target = null)
-            => Debug.LogWarning($"Property <color=brown>{property.name}</color> " +
-                                $"in Object <color=brown>{property.serializedObject.targetObject.name}</color> caused: " +
-                                message, target);
-
-        public static void LogCollectionsNotSupportedWarning(UnityEditor.SerializedProperty property, string nameOfType)
-            => LogWarning(property, $"Array fields are not supported by <color=brown>[{nameOfType}]</color>. " +
-                                    "Consider to use <color=blue>CollectionWrapper</color>",
-                property.serializedObject.targetObject);
-#endif
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -52,6 +39,27 @@ namespace QFramework
             if (customDrawer != null) customDrawer.OnGUI(position, property, label);
             else EditorGUI.PropertyField(position, property, label, true);
         }
+
+#if UNITY_EDITOR
+        public static void LogWarning(Object owner, string message, Object target = null)
+        {
+            Debug.LogWarning($"<color=brown>{owner.name}</color> caused: " + message, target);
+        }
+
+        public static void LogWarning(SerializedProperty property, string message, Object target = null)
+        {
+            Debug.LogWarning($"Property <color=brown>{property.name}</color> " +
+                             $"in Object <color=brown>{property.serializedObject.targetObject.name}</color> caused: " +
+                             message, target);
+        }
+
+        public static void LogCollectionsNotSupportedWarning(SerializedProperty property, string nameOfType)
+        {
+            LogWarning(property, $"Array fields are not supported by <color=brown>[{nameOfType}]</color>. " +
+                                 "Consider to use <color=blue>CollectionWrapper</color>",
+                property.serializedObject.targetObject);
+        }
+#endif
     }
 }
 #endif

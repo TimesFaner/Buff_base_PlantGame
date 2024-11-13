@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2016 ~ 2022 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -17,24 +17,20 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace QFramework
 {
     internal static class User
     {
-        public static BindableProperty<string> Username = new BindableProperty<string>(LoadString("username"));
-        public static BindableProperty<string> Password = new BindableProperty<string>(LoadString("password"));
-        public static BindableProperty<string> Token = new BindableProperty<string>(LoadString("token"));
+        public static BindableProperty<string> Username = new(LoadString("username"));
+        public static BindableProperty<string> Password = new(LoadString("password"));
+        public static BindableProperty<string> Token = new(LoadString("token"));
 
-        public static bool Logined
-        {
-            get
-            {
-                return !string.IsNullOrEmpty(Token.Value) &&
-                       !string.IsNullOrEmpty(Username.Value) &&
-                       !string.IsNullOrEmpty(Password.Value);
-            }
-        }
+        public static bool Logined =>
+            !string.IsNullOrEmpty(Token.Value) &&
+            !string.IsNullOrEmpty(Username.Value) &&
+            !string.IsNullOrEmpty(Password.Value);
 
 
         public static void Save()
@@ -67,21 +63,10 @@ namespace QFramework
 
     public class ReadmeWindow : EditorWindow
     {
+        private PackageVersion mPackageVersion;
         private Readme mReadme;
 
         private Vector2 mScrollPos = Vector2.zero;
-
-        private PackageVersion mPackageVersion;
-
-
-        public static void Init(Readme readme, PackageVersion packageVersion)
-        {
-            var readmeWin = (ReadmeWindow)GetWindow(typeof(ReadmeWindow), true, packageVersion.Name, true);
-            readmeWin.mReadme = readme;
-            readmeWin.mPackageVersion = packageVersion;
-            readmeWin.position = new Rect(Screen.width / 2, Screen.height / 2, 600, 300);
-            readmeWin.Show();
-        }
 
         public void OnGUI()
         {
@@ -104,17 +89,12 @@ namespace QFramework
                         GUILayout.Label("date: " + item.date);
 
                         if (item.author == User.Username.Value || User.Username.Value == "liangxie")
-                        {
                             if (GUILayout.Button("删除"))
-                            {
-//                            RenderEndCommandExecuter.PushCommand(() =>
-//                            {
+                                //                            RenderEndCommandExecuter.PushCommand(() =>
+                                //                            {
                                 new PackageManagerServer().DeletePackage(item.PackageId,
                                     () => { mReadme.items.Remove(item); });
-//                            });
-                            }
-                        }
-
+                        //                            });
                         GUILayout.EndHorizontal();
                         GUILayout.Label(item.content);
                         GUILayout.EndVertical();
@@ -125,12 +105,22 @@ namespace QFramework
 
             GUILayout.EndScrollView();
         }
+
+
+        public static void Init(Readme readme, PackageVersion packageVersion)
+        {
+            var readmeWin = (ReadmeWindow)GetWindow(typeof(ReadmeWindow), true, packageVersion.Name, true);
+            readmeWin.mReadme = readme;
+            readmeWin.mPackageVersion = packageVersion;
+            readmeWin.position = new Rect(Screen.width / 2, Screen.height / 2, 600, 300);
+            readmeWin.Show();
+        }
     }
 
     [Serializable]
     public class PackageInfosRequestCache
     {
-        public List<PackageRepository> PackageRepositories = new List<PackageRepository>();
+        public List<PackageRepository> PackageRepositories = new();
 
         private static string mFilePath
         {
@@ -138,10 +128,7 @@ namespace QFramework
             {
                 var dirPath = Application.dataPath + "/.qframework/PackageManager/";
 
-                if (!Directory.Exists(dirPath))
-                {
-                    Directory.CreateDirectory(dirPath);
-                }
+                if (!Directory.Exists(dirPath)) Directory.CreateDirectory(dirPath);
 
                 return dirPath + "PackageInfosRequestCache.json";
             }
@@ -153,18 +140,12 @@ namespace QFramework
             {
                 var cacheJson = File.ReadAllText(mFilePath);
 
-                if (cacheJson.IsTrimNotNullAndEmpty())
-                {
-                    return new PackageInfosRequestCache();
-                }
+                if (cacheJson.IsTrimNotNullAndEmpty()) return new PackageInfosRequestCache();
                 try
                 {
                     var retValue = JsonUtility.FromJson<PackageInfosRequestCache>(cacheJson);
 
-                    if (retValue.PackageRepositories == null)
-                    {
-                        return new PackageInfosRequestCache();
-                    }
+                    if (retValue.PackageRepositories == null) return new PackageInfosRequestCache();
                 }
                 catch (Exception)
                 {
@@ -196,10 +177,17 @@ namespace QFramework
 
         public const int Feedback = 11;
     }
-    
+
 
     public class SubWindow : EditorWindow, IMGUILayout
     {
+        private List<IMGUIView> mChildren { get; } = new();
+
+        private void OnGUI()
+        {
+            mChildren.ForEach(view => view.DrawGUI());
+        }
+
         public string Id { get; set; }
         public bool Visible { get; set; }
 
@@ -211,24 +199,9 @@ namespace QFramework
 
         IMGUILayout IMGUIView.Parent { get; set; }
 
-        private FluentGUIStyle mStyle = new FluentGUIStyle(() => new GUIStyle());
-
-        public FluentGUIStyle Style
-        {
-            get { return mStyle; }
-            set { mStyle = value; }
-        }
+        public FluentGUIStyle Style { get; set; } = new(() => new GUIStyle());
 
         Color IMGUIView.BackgroundColor { get; set; }
-
-
-        private List<IMGUIView> mPrivateChildren = new List<IMGUIView>();
-
-        private List<IMGUIView> mChildren
-        {
-            get { return mPrivateChildren; }
-            set { mPrivateChildren = value; }
-        }
 
         void IMGUIView.RefreshNextFrame()
         {
@@ -269,11 +242,6 @@ namespace QFramework
             mChildren.Clear();
         }
 
-        private void OnGUI()
-        {
-            mChildren.ForEach(view => view.DrawGUI());
-        }
-
         public void Dispose()
         {
         }
@@ -281,9 +249,22 @@ namespace QFramework
 
     public abstract class Window : EditorWindow, IDisposable
     {
+        protected bool mShowing;
         public static Window MainWindow { get; protected set; }
 
         public IMGUIViewController ViewController { get; set; }
+
+        private void OnGUI()
+        {
+            if (ViewController != null) ViewController.View.DrawGUI();
+
+            RenderEndCommandExecutor.ExecuteCommand();
+        }
+
+        public void Dispose()
+        {
+            OnDispose();
+        }
 
         public T CreateViewController<T>() where T : IMGUIViewController, new()
         {
@@ -320,33 +301,16 @@ namespace QFramework
             return window;
         }
 
-        void Init()
+        private void Init()
         {
             OnInit();
         }
 
 
-        public void PushCommand(System.Action command)
+        public void PushCommand(Action command)
         {
             RenderEndCommandExecutor.PushCommand(command);
         }
-
-        private void OnGUI()
-        {
-            if (ViewController != null)
-            {
-                ViewController.View.DrawGUI();
-            }
-
-            RenderEndCommandExecutor.ExecuteCommand();
-        }
-
-        public void Dispose()
-        {
-            OnDispose();
-        }
-
-        protected bool mShowing = false;
 
 
         protected abstract void OnInit();
@@ -356,7 +320,7 @@ namespace QFramework
 
     public static class WindowExtension
     {
-        public static T PushCommand<T>(this T view, System.Action command) where T : IMGUIView
+        public static T PushCommand<T>(this T view, Action command) where T : IMGUIView
         {
             RenderEndCommandExecutor.PushCommand(command);
             return view;
@@ -398,18 +362,19 @@ namespace QFramework
 
     public static class EditorUtils
     {
+        public static string CurrentSelectPath => Selection.activeObject == null
+            ? null
+            : AssetDatabase.GetAssetPath(Selection.activeObject);
+
         public static string GetSelectedPathOrFallback()
         {
             var path = string.Empty;
 
-            foreach (var obj in Selection.GetFiltered(typeof(UnityEngine.Object), SelectionMode.Assets))
+            foreach (var obj in Selection.GetFiltered(typeof(Object), SelectionMode.Assets))
             {
                 path = AssetDatabase.GetAssetPath(obj);
 
-                if (!string.IsNullOrEmpty(path) && File.Exists(path))
-                {
-                    return path;
-                }
+                if (!string.IsNullOrEmpty(path) && File.Exists(path)) return path;
             }
 
             return path;
@@ -420,20 +385,15 @@ namespace QFramework
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
-        public static string CurrentSelectPath
-        {
-            get { return Selection.activeObject == null ? null : AssetDatabase.GetAssetPath(Selection.activeObject); }
-        }
-
         public static string AssetsPath2ABSPath(string assetsPath)
         {
-            string assetRootPath = Path.GetFullPath(Application.dataPath);
+            var assetRootPath = Path.GetFullPath(Application.dataPath);
             return assetRootPath.Substring(0, assetRootPath.Length - 6) + assetsPath;
         }
 
         public static string ABSPath2AssetsPath(string absPath)
         {
-            string assetRootPath = Path.GetFullPath(Application.dataPath);
+            var assetRootPath = Path.GetFullPath(Application.dataPath);
             Debug.Log(assetRootPath);
             Debug.Log(Path.GetFullPath(absPath));
             return "Assets" + Path.GetFullPath(absPath).Substring(assetRootPath.Length).Replace("\\", "/");
@@ -442,17 +402,14 @@ namespace QFramework
 
         public static string AssetPath2ReltivePath(string path)
         {
-            if (path == null)
-            {
-                return null;
-            }
+            if (path == null) return null;
 
             return path.Replace("Assets/", "");
         }
 
         public static bool ExcuteCmd(string toolName, string args, bool isThrowExcpetion = true)
         {
-            Process process = new Process();
+            var process = new Process();
             process.StartInfo.FileName = toolName;
             process.StartInfo.Arguments = args;
             process.StartInfo.CreateNoWindow = true;
@@ -466,12 +423,12 @@ namespace QFramework
 
         public static void OuputProcessLog(Process p, bool isThrowExcpetion)
         {
-            string standardError = string.Empty;
+            var standardError = string.Empty;
             p.BeginErrorReadLine();
 
             p.ErrorDataReceived += (sender, outLine) => { standardError += outLine.Data; };
 
-            string standardOutput = string.Empty;
+            var standardOutput = string.Empty;
             p.BeginOutputReadLine();
             p.OutputDataReceived += (sender, outLine) => { standardOutput += outLine.Data; };
 
@@ -493,35 +450,31 @@ namespace QFramework
 
         public static Dictionary<string, string> ParseArgs(string argString)
         {
-            int curPos = argString.IndexOf('-');
-            Dictionary<string, string> result = new Dictionary<string, string>();
+            var curPos = argString.IndexOf('-');
+            var result = new Dictionary<string, string>();
 
             while (curPos != -1 && curPos < argString.Length)
             {
-                int nextPos = argString.IndexOf('-', curPos + 1);
-                string item = string.Empty;
+                var nextPos = argString.IndexOf('-', curPos + 1);
+                var item = string.Empty;
 
                 if (nextPos != -1)
-                {
                     item = argString.Substring(curPos + 1, nextPos - curPos - 1);
-                }
                 else
-                {
                     item = argString.Substring(curPos + 1, argString.Length - curPos - 1);
-                }
 
                 item = StringTrim(item);
-                int splitPos = item.IndexOf(' ');
+                var splitPos = item.IndexOf(' ');
 
                 if (splitPos == -1)
                 {
-                    string key = StringTrim(item);
+                    var key = StringTrim(item);
                     result[key] = "";
                 }
                 else
                 {
-                    string key = StringTrim(item.Substring(0, splitPos));
-                    string value = StringTrim(item.Substring(splitPos + 1, item.Length - splitPos - 1));
+                    var key = StringTrim(item.Substring(0, splitPos));
+                    var value = StringTrim(item.Substring(splitPos + 1, item.Length - splitPos - 1));
                     result[key] = value;
                 }
 
@@ -536,16 +489,13 @@ namespace QFramework
             if (!File.Exists(absPath))
                 return "";
 
-            MD5CryptoServiceProvider md5CSP = new MD5CryptoServiceProvider();
-            FileStream file = new FileStream(absPath, FileMode.Open);
-            byte[] retVal = md5CSP.ComputeHash(file);
+            var md5CSP = new MD5CryptoServiceProvider();
+            var file = new FileStream(absPath, FileMode.Open);
+            var retVal = md5CSP.ComputeHash(file);
             file.Close();
-            string result = "";
+            var result = "";
 
-            for (int i = 0; i < retVal.Length; i++)
-            {
-                result += retVal[i].ToString("x2");
-            }
+            for (var i = 0; i < retVal.Length; i++) result += retVal[i].ToString("x2");
 
             return result;
         }
@@ -553,31 +503,24 @@ namespace QFramework
 
         public static string StringTrim(string str, params char[] trimer)
         {
-            int startIndex = 0;
-            int endIndex = str.Length;
+            var startIndex = 0;
+            var endIndex = str.Length;
 
-            for (int i = 0; i < str.Length; ++i)
-            {
+            for (var i = 0; i < str.Length; ++i)
                 if (!IsInCharArray(trimer, str[i]))
                 {
                     startIndex = i;
                     break;
                 }
-            }
 
-            for (int i = str.Length - 1; i >= 0; --i)
-            {
+            for (var i = str.Length - 1; i >= 0; --i)
                 if (!IsInCharArray(trimer, str[i]))
                 {
                     endIndex = i;
                     break;
                 }
-            }
 
-            if (startIndex == 0 && endIndex == str.Length)
-            {
-                return string.Empty;
-            }
+            if (startIndex == 0 && endIndex == str.Length) return string.Empty;
 
             return str.Substring(startIndex, endIndex - startIndex + 1);
         }
@@ -587,15 +530,11 @@ namespace QFramework
             return StringTrim(str, ' ', '\t');
         }
 
-        static bool IsInCharArray(char[] array, char c)
+        private static bool IsInCharArray(char[] array, char c)
         {
-            for (int i = 0; i < array.Length; ++i)
-            {
+            for (var i = 0; i < array.Length; ++i)
                 if (array[i] == c)
-                {
                     return true;
-                }
-            }
 
             return false;
         }
@@ -607,7 +546,7 @@ namespace QFramework
         {
             var path = string.Empty;
 
-            foreach (var obj in Selection.GetFiltered(typeof(UnityEngine.Object), SelectionMode.Assets))
+            foreach (var obj in Selection.GetFiltered(typeof(Object), SelectionMode.Assets))
             {
                 path = AssetDatabase.GetAssetPath(obj);
                 if (!string.IsNullOrEmpty(path) && File.Exists(path))
@@ -627,7 +566,7 @@ namespace QFramework
             Color = new BindableProperty<Color>(color);
         }
 
-        public BindableProperty<Color> Color { get; private set; }
+        public BindableProperty<Color> Color { get; }
 
         protected override void OnGUI()
         {
@@ -638,8 +577,6 @@ namespace QFramework
 
     internal class EnumPopupView : IMGUIAbstractView
     {
-        public BindableProperty<Enum> ValueProperty { get; set; }
-
         public EnumPopupView(Enum initValue)
         {
             ValueProperty = new BindableProperty<Enum>(initValue);
@@ -647,9 +584,11 @@ namespace QFramework
             Style = new FluentGUIStyle(() => EditorStyles.popup);
         }
 
+        public BindableProperty<Enum> ValueProperty { get; set; }
+
         protected override void OnGUI()
         {
-            Enum enumType = ValueProperty.Value;
+            var enumType = ValueProperty.Value;
             ValueProperty.Value = EditorGUILayout.EnumPopup(enumType, Style.Value, LayoutStyles);
         }
     }
@@ -657,7 +596,7 @@ namespace QFramework
 
     public abstract class IMGUIViewController
     {
-        public VerticalLayout View = new VerticalLayout();
+        public VerticalLayout View = new();
 
         public abstract void SetUpView();
     }

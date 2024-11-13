@@ -7,25 +7,22 @@
  ****************************************************************************/
 
 using System;
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-using UnityEngine;
 
 namespace QFramework
 {
     public static class IMGUIHelper
     {
-        private static readonly FluentGUIStyle SelectionRect = new FluentGUIStyle(() => "SelectionRect");
+        private static readonly FluentGUIStyle SelectionRect = new(() => "SelectionRect");
 
-        public static void LastRectSelectionCheck<T>(T current,T select,Action onSelect)
+        public static void LastRectSelectionCheck<T>(T current, T select, Action onSelect)
         {
             var lastRect = GUILayoutUtility.GetLastRect();
 
-            if (Equals(current,select))
-            {
-                GUI.Box(lastRect, "", SelectionRect.Value);
-            }
+            if (Equals(current, select)) GUI.Box(lastRect, "", SelectionRect.Value);
 
             if (lastRect.Contains(Event.current.mousePosition) &&
                 Event.current.type == EventType.MouseUp)
@@ -34,17 +31,17 @@ namespace QFramework
                 Event.current.Use();
             }
         }
-        
+
 #if UNITY_EDITOR
         public static void ShowEditorDialogWithErrorMsg(string content)
         {
             EditorUtility.DisplayDialog("error", content, "OK");
         }
 #endif
-        
+
         /// <summary>
-        /// 设置屏幕分辨率（拉伸)
-        /// SetDesignResolution(Strench)
+        ///     设置屏幕分辨率（拉伸)
+        ///     SetDesignResolution(Strench)
         /// </summary>
         /// <param name="width"></param>
         /// <param name="height"></param>

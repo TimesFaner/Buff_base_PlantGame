@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -49,9 +49,9 @@ gameObject
 prefab.Instantiate();
 ")]
 #endif
-        public static T Instantiate<T>(this T selfObj) where T : UnityEngine.Object
+        public static T Instantiate<T>(this T selfObj) where T : Object
         {
-            return UnityEngine.Object.Instantiate(selfObj);
+            return Object.Instantiate(selfObj);
         }
 #if UNITY_EDITOR
         // v1 No.38
@@ -63,9 +63,9 @@ prefab.Instantiate(Vector3.zero,Quaternion.identity);
 ")]
 #endif
         public static T Instantiate<T>(this T selfObj, Vector3 position, Quaternion rotation)
-            where T : UnityEngine.Object
+            where T : Object
         {
-            return UnityEngine.Object.Instantiate(selfObj, position, rotation);
+            return Object.Instantiate(selfObj, position, rotation);
         }
 
 #if UNITY_EDITOR
@@ -82,9 +82,9 @@ prefab.Instantiate(Vector3.zero,Quaternion.identity,transformRoot);
             Vector3 position,
             Quaternion rotation,
             Transform parent)
-            where T : UnityEngine.Object
+            where T : Object
         {
-            return UnityEngine.Object.Instantiate(selfObj, position, rotation, parent);
+            return Object.Instantiate(selfObj, position, rotation, parent);
         }
 
 #if UNITY_EDITOR
@@ -97,15 +97,15 @@ prefab.Instantiate(transformRoot,true);
 ")]
 #endif
         public static T InstantiateWithParent<T>(this T selfObj, Transform parent, bool worldPositionStays)
-            where T : UnityEngine.Object
+            where T : Object
         {
-            return (T)UnityEngine.Object.Instantiate((UnityEngine.Object)selfObj, parent, worldPositionStays);
+            return (T)Object.Instantiate((Object)selfObj, parent, worldPositionStays);
         }
-        
+
         public static T InstantiateWithParent<T>(this T selfObj, Component parent, bool worldPositionStays)
-            where T : UnityEngine.Object
+            where T : Object
         {
-            return (T)UnityEngine.Object.Instantiate((UnityEngine.Object)selfObj, parent.transform, worldPositionStays);
+            return (T)Object.Instantiate((Object)selfObj, parent.transform, worldPositionStays);
         }
 #if UNITY_EDITOR
         // v1 No.41
@@ -116,14 +116,14 @@ prefab.Instantiate(transformRoot,true);
 prefab.Instantiate(transformRoot);
 ")]
 #endif
-        public static T InstantiateWithParent<T>(this T selfObj, Transform parent) where T : UnityEngine.Object
+        public static T InstantiateWithParent<T>(this T selfObj, Transform parent) where T : Object
         {
-            return UnityEngine.Object.Instantiate(selfObj, parent, false);
+            return Object.Instantiate(selfObj, parent, false);
         }
-        
-        public static T InstantiateWithParent<T>(this T selfObj, Component parent) where T : UnityEngine.Object
+
+        public static T InstantiateWithParent<T>(this T selfObj, Component parent) where T : Object
         {
-            return UnityEngine.Object.Instantiate(selfObj, parent.transform, false);
+            return Object.Instantiate(selfObj, parent.transform, false);
         }
 
 
@@ -138,7 +138,7 @@ Debug.Log(scriptableObject.name);
 // LevelData
 ")]
 #endif
-        public static T Name<T>(this T selfObj, string name) where T : UnityEngine.Object
+        public static T Name<T>(this T selfObj, string name) where T : Object
         {
             selfObj.name = name;
             return selfObj;
@@ -154,9 +154,9 @@ Debug.Log(scriptableObject.name);
 new GameObject().DestroySelf()
 ")]
 #endif
-        public static void DestroySelf<T>(this T selfObj) where T : UnityEngine.Object
+        public static void DestroySelf<T>(this T selfObj) where T : Object
         {
-            UnityEngine.Object.Destroy(selfObj);
+            Object.Destroy(selfObj);
         }
 
 #if UNITY_EDITOR
@@ -171,12 +171,9 @@ gameObj.DestroySelfGracefully();
 // 这样写不会报异常(但是不好调试)
 ")]
 #endif
-        public static T DestroySelfGracefully<T>(this T selfObj) where T : UnityEngine.Object
+        public static T DestroySelfGracefully<T>(this T selfObj) where T : Object
         {
-            if (selfObj)
-            {
-                UnityEngine.Object.Destroy(selfObj);
-            }
+            if (selfObj) Object.Destroy(selfObj);
 
             return selfObj;
         }
@@ -191,9 +188,9 @@ gameObj.DestroySelfGracefully();
 new GameObject().DestroySelfAfterDelay(5);
 ")]
 #endif
-        public static T DestroySelfAfterDelay<T>(this T selfObj, float afterDelay) where T : UnityEngine.Object
+        public static T DestroySelfAfterDelay<T>(this T selfObj, float afterDelay) where T : Object
         {
-            UnityEngine.Object.Destroy(selfObj, afterDelay);
+            Object.Destroy(selfObj, afterDelay);
             return selfObj;
         }
 
@@ -209,12 +206,9 @@ gameObj.DestroySelfAfterDelayGracefully(5);
 // 不会报异常
 ")]
 #endif
-        public static T DestroySelfAfterDelayGracefully<T>(this T selfObj, float delay) where T : UnityEngine.Object
+        public static T DestroySelfAfterDelayGracefully<T>(this T selfObj, float delay) where T : Object
         {
-            if (selfObj)
-            {
-                UnityEngine.Object.Destroy(selfObj, delay);
-            }
+            if (selfObj) Object.Destroy(selfObj, delay);
 
             return selfObj;
         }
@@ -228,9 +222,9 @@ gameObj.DestroySelfAfterDelayGracefully(5);
 new GameObject().DontDestroyOnLoad();
 ")]
 #endif
-        public static T DontDestroyOnLoad<T>(this T selfObj) where T : UnityEngine.Object
+        public static T DontDestroyOnLoad<T>(this T selfObj) where T : Object
         {
-            UnityEngine.Object.DontDestroyOnLoad(selfObj);
+            Object.DontDestroyOnLoad(selfObj);
             return selfObj;
         }
     }

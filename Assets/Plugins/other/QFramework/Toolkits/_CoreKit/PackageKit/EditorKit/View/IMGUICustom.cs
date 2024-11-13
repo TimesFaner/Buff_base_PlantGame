@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -21,11 +21,6 @@ namespace QFramework
     {
         private Action mOnGUIAction { get; set; }
 
-        protected override void OnGUI()
-        {
-            mOnGUIAction.Invoke();
-        }
-
         public IMGUICustom OnGUI(Action onGUI)
         {
             mOnGUIAction = onGUI;
@@ -37,14 +32,15 @@ namespace QFramework
             var custom = EasyIMGUI.Custom();
 
             foreach (XmlAttribute nodeAttribute in node.Attributes)
-            {
                 if (nodeAttribute.Name == "Id")
-                {
                     custom.Id = nodeAttribute.Value;
-                }
-            }
 
             return custom as T;
+        }
+
+        protected override void OnGUI()
+        {
+            mOnGUIAction.Invoke();
         }
     }
 }

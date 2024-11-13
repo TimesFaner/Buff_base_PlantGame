@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt 
+ * Copyright (c) 2017 Thor Brigsted UNDER MIT LICENSE  see licenses.txt
  * Copyright (c) 2022 liangxiegame UNDER Paid MIT LICENSE  see licenses.txt
  *
  * xNode: https://github.com/Siccity/xNode
@@ -8,34 +8,29 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using QFramework.Internal;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace QFramework
 {
     /// <summary> Contains GUI methods </summary>
     public partial class GUIGraphWindow
     {
-        public GUIGraphEditor graphEditor;
-        private List<UnityEngine.Object> selectionCache;
+        private static readonly Vector3[] polyLineTempArray = new Vector3[2];
         private List<GUIGraphNode> culledNodes;
+        public GUIGraphEditor graphEditor;
+        private List<Object> selectionCache;
 
         /// <summary> 19 if docked, 22 if not </summary>
-        private int topPadding
-        {
-            get { return isDocked() ? 19 : 22; }
-        }
-
-        /// <summary> Executed after all other window GUI. Useful if Zoom is ruining your day. Automatically resets after being run.</summary>
-        public event Action onLateGUI;
-
-        private static readonly Vector3[] polyLineTempArray = new Vector3[2];
+        private int topPadding => isDocked() ? 19 : 22;
 
         protected virtual void OnGUI()
         {
-            Event e = Event.current;
-            Matrix4x4 m = GUI.matrix;
+            var e = Event.current;
+            var m = GUI.matrix;
             if (graph == null) return;
             ValidateGraphEditor();
             Controls();
@@ -58,15 +53,21 @@ namespace QFramework
             GUI.matrix = m;
         }
 
+        /// <summary>
+        ///     Executed after all other window GUI. Useful if Zoom is ruining your day. Automatically resets after being
+        ///     run.
+        /// </summary>
+        public event Action onLateGUI;
+
         public static void BeginZoomed(Rect rect, float zoom, float topPadding)
         {
             GUI.EndClip();
 
             GUIUtility.ScaleAroundPivot(Vector2.one / zoom, rect.size * 0.5f);
-            Vector4 padding = new Vector4(0, topPadding, 0, 0);
+            var padding = new Vector4(0, topPadding, 0, 0);
             padding *= zoom;
-            GUI.BeginClip(new Rect(-((rect.width * zoom) - rect.width) * 0.5f,
-                -(((rect.height * zoom) - rect.height) * 0.5f) + (topPadding * zoom),
+            GUI.BeginClip(new Rect(-(rect.width * zoom - rect.width) * 0.5f,
+                -((rect.height * zoom - rect.height) * 0.5f) + topPadding * zoom,
                 rect.width * zoom,
                 rect.height * zoom));
         }
@@ -74,9 +75,9 @@ namespace QFramework
         public static void EndZoomed(Rect rect, float zoom, float topPadding)
         {
             GUIUtility.ScaleAroundPivot(Vector2.one * zoom, rect.size * 0.5f);
-            Vector3 offset = new Vector3(
-                (((rect.width * zoom) - rect.width) * 0.5f),
-                (((rect.height * zoom) - rect.height) * 0.5f) + (-topPadding * zoom) + topPadding,
+            var offset = new Vector3(
+                (rect.width * zoom - rect.width) * 0.5f,
+                (rect.height * zoom - rect.height) * 0.5f + -topPadding * zoom + topPadding,
                 0);
             GUI.matrix = Matrix4x4.TRS(offset, Quaternion.identity, Vector3.one);
         }
@@ -85,21 +86,21 @@ namespace QFramework
         {
             rect.position = Vector2.zero;
 
-            Vector2 center = rect.size / 2f;
-            Texture2D gridTex = graphEditor.GetGridTexture();
-            Texture2D crossTex = graphEditor.GetSecondaryGridTexture();
+            var center = rect.size / 2f;
+            var gridTex = graphEditor.GetGridTexture();
+            var crossTex = graphEditor.GetSecondaryGridTexture();
 
             // Offset from origin in tile units
-            float xOffset = -(center.x * zoom + panOffset.x) / gridTex.width;
-            float yOffset = ((center.y - rect.size.y) * zoom + panOffset.y) / gridTex.height;
+            var xOffset = -(center.x * zoom + panOffset.x) / gridTex.width;
+            var yOffset = ((center.y - rect.size.y) * zoom + panOffset.y) / gridTex.height;
 
-            Vector2 tileOffset = new Vector2(xOffset, yOffset);
+            var tileOffset = new Vector2(xOffset, yOffset);
 
             // Amount of tiles
-            float tileAmountX = Mathf.Round(rect.size.x * zoom) / gridTex.width;
-            float tileAmountY = Mathf.Round(rect.size.y * zoom) / gridTex.height;
+            var tileAmountX = Mathf.Round(rect.size.x * zoom) / gridTex.width;
+            var tileAmountY = Mathf.Round(rect.size.y * zoom) / gridTex.height;
 
-            Vector2 tileAmount = new Vector2(tileAmountX, tileAmountY);
+            var tileAmount = new Vector2(tileAmountX, tileAmountY);
 
             // Draw tiled background
             GUI.DrawTextureWithTexCoords(rect, gridTex, new Rect(tileOffset, tileAmount));
@@ -110,9 +111,9 @@ namespace QFramework
         {
             if (currentActivity == NodeActivity.DragGrid)
             {
-                Vector2 curPos = WindowToGridPosition(Event.current.mousePosition);
-                Vector2 size = curPos - dragBoxStart;
-                Rect r = new Rect(dragBoxStart, size);
+                var curPos = WindowToGridPosition(Event.current.mousePosition);
+                var size = curPos - dragBoxStart;
+                var r = new Rect(dragBoxStart, size);
                 r.position = GridToWindowPosition(r.position);
                 r.size /= zoom;
                 Handles.DrawSolidRectangleWithOutline(r, new Color(0, 0, 0, 0.1f), new Color(1, 1, 1, 0.6f));
@@ -125,36 +126,36 @@ namespace QFramework
         }
 
         /// <summary> Show right-click context menu for hovered reroute </summary>
-        void ShowRerouteContextMenu(GUIGraphRerouteReference reroute)
+        private void ShowRerouteContextMenu(GUIGraphRerouteReference reroute)
         {
-            GenericMenu contextMenu = new GenericMenu();
+            var contextMenu = new GenericMenu();
             contextMenu.AddItem(new GUIContent("Remove"), false, () => reroute.RemovePoint());
             contextMenu.DropDown(new Rect(Event.current.mousePosition, Vector2.zero));
             if (GUIGraphPreferences.GetSettings().autoSave) AssetDatabase.SaveAssets();
         }
 
         /// <summary> Show right-click context menu for hovered port </summary>
-        void ShowPortContextMenu(GUIGraphNodePort hoveredPort)
+        private void ShowPortContextMenu(GUIGraphNodePort hoveredPort)
         {
-            GenericMenu contextMenu = new GenericMenu();
+            var contextMenu = new GenericMenu();
             contextMenu.AddItem(new GUIContent("Clear Connections"), false, () => hoveredPort.ClearConnections());
             contextMenu.DropDown(new Rect(Event.current.mousePosition, Vector2.zero));
             if (GUIGraphPreferences.GetSettings().autoSave) AssetDatabase.SaveAssets();
         }
 
-        static Vector2 CalculateBezierPoint(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
+        private static Vector2 CalculateBezierPoint(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
         {
-            float u = 1 - t;
+            var u = 1 - t;
             float tt = t * t, uu = u * u;
             float uuu = uu * u, ttt = tt * t;
             return new Vector2(
-                (uuu * p0.x) + (3 * uu * t * p1.x) + (3 * u * tt * p2.x) + (ttt * p3.x),
-                (uuu * p0.y) + (3 * uu * t * p1.y) + (3 * u * tt * p2.y) + (ttt * p3.y)
+                uuu * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + ttt * p3.x,
+                uuu * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + ttt * p3.y
             );
         }
 
         /// <summary> Draws a line segment without allocating temporary arrays </summary>
-        static void DrawAAPolyLineNonAlloc(float thickness, Vector2 p0, Vector2 p1)
+        private static void DrawAAPolyLineNonAlloc(float thickness, Vector2 p0, Vector2 p1)
         {
             polyLineTempArray[0].x = p0.x;
             polyLineTempArray[0].y = p0.y;
@@ -164,37 +165,38 @@ namespace QFramework
         }
 
         /// <summary> Draw a bezier from output to input in grid coordinates </summary>
-        public void DrawNoodle(Gradient gradient, GUIGraphConnectionPath path, GUIGraphConnectionStroke stroke, float thickness,
+        public void DrawNoodle(Gradient gradient, GUIGraphConnectionPath path, GUIGraphConnectionStroke stroke,
+            float thickness,
             List<Vector2> gridPoints)
         {
             // convert grid points to window points
-            for (int i = 0; i < gridPoints.Count; ++i)
+            for (var i = 0; i < gridPoints.Count; ++i)
                 gridPoints[i] = GridToWindowPosition(gridPoints[i]);
 
-            Color originalHandlesColor = Handles.color;
+            var originalHandlesColor = Handles.color;
             Handles.color = gradient.Evaluate(0f);
-            int length = gridPoints.Count;
+            var length = gridPoints.Count;
             switch (path)
             {
                 case GUIGraphConnectionPath.Curvy:
-                    Vector2 outputTangent = Vector2.right;
-                    for (int i = 0; i < length - 1; i++)
+                    var outputTangent = Vector2.right;
+                    for (var i = 0; i < length - 1; i++)
                     {
                         Vector2 inputTangent;
                         // Cached most variables that repeat themselves here to avoid so many indexer calls :p
-                        Vector2 point_a = gridPoints[i];
-                        Vector2 point_b = gridPoints[i + 1];
-                        float dist_ab = Vector2.Distance(point_a, point_b);
+                        var point_a = gridPoints[i];
+                        var point_b = gridPoints[i + 1];
+                        var dist_ab = Vector2.Distance(point_a, point_b);
                         if (i == 0) outputTangent = zoom * dist_ab * 0.01f * Vector2.right;
                         if (i < length - 2)
                         {
-                            Vector2 point_c = gridPoints[i + 2];
-                            Vector2 ab = (point_b - point_a).normalized;
-                            Vector2 cb = (point_b - point_c).normalized;
-                            Vector2 ac = (point_c - point_a).normalized;
-                            Vector2 p = (ab + cb) * 0.5f;
-                            float tangentLength = (dist_ab + Vector2.Distance(point_b, point_c)) * 0.005f * zoom;
-                            float side = ((ac.x * (point_b.y - point_a.y)) - (ac.y * (point_b.x - point_a.x)));
+                            var point_c = gridPoints[i + 2];
+                            var ab = (point_b - point_a).normalized;
+                            var cb = (point_b - point_c).normalized;
+                            var ac = (point_c - point_a).normalized;
+                            var p = (ab + cb) * 0.5f;
+                            var tangentLength = (dist_ab + Vector2.Distance(point_b, point_c)) * 0.005f * zoom;
+                            var side = ac.x * (point_b.y - point_a.y) - ac.y * (point_b.x - point_a.x);
 
                             p = tangentLength * Mathf.Sign(side) * new Vector2(-p.y, p.x);
                             inputTangent = p;
@@ -205,15 +207,15 @@ namespace QFramework
                         }
 
                         // Calculates the tangents for the bezier's curves.
-                        float zoomCoef = 50 / zoom;
-                        Vector2 tangent_a = point_a + outputTangent * zoomCoef;
-                        Vector2 tangent_b = point_b + inputTangent * zoomCoef;
+                        var zoomCoef = 50 / zoom;
+                        var tangent_a = point_a + outputTangent * zoomCoef;
+                        var tangent_b = point_b + inputTangent * zoomCoef;
                         // Hover effect.
-                        int division = Mathf.RoundToInt(.2f * dist_ab) + 3;
+                        var division = Mathf.RoundToInt(.2f * dist_ab) + 3;
                         // Coloring and bezier drawing.
-                        int draw = 0;
-                        Vector2 bezierPrevious = point_a;
-                        for (int j = 1; j <= division; ++j)
+                        var draw = 0;
+                        var bezierPrevious = point_a;
+                        for (var j = 1; j <= division; ++j)
                         {
                             if (stroke == GUIGraphConnectionStroke.Dashed)
                             {
@@ -222,12 +224,12 @@ namespace QFramework
                                 if (draw < 0) continue;
                                 if (draw == 0)
                                     bezierPrevious = CalculateBezierPoint(point_a, tangent_a, tangent_b, point_b,
-                                        (j - 1f) / (float)division);
+                                        (j - 1f) / division);
                             }
 
                             if (i == length - 2)
                                 Handles.color = gradient.Evaluate((j + 1f) / division);
-                            Vector2 bezierNext = CalculateBezierPoint(point_a, tangent_a, tangent_b, point_b,
+                            var bezierNext = CalculateBezierPoint(point_a, tangent_a, tangent_b, point_b,
                                 j / (float)division);
                             DrawAAPolyLineNonAlloc(thickness, bezierPrevious, bezierNext);
                             bezierPrevious = bezierNext;
@@ -238,22 +240,22 @@ namespace QFramework
 
                     break;
                 case GUIGraphConnectionPath.Straight:
-                    for (int i = 0; i < length - 1; i++)
+                    for (var i = 0; i < length - 1; i++)
                     {
-                        Vector2 point_a = gridPoints[i];
-                        Vector2 point_b = gridPoints[i + 1];
+                        var point_a = gridPoints[i];
+                        var point_b = gridPoints[i + 1];
                         // Draws the line with the coloring.
-                        Vector2 prev_point = point_a;
+                        var prev_point = point_a;
                         // Approximately one segment per 5 pixels
-                        int segments = (int)Vector2.Distance(point_a, point_b) / 5;
+                        var segments = (int)Vector2.Distance(point_a, point_b) / 5;
                         segments = Math.Max(segments, 1);
 
-                        int draw = 0;
-                        for (int j = 0; j <= segments; j++)
+                        var draw = 0;
+                        for (var j = 0; j <= segments; j++)
                         {
                             draw++;
-                            float t = j / (float)segments;
-                            Vector2 lerp = Vector2.Lerp(point_a, point_b, t);
+                            var t = j / (float)segments;
+                            var lerp = Vector2.Lerp(point_a, point_b, t);
                             if (draw > 0)
                             {
                                 if (i == length - 2) Handles.color = gradient.Evaluate(t);
@@ -267,14 +269,14 @@ namespace QFramework
 
                     break;
                 case GUIGraphConnectionPath.Angled:
-                    for (int i = 0; i < length - 1; i++)
+                    for (var i = 0; i < length - 1; i++)
                     {
                         if (i == length - 1) continue; // Skip last index
-                        if (gridPoints[i].x <= gridPoints[i + 1].x - (50 / zoom))
+                        if (gridPoints[i].x <= gridPoints[i + 1].x - 50 / zoom)
                         {
-                            float midpoint = (gridPoints[i].x + gridPoints[i + 1].x) * 0.5f;
-                            Vector2 start_1 = gridPoints[i];
-                            Vector2 end_1 = gridPoints[i + 1];
+                            var midpoint = (gridPoints[i].x + gridPoints[i + 1].x) * 0.5f;
+                            var start_1 = gridPoints[i];
+                            var end_1 = gridPoints[i + 1];
                             start_1.x = midpoint;
                             end_1.x = midpoint;
                             if (i == length - 2)
@@ -294,13 +296,13 @@ namespace QFramework
                         }
                         else
                         {
-                            float midpoint = (gridPoints[i].y + gridPoints[i + 1].y) * 0.5f;
-                            Vector2 start_1 = gridPoints[i];
-                            Vector2 end_1 = gridPoints[i + 1];
+                            var midpoint = (gridPoints[i].y + gridPoints[i + 1].y) * 0.5f;
+                            var start_1 = gridPoints[i];
+                            var end_1 = gridPoints[i + 1];
                             start_1.x += 25 / zoom;
                             end_1.x -= 25 / zoom;
-                            Vector2 start_2 = start_1;
-                            Vector2 end_2 = end_1;
+                            var start_2 = start_1;
+                            var end_2 = end_1;
                             start_2.y = midpoint;
                             end_2.y = midpoint;
                             if (i == length - 2)
@@ -328,8 +330,8 @@ namespace QFramework
 
                     break;
                 case GUIGraphConnectionPath.ShaderLab:
-                    Vector2 start = gridPoints[0];
-                    Vector2 end = gridPoints[length - 1];
+                    var start = gridPoints[0];
+                    var end = gridPoints[length - 1];
                     //Modify first and last point in array so we can loop trough them nicely.
                     gridPoints[0] = gridPoints[0] + Vector2.right * (20 / zoom);
                     gridPoints[length - 1] = gridPoints[length - 1] + Vector2.left * (20 / zoom);
@@ -338,22 +340,22 @@ namespace QFramework
                     DrawAAPolyLineNonAlloc(thickness, start, gridPoints[0]);
                     Handles.color = gradient.Evaluate(1f);
                     DrawAAPolyLineNonAlloc(thickness, end, gridPoints[length - 1]);
-                    for (int i = 0; i < length - 1; i++)
+                    for (var i = 0; i < length - 1; i++)
                     {
-                        Vector2 point_a = gridPoints[i];
-                        Vector2 point_b = gridPoints[i + 1];
+                        var point_a = gridPoints[i];
+                        var point_b = gridPoints[i + 1];
                         // Draws the line with the coloring.
-                        Vector2 prev_point = point_a;
+                        var prev_point = point_a;
                         // Approximately one segment per 5 pixels
-                        int segments = (int)Vector2.Distance(point_a, point_b) / 5;
+                        var segments = (int)Vector2.Distance(point_a, point_b) / 5;
                         segments = Math.Max(segments, 1);
 
-                        int draw = 0;
-                        for (int j = 0; j <= segments; j++)
+                        var draw = 0;
+                        for (var j = 0; j <= segments; j++)
                         {
                             draw++;
-                            float t = j / (float)segments;
-                            Vector2 lerp = Vector2.Lerp(point_a, point_b, t);
+                            var t = j / (float)segments;
+                            var lerp = Vector2.Lerp(point_a, point_b, t);
                             if (draw > 0)
                             {
                                 if (i == length - 2) Handles.color = gradient.Evaluate(t);
@@ -376,58 +378,59 @@ namespace QFramework
         /// <summary> Draws all connections </summary>
         public void DrawConnections()
         {
-            Vector2 mousePos = Event.current.mousePosition;
-            List<GUIGraphRerouteReference> selection = preBoxSelectionReroute != null
+            var mousePos = Event.current.mousePosition;
+            var selection = preBoxSelectionReroute != null
                 ? new List<GUIGraphRerouteReference>(preBoxSelectionReroute)
                 : new List<GUIGraphRerouteReference>();
             hoveredReroute = new GUIGraphRerouteReference();
 
-            List<Vector2> gridPoints = new List<Vector2>(2);
+            var gridPoints = new List<Vector2>(2);
 
-            Color col = GUI.color;
-            foreach (GUIGraphNode node in graph.nodes)
+            var col = GUI.color;
+            foreach (var node in graph.nodes)
             {
                 //If a null node is found, return. This can happen if the nodes associated script is deleted. It is currently not possible in Unity to delete a null asset.
                 if (node == null) continue;
 
                 // Draw full connections and output > reroute
-                foreach (GUIGraphNodePort output in node.Outputs)
+                foreach (var output in node.Outputs)
                 {
                     //Needs cleanup. Null checks are ugly
                     Rect fromRect;
-                    if (!_portConnectionPoints.TryGetValue(output, out fromRect)) continue;
+                    if (!portConnectionPoints.TryGetValue(output, out fromRect)) continue;
 
-                    Color portColor = graphEditor.GetPortColor(output);
-                    for (int k = 0; k < output.ConnectionCount; k++)
+                    var portColor = graphEditor.GetPortColor(output);
+                    for (var k = 0; k < output.ConnectionCount; k++)
                     {
-                        GUIGraphNodePort input = output.GetConnection(k);
+                        var input = output.GetConnection(k);
 
-                        Gradient noodleGradient = graphEditor.GetNoodleGradient(output, input);
-                        float noodleThickness = graphEditor.GetNoodleThickness(output, input);
-                        GUIGraphConnectionPath guiGraphConnectionPath = graphEditor.GetNoodlePath(output, input);
-                        GUIGraphConnectionStroke guiGraphConnectionStroke = graphEditor.GetNoodleStroke(output, input);
+                        var noodleGradient = graphEditor.GetNoodleGradient(output, input);
+                        var noodleThickness = graphEditor.GetNoodleThickness(output, input);
+                        var guiGraphConnectionPath = graphEditor.GetNoodlePath(output, input);
+                        var guiGraphConnectionStroke = graphEditor.GetNoodleStroke(output, input);
 
                         // Error handling
                         if (input == null)
                             continue; //If a script has been updated and the port doesn't exist, it is removed and null is returned. If this happens, return.
                         if (!input.IsConnectedTo(output)) input.Connect(output);
                         Rect toRect;
-                        if (!_portConnectionPoints.TryGetValue(input, out toRect)) continue;
+                        if (!portConnectionPoints.TryGetValue(input, out toRect)) continue;
 
-                        List<Vector2> reroutePoints = output.GetReroutePoints(k);
+                        var reroutePoints = output.GetReroutePoints(k);
 
                         gridPoints.Clear();
                         gridPoints.Add(fromRect.center);
                         gridPoints.AddRange(reroutePoints);
                         gridPoints.Add(toRect.center);
-                        DrawNoodle(noodleGradient, guiGraphConnectionPath, guiGraphConnectionStroke, noodleThickness, gridPoints);
+                        DrawNoodle(noodleGradient, guiGraphConnectionPath, guiGraphConnectionStroke, noodleThickness,
+                            gridPoints);
 
                         // Loop through reroute points again and draw the points
-                        for (int i = 0; i < reroutePoints.Count; i++)
+                        for (var i = 0; i < reroutePoints.Count; i++)
                         {
-                            GUIGraphRerouteReference rerouteRef = new GUIGraphRerouteReference(output, k, i);
+                            var rerouteRef = new GUIGraphRerouteReference(output, k, i);
                             // Draw reroute point at position
-                            Rect rect = new Rect(reroutePoints[i], new Vector2(12, 12));
+                            var rect = new Rect(reroutePoints[i], new Vector2(12, 12));
                             rect.position = new Vector2(rect.position.x - 6, rect.position.y - 6);
                             rect = GridToWindowRect(rect);
 
@@ -454,13 +457,10 @@ namespace QFramework
 
         private void DrawNodes()
         {
-            Event e = Event.current;
-            if (e.type == EventType.Layout)
-            {
-                selectionCache = new List<UnityEngine.Object>(Selection.objects);
-            }
+            var e = Event.current;
+            if (e.type == EventType.Layout) selectionCache = new List<Object>(Selection.objects);
 
-            System.Reflection.MethodInfo onValidate = null;
+            MethodInfo onValidate = null;
             if (Selection.activeObject != null && Selection.activeObject is GUIGraphNode)
             {
                 onValidate = Selection.activeObject.GetType().GetMethod("OnValidate");
@@ -469,7 +469,7 @@ namespace QFramework
 
             BeginZoomed(position, zoom, topPadding);
 
-            Vector2 mousePos = Event.current.mousePosition;
+            var mousePos = Event.current.mousePosition;
 
             if (e.type != EventType.Layout)
             {
@@ -477,13 +477,13 @@ namespace QFramework
                 hoveredPort = null;
             }
 
-            List<UnityEngine.Object> preSelection = preBoxSelection != null
-                ? new List<UnityEngine.Object>(preBoxSelection)
-                : new List<UnityEngine.Object>();
+            var preSelection = preBoxSelection != null
+                ? new List<Object>(preBoxSelection)
+                : new List<Object>();
 
             // Selection box stuff
-            Vector2 boxStartPos = GridToWindowPositionNoClipped(dragBoxStart);
-            Vector2 boxSize = mousePos - boxStartPos;
+            var boxStartPos = GridToWindowPositionNoClipped(dragBoxStart);
+            var boxSize = mousePos - boxStartPos;
             if (boxSize.x < 0)
             {
                 boxStartPos.x += boxSize.x;
@@ -496,20 +496,20 @@ namespace QFramework
                 boxSize.y = Mathf.Abs(boxSize.y);
             }
 
-            Rect selectionBox = new Rect(boxStartPos, boxSize);
+            var selectionBox = new Rect(boxStartPos, boxSize);
 
             //Save guiColor so we can revert it
-            Color guiColor = GUI.color;
+            var guiColor = GUI.color;
 
-            List<GUIGraphNodePort> removeEntries = new List<GUIGraphNodePort>();
+            var removeEntries = new List<GUIGraphNodePort>();
 
             if (e.type == EventType.Layout) culledNodes = new List<GUIGraphNode>();
-            for (int n = 0; n < graph.nodes.Count; n++)
+            for (var n = 0; n < graph.nodes.Count; n++)
             {
                 // Skip null nodes. The user could be in the process of renaming scripts, so removing them at this point is not advisable.
                 if (graph.nodes[n] == null) continue;
                 if (n >= graph.nodes.Count) return;
-                GUIGraphNode node = graph.nodes[n];
+                var node = graph.nodes[n];
 
                 // Culling
                 if (e.type == EventType.Layout)
@@ -521,18 +521,21 @@ namespace QFramework
                         continue;
                     }
                 }
-                else if (culledNodes.Contains(node)) continue;
+                else if (culledNodes.Contains(node))
+                {
+                    continue;
+                }
 
                 if (e.type == EventType.Repaint)
                 {
                     removeEntries.Clear();
-                    foreach (var kvp in _portConnectionPoints)
+                    foreach (var kvp in portConnectionPoints)
                         if (kvp.Key.node == node)
                             removeEntries.Add(kvp.Key);
-                    foreach (var k in removeEntries) _portConnectionPoints.Remove(k);
+                    foreach (var k in removeEntries) portConnectionPoints.Remove(k);
                 }
 
-                GUIGraphNodeEditor nodeEditor = GUIGraphNodeEditor.GetEditor(node, this);
+                var nodeEditor = GUIGraphNodeEditor.GetEditor(node, this);
 
                 GUIGraphNodeEditor.portPositions.Clear();
 
@@ -540,16 +543,16 @@ namespace QFramework
                 EditorGUIUtility.labelWidth = 84;
 
                 //Get node position
-                Vector2 nodePos = GridToWindowPositionNoClipped(node.position);
+                var nodePos = GridToWindowPositionNoClipped(node.position);
 
                 GUILayout.BeginArea(new Rect(nodePos, new Vector2(nodeEditor.GetWidth(), 4000)));
 
-                bool selected = selectionCache.Contains(graph.nodes[n]);
+                var selected = selectionCache.Contains(graph.nodes[n]);
 
                 if (selected)
                 {
-                    GUIStyle style = new GUIStyle(nodeEditor.GetBodyStyle());
-                    GUIStyle highlightStyle = new GUIStyle(nodeEditor.GetBodyHighlightStyle());
+                    var style = new GUIStyle(nodeEditor.GetBodyStyle());
+                    var highlightStyle = new GUIStyle(nodeEditor.GetBodyHighlightStyle());
                     highlightStyle.padding = style.padding;
                     style.padding = new RectOffset();
                     GUI.color = nodeEditor.GetTint();
@@ -559,7 +562,7 @@ namespace QFramework
                 }
                 else
                 {
-                    GUIStyle style = new GUIStyle(nodeEditor.GetBodyStyle());
+                    var style = new GUIStyle(nodeEditor.GetBodyStyle());
                     GUI.color = nodeEditor.GetTint();
                     GUILayout.BeginVertical(style);
                 }
@@ -584,15 +587,15 @@ namespace QFramework
                 //Cache data about the node for next frame
                 if (e.type == EventType.Repaint)
                 {
-                    Vector2 size = GUILayoutUtility.GetLastRect().size;
+                    var size = GUILayoutUtility.GetLastRect().size;
                     if (nodeSizes.ContainsKey(node)) nodeSizes[node] = size;
                     else nodeSizes.Add(node, size);
 
                     foreach (var kvp in GUIGraphNodeEditor.portPositions)
                     {
-                        Vector2 portHandlePos = kvp.Value;
+                        var portHandlePos = kvp.Value;
                         portHandlePos += node.position;
-                        Rect rect = new Rect(portHandlePos.x - 8, portHandlePos.y - 8, 16, 16);
+                        var rect = new Rect(portHandlePos.x - 8, portHandlePos.y - 8, 16, 16);
                         portConnectionPoints[kvp.Key] = rect;
                     }
                 }
@@ -602,32 +605,31 @@ namespace QFramework
                 if (e.type != EventType.Layout)
                 {
                     //Check if we are hovering this node
-                    Vector2 nodeSize = GUILayoutUtility.GetLastRect().size;
-                    Rect windowRect = new Rect(nodePos, nodeSize);
+                    var nodeSize = GUILayoutUtility.GetLastRect().size;
+                    var windowRect = new Rect(nodePos, nodeSize);
                     if (windowRect.Contains(mousePos)) hoveredNode = node;
 
                     //If dragging a selection box, add nodes inside to selection
                     if (currentActivity == NodeActivity.DragGrid)
-                    {
-                        if (windowRect.Overlaps(selectionBox)) preSelection.Add(node);
-                    }
+                        if (windowRect.Overlaps(selectionBox))
+                            preSelection.Add(node);
 
                     //Check if we are hovering any of this nodes ports
                     //Check input ports
-                    foreach (GUIGraphNodePort input in node.Inputs)
+                    foreach (var input in node.Inputs)
                     {
                         //Check if port rect is available
                         if (!portConnectionPoints.ContainsKey(input)) continue;
-                        Rect r = GridToWindowRectNoClipped(portConnectionPoints[input]);
+                        var r = GridToWindowRectNoClipped(portConnectionPoints[input]);
                         if (r.Contains(mousePos)) hoveredPort = input;
                     }
 
                     //Check all output ports
-                    foreach (GUIGraphNodePort output in node.Outputs)
+                    foreach (var output in node.Outputs)
                     {
                         //Check if port rect is available
                         if (!portConnectionPoints.ContainsKey(output)) continue;
-                        Rect r = GridToWindowRectNoClipped(portConnectionPoints[output]);
+                        var r = GridToWindowRectNoClipped(portConnectionPoints[output]);
                         if (r.Contains(mousePos)) hoveredPort = output;
                     }
                 }
@@ -647,14 +649,16 @@ namespace QFramework
 
         private bool ShouldBeCulled(GUIGraphNode node)
         {
-            Vector2 nodePos = GridToWindowPositionNoClipped(node.position);
+            var nodePos = GridToWindowPositionNoClipped(node.position);
             if (nodePos.x / _zoom > position.width) return true; // Right
-            else if (nodePos.y / _zoom > position.height) return true; // Bottom
-            else if (nodeSizes.ContainsKey(node))
+
+            if (nodePos.y / _zoom > position.height) return true; // Bottom
+
+            if (nodeSizes.ContainsKey(node))
             {
-                Vector2 size = nodeSizes[node];
+                var size = nodeSizes[node];
                 if (nodePos.x + size.x < 0) return true; // Left
-                else if (nodePos.y + size.y < 0) return true; // Top
+                if (nodePos.y + size.y < 0) return true; // Top
             }
 
             return false;
@@ -665,12 +669,12 @@ namespace QFramework
             if (hoveredPort != null && GUIGraphPreferences.GetSettings().portTooltips &&
                 graphEditor != null)
             {
-                string tooltip = graphEditor.GetPortTooltip(hoveredPort);
+                var tooltip = graphEditor.GetPortTooltip(hoveredPort);
                 if (string.IsNullOrEmpty(tooltip)) return;
-                GUIContent content = new GUIContent(tooltip);
-                Vector2 size = GUIGraphResources.styles.Tooltip.CalcSize(content);
+                var content = new GUIContent(tooltip);
+                var size = GUIGraphResources.styles.Tooltip.CalcSize(content);
                 size.x += 8;
-                Rect rect = new Rect(Event.current.mousePosition - (size), size);
+                var rect = new Rect(Event.current.mousePosition - size, size);
                 EditorGUI.LabelField(rect, content, GUIGraphResources.styles.Tooltip);
                 Repaint();
             }

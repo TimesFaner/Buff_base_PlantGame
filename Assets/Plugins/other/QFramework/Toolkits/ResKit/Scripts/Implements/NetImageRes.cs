@@ -1,7 +1,7 @@
 ﻿/****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 ~ 2018.7 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,11 +24,13 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using System;
+using System.Collections;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
 namespace QFramework
 {
-    using UnityEngine;
-    using System.Collections;
-    
     public static class NetImageResUtil
     {
         public static string ToNetImageResName(this string selfHttpUrl)
@@ -36,66 +38,48 @@ namespace QFramework
             return string.Format("NetImage:{0}", selfHttpUrl);
         }
     }
-    
+
     public class NetImageRes : Res
     {
-        private string mUrl;
         private string mHashCode;
         private object mRawAsset;
 #pragma warning disable CS0618
         private WWW mWWW;
 #pragma warning restore CS0618
 
-        public static NetImageRes Allocate(string lowerName,string originalName)
+        public string LocalResPath =>
+            string.Format("{0}{1}", AssetBundlePathHelper.PersistentDataPath4Photo, mHashCode);
+
+        public virtual object RawAsset => mRawAsset;
+
+        public bool NeedDownload => RefCount > 0;
+
+        public string Url { get; private set; }
+
+        public int FileSize => 1;
+
+        public static NetImageRes Allocate(string lowerName, string originalName)
         {
-            NetImageRes res = SafeObjectPool<NetImageRes>.Instance.Allocate();
+            var res = SafeObjectPool<NetImageRes>.Instance.Allocate();
             if (res != null)
             {
                 res.AssetName = lowerName;
                 res.SetUrl(originalName.Substring(9));
             }
+
             return res;
         }
 
         public void SetDownloadProgress(int totalSize, int download)
         {
-
-        }
-
-        public string LocalResPath
-        {
-            get { return string.Format("{0}{1}", AssetBundlePathHelper.PersistentDataPath4Photo, mHashCode); }
-        }
-
-        public virtual object RawAsset
-        {
-            get { return mRawAsset; }
-        }
-
-        public bool NeedDownload
-        {
-            get { return RefCount > 0; }
-        }
-
-        public string Url
-        {
-            get { return mUrl; }
-        }
-
-        public int FileSize
-        {
-            get { return 1; }
         }
 
         public void SetUrl(string url)
         {
-            if (string.IsNullOrEmpty(url))
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(url)) return;
 
-            mUrl = url;
-            mHashCode = string.Format("Photo_{0}", mUrl.GetHashCode());
+            Url = url;
+            mHashCode = string.Format("Photo_{0}", Url.GetHashCode());
         }
 
         public override bool UnloadImage(bool flag)
@@ -110,15 +94,9 @@ namespace QFramework
 
         public override void LoadAsync()
         {
-            if (!CheckLoadAble())
-            {
-                return;
-            }
+            if (!CheckLoadAble()) return;
 
-            if (string.IsNullOrEmpty(mAssetName))
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(mAssetName)) return;
 
             DoLoadWork();
         }
@@ -146,7 +124,7 @@ namespace QFramework
         {
             if (mAsset != null)
             {
-                GameObject.Destroy(mAsset);
+                Object.Destroy(mAsset);
                 mAsset = null;
             }
 
@@ -160,7 +138,6 @@ namespace QFramework
 
         public override void OnRecycled()
         {
-
         }
 
         public void DeleteOldResFile()
@@ -187,7 +164,7 @@ namespace QFramework
         }
 
         //完全的WWW方式,Unity 帮助管理纹理缓存，并且效率貌似更高
-        public override IEnumerator DoLoadAsync(System.Action finishCallback)
+        public override IEnumerator DoLoadAsync(Action finishCallback)
         {
             if (RefCount <= 0)
             {
@@ -197,7 +174,7 @@ namespace QFramework
             }
 
 #pragma warning disable CS0618
-            WWW www = new WWW(mUrl);
+            var www = new WWW(Url);
 #pragma warning restore CS0618
 
             mWWW = www;
@@ -208,7 +185,7 @@ namespace QFramework
 
             if (www.error != null)
             {
-                Debug.LogError($"Res:{mUrl}, WWW Errors:{www.error}");
+                Debug.LogError($"Res:{Url}, WWW Errors:{www.error}");
                 OnResLoadFaild();
                 finishCallback();
                 yield break;
@@ -216,7 +193,7 @@ namespace QFramework
 
             if (!www.isDone)
             {
-                Debug.LogError("NetImageRes WWW Not Done! Url:" + mUrl);
+                Debug.LogError("NetImageRes WWW Not Done! Url:" + Url);
                 OnResLoadFaild();
                 finishCallback();
 
@@ -254,10 +231,7 @@ namespace QFramework
 
         protected override float CalculateProgress()
         {
-            if (mWWW == null)
-            {
-                return 0;
-            }
+            if (mWWW == null) return 0;
 
             return mWWW.progress;
         }

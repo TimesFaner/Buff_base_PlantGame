@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -17,28 +17,24 @@ namespace QFramework
 
     internal class PackageTypeConfigModel : AbstractModel, IPackageTypeConfigModel
     {
-        private Dictionary<string, string> mTypeName2FullName = new Dictionary<string, string>()
+        private readonly Dictionary<string, string> mTypeName2FullName = new()
         {
-            {"fm", "Framework"},
-            {"p", "Plugin"},
-            {"s", "Shader"},
-            {"agt", "Example/Demo"},
-            {"master", "Master"},
+            { "fm", "Framework" },
+            { "p", "Plugin" },
+            { "s", "Shader" },
+            { "agt", "Example/Demo" },
+            { "master", "Master" }
         };
 
         public string GetFullTypeName(string typeName)
         {
-            if (mTypeName2FullName.ContainsKey(typeName))
-            {
-                return mTypeName2FullName[typeName];
-            }
+            if (mTypeName2FullName.ContainsKey(typeName)) return mTypeName2FullName[typeName];
 
             return typeName;
         }
 
         protected override void OnInit()
         {
-            
         }
     }
 }

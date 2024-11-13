@@ -1,19 +1,16 @@
-using System.Collections;
 using System.Linq;
-using UnityEngine;
 
 namespace Mirror.Examples.TanksCoop
 {
     public class AuthorityNetworkManager : NetworkManager
     {
-
-        public static new AuthorityNetworkManager singleton { get; private set; }
-
         private NetworkIdentity[] copyOfOwnedObjects;
 
+        public new static AuthorityNetworkManager singleton { get; private set; }
+
         /// <summary>
-        /// Runs on both Server and Client
-        /// Networking is NOT initialized when this fires
+        ///     Runs on both Server and Client
+        ///     Networking is NOT initialized when this fires
         /// </summary>
         public override void Awake()
         {
@@ -22,8 +19,11 @@ namespace Mirror.Examples.TanksCoop
         }
 
         /// <summary>
-        /// Called on the server when a client disconnects.
-        /// <para>This is called on the Server when a Client disconnects from the Server. Use an override to decide what should happen when a disconnection is detected.</para>
+        ///     Called on the server when a client disconnects.
+        ///     <para>
+        ///         This is called on the Server when a Client disconnects from the Server. Use an override to decide what should
+        ///         happen when a disconnection is detected.
+        ///     </para>
         /// </summary>
         /// <param name="conn">Connection from client.</param>
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
@@ -33,11 +33,9 @@ namespace Mirror.Examples.TanksCoop
             copyOfOwnedObjects = conn.owned.ToArray();
             // Loop the copy, skipping the player object.
             // RemoveClientAuthority on everything else
-            foreach (NetworkIdentity identity in copyOfOwnedObjects)
-            {
+            foreach (var identity in copyOfOwnedObjects)
                 if (identity != conn.identity)
                     identity.RemoveClientAuthority();
-            }
 
             base.OnServerDisconnect(conn);
         }

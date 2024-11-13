@@ -1,7 +1,7 @@
 /****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 ~ 2019.1 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
  *
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,30 +24,27 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
-using System.Collections.Generic;
-using UnityEngine;
+using System;
+using Object = UnityEngine.Object;
 
 namespace QFramework
 {
-    using System;
-
     public enum ResState
     {
         Waiting = 0,
         Loading = 1,
-        Ready   = 2,
+        Ready = 2
     }
 
     public static class ResLoadType
     {
-        public const short AssetBundle   = 0;
-        public const short ABAsset       = 1;
-        public const short ABScene       = 2;
-        public const short Internal      = 3;
-        public const short NetImageRes   = 4;
+        public const short AssetBundle = 0;
+        public const short ABAsset = 1;
+        public const short ABScene = 2;
+        public const short Internal = 3;
+        public const short NetImageRes = 4;
         public const short LocalImageRes = 5;
     }
-
 
 
     public interface IRes : IRefCounter, IEnumeratorTask
@@ -58,7 +55,7 @@ namespace QFramework
 
         ResState State { get; }
 
-        UnityEngine.Object Asset { get; }
+        Object Asset { get; }
 
         float Progress { get; }
         Type AssetType { get; set; }
@@ -79,6 +76,5 @@ namespace QFramework
         bool ReleaseRes();
 
         void Recycle2Cache();
-
     }
 }

@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +9,12 @@ namespace QFramework
     [Serializable]
     public class ReleaseItem
     {
+        public string version = "";
+        public string content = "";
+        public string author = "";
+        public string date = "";
+        public string PackageId = "";
+
         public ReleaseItem()
         {
         }
@@ -23,21 +28,12 @@ namespace QFramework
             PackageId = packageId;
         }
 
-        public string version   = "";
-        public string content   = "";
-        public string author    = "";
-        public string date      = "";
-        public string PackageId = "";
-
 
         public int VersionNumber
         {
             get
             {
-                if (string.IsNullOrEmpty(version))
-                {
-                    return 0;
-                }
+                if (string.IsNullOrEmpty(version)) return 0;
 
                 var numbersStr = version.Replace("v", string.Empty).Split('.');
 
@@ -57,10 +53,7 @@ namespace QFramework
 
         public ReleaseItem GetItem(string version)
         {
-            if (items == null || items.Count == 0)
-            {
-                return null;
-            }
+            if (items == null || items.Count == 0) return null;
 
             return items.First(s => s.version == version);
         }
@@ -69,13 +62,12 @@ namespace QFramework
         {
             if (items == null)
             {
-                items = new List<ReleaseItem> {pluginReadme};
+                items = new List<ReleaseItem> { pluginReadme };
             }
             else
             {
-                bool exist = false;
+                var exist = false;
                 foreach (var item in items)
-                {
                     if (item.version == pluginReadme.version)
                     {
                         item.content = pluginReadme.content;
@@ -83,12 +75,8 @@ namespace QFramework
                         exist = true;
                         break;
                     }
-                }
 
-                if (!exist)
-                {
-                    items.Add(pluginReadme);
-                }
+                if (!exist) items.Add(pluginReadme);
             }
         }
     }
@@ -100,53 +88,32 @@ namespace QFramework
 
         public string Name = "";
 
-        private PackageVersion mLatestVersion
-        {
-            get { return PackageVersions.FirstOrDefault(); }
-        }
-        
-        
+        public Readme readme;
 
-        public string version
+        public List<PackageVersion> PackageVersions = new();
+
+        public PackageData()
         {
-            get { return mLatestVersion == null ? string.Empty : mLatestVersion.Version; }
+            readme = new Readme();
         }
 
-        public string DownloadUrl
-        {
-            get
-            {
-                return mLatestVersion == null ? string.Empty : mLatestVersion.DownloadUrl;
-            }
-        }
+        private PackageVersion mLatestVersion => PackageVersions.FirstOrDefault();
 
-        public string InstallPath
-        {
-            get
-            {
-                return mLatestVersion == null ? string.Empty : mLatestVersion.InstallPath;
-            }
-        }
 
-        public string DocUrl
-        {
-            get { return mLatestVersion == null ? string.Empty : mLatestVersion.DocUrl; }
-        }
+        public string version => mLatestVersion == null ? string.Empty : mLatestVersion.Version;
 
-        public PackageType Type
-        {
-            get { return mLatestVersion == null ? PackageType.AppOrGameDemoOrTemplate : mLatestVersion.Type; }
-        }
+        public string DownloadUrl => mLatestVersion == null ? string.Empty : mLatestVersion.DownloadUrl;
 
-        public PackageAccessRight AccessRight
-        {
-            get
-            {
-                return PackageVersions.FirstOrDefault() == null
-                    ? PackageAccessRight.Public
-                    : PackageVersions.First().AccessRight;
-            }
-        }
+        public string InstallPath => mLatestVersion == null ? string.Empty : mLatestVersion.InstallPath;
+
+        public string DocUrl => mLatestVersion == null ? string.Empty : mLatestVersion.DocUrl;
+
+        public PackageType Type => mLatestVersion == null ? PackageType.AppOrGameDemoOrTemplate : mLatestVersion.Type;
+
+        public PackageAccessRight AccessRight =>
+            PackageVersions.FirstOrDefault() == null
+                ? PackageAccessRight.Public
+                : PackageVersions.First().AccessRight;
 
 
         public string Author
@@ -164,15 +131,6 @@ namespace QFramework
             }
         }
 
-        public Readme readme;
-
-        public List<PackageVersion> PackageVersions = new List<PackageVersion>();
-
-        public PackageData()
-        {
-            readme = new Readme();
-        }
-
         public int VersionNumber
         {
             get
@@ -186,10 +144,7 @@ namespace QFramework
             }
         }
 
-        public bool Installed
-        {
-            get { return Directory.Exists(InstallPath); }
-        }
+        public bool Installed => Directory.Exists(InstallPath);
 
         public void SaveVersionFile()
         {
@@ -204,19 +159,35 @@ namespace QFramework
         UIKitComponent, //uc
         Plugin, // p
         AppOrGameDemoOrTemplate, //agt
-        DocumentsOrTutorial, //doc
+        DocumentsOrTutorial //doc
     }
 
     public enum PackageAccessRight
     {
         Public,
-        Private,
+        Private
     }
 
     [Serializable]
     public class PackageVersion
     {
         public string Id;
+
+        public string Version = "v0.0.0";
+
+        public PackageType Type;
+
+        public PackageAccessRight AccessRight;
+
+        public string DownloadUrl;
+
+        public string InstallPath = "Assets/QFramework/Framework/";
+
+        public List<string> IncludeFileOrFolders = new();
+
+        public string DocUrl;
+
+        public ReleaseItem Readme = new();
 
         public string Name
         {
@@ -233,12 +204,6 @@ namespace QFramework
             }
         }
 
-        public string Version = "v0.0.0";
-
-        public PackageType Type;
-
-        public PackageAccessRight AccessRight;
-
         public int VersionNumber
         {
             get
@@ -253,24 +218,11 @@ namespace QFramework
             }
         }
 
-        public string DownloadUrl;
-
-        public string InstallPath = "Assets/QFramework/Framework/";
-        
-        public List<string> IncludeFileOrFolders = new List<string>();
-
-        public string DocUrl;
-
-        public ReleaseItem Readme = new ReleaseItem();
-
         public void Save()
         {
-            var json = JsonUtility.ToJson(this,true);
+            var json = JsonUtility.ToJson(this, true);
 
-            if (!Directory.Exists(InstallPath))
-            {
-                Directory.CreateDirectory(InstallPath);
-            }
+            if (!Directory.Exists(InstallPath)) Directory.CreateDirectory(InstallPath);
 
             File.WriteAllText(InstallPath + "/PackageVersion.json", json);
         }
@@ -278,13 +230,8 @@ namespace QFramework
         public static PackageVersion Load(string filePath)
         {
             if (filePath.EndsWith("/"))
-            {
                 filePath += "PackageVersion.json";
-            }
-            else if (!filePath.EndsWith("PackageVersion.json"))
-            {
-                filePath += "/PackageVersion.json";
-            }
+            else if (!filePath.EndsWith("PackageVersion.json")) filePath += "/PackageVersion.json";
 
             return JsonUtility.FromJson<PackageVersion>(File.ReadAllText(filePath));
         }
@@ -293,7 +240,7 @@ namespace QFramework
     public static class PackageKitExtension
     {
         /// <summary>
-        /// 解析成数字类型
+        ///     解析成数字类型
         /// </summary>
         /// <param name="selfStr"></param>
         /// <param name="defaulValue"></param>

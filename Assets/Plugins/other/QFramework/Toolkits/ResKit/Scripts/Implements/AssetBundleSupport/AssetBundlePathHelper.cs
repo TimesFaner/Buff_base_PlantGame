@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -53,22 +52,17 @@ namespace QFramework
             }
         }
 #endif
-        
+
         // 资源路径，优先返回外存资源路径
         public static string GetResPathInPersistentOrStream(string relativePath)
         {
-            string resPersistentPath = string.Format("{0}{1}", PersistentDataPath4Res, relativePath);
+            var resPersistentPath = string.Format("{0}{1}", PersistentDataPath4Res, relativePath);
             if (File.Exists(resPersistentPath))
-            {
                 return resPersistentPath;
-            }
-            else
-            {
-                return StreamingAssetsPath + relativePath;
-            }
+            return StreamingAssetsPath + relativePath;
         }
 
-        
+
         private static string mPersistentDataPath;
         private static string mStreamingAssetsPath;
         private static string mPersistentDataPath4Res;
@@ -79,10 +73,7 @@ namespace QFramework
         {
             get
             {
-                if (null == mPersistentDataPath)
-                {
-                    mPersistentDataPath = Application.persistentDataPath + "/";
-                }
+                if (null == mPersistentDataPath) mPersistentDataPath = Application.persistentDataPath + "/";
 
                 return mPersistentDataPath;
             }
@@ -124,9 +115,7 @@ namespace QFramework
                     mPersistentDataPath4Photo = PersistentDataPath + "Photos\\";
 
                     if (!Directory.Exists(mPersistentDataPath4Photo))
-                    {
                         Directory.CreateDirectory(mPersistentDataPath4Photo);
-                    }
                 }
 
                 return mPersistentDataPath4Photo;
@@ -154,6 +143,7 @@ namespace QFramework
                 return mPersistentDataPath4Res;
             }
         }
+
         public static string GetPlatformName()
         {
 #if UNITY_EDITOR
@@ -162,7 +152,7 @@ namespace QFramework
 			return GetPlatformForAssetBundles(UnityEngine.Application.platform);
 #endif
         }
-        
+
         public static string GetPlatformForAssetBundles(RuntimePlatform platform)
         {
             switch (platform)
@@ -189,7 +179,7 @@ namespace QFramework
                     return null;
             }
         }
-        
+
         public static string[] GetAssetPathsFromAssetBundleAndAssetName(string abRAssetName, string assetName)
         {
 #if UNITY_EDITOR
@@ -216,17 +206,16 @@ namespace QFramework
             return null;
 #endif
         }
-        
-        
-        
+
+
 // 上一级目录
         public static string GetParentDir(string dir, int floor = 1)
         {
-            string subDir = dir;
+            var subDir = dir;
 
-            for (int i = 0; i < floor; ++i)
+            for (var i = 0; i < floor; ++i)
             {
-                int last = subDir.LastIndexOf('/');
+                var last = subDir.LastIndexOf('/');
                 subDir = subDir.Substring(0, last);
             }
 
@@ -235,26 +224,18 @@ namespace QFramework
 
         public static void GetFileInFolder(string dirName, string fileName, List<string> outResult)
         {
-            if (outResult == null)
-            {
-                return;
-            }
+            if (outResult == null) return;
 
             var dir = new DirectoryInfo(dirName);
 
-            if (null != dir.Parent && dir.Attributes.ToString().IndexOf("System", StringComparison.Ordinal) > -1)
-            {
-                return;
-            }
+            if (null != dir.Parent &&
+                dir.Attributes.ToString().IndexOf("System", StringComparison.Ordinal) > -1) return;
 
             var fileInfos = dir.GetFiles(fileName);
             outResult.AddRange(fileInfos.Select(fileInfo => fileInfo.FullName));
 
             var dirInfos = dir.GetDirectories();
-            foreach (var dinfo in dirInfos)
-            {
-                GetFileInFolder(dinfo.FullName, fileName, outResult);
-            }
+            foreach (var dinfo in dirInfos) GetFileInFolder(dinfo.FullName, fileName, outResult);
         }
 
         public static string PathPrefix
@@ -269,12 +250,12 @@ namespace QFramework
             }
         }
 #if UNITY_EDITOR
-        const string kSimulateAssetBundles = "SimulateAssetBundles"; //此处跟editor中保持统一，不能随意更改
+        private const string kSimulateAssetBundles = "SimulateAssetBundles"; //此处跟editor中保持统一，不能随意更改
 
         public static bool SimulationMode
         {
-            get { return UnityEditor.EditorPrefs.GetBool(kSimulateAssetBundles, true); }
-            set { UnityEditor.EditorPrefs.SetBool(kSimulateAssetBundles, value); }
+            get => EditorPrefs.GetBool(kSimulateAssetBundles, true);
+            set => EditorPrefs.SetBool(kSimulateAssetBundles, value);
         }
 #else
          public static bool SimulationMode

@@ -1,20 +1,20 @@
 /****************************************************************************
  * Copyright (c) 2017 snowcold
  * Copyright (c) 2017 liangxie
- * 
+ *
  * http://qframework.io
  * https://github.com/liangxiegame/QFramework
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,23 +24,23 @@
  * THE SOFTWARE.
  ****************************************************************************/
 
+using System;
+
 namespace QFramework
 {
-    using System;
-
     public class DisposableObject : IDisposable
     {
-        private Boolean mDisposed = false;
-
-        ~DisposableObject()
-        {
-            Dispose(false);
-        }
+        private bool mDisposed;
 
         public virtual void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        ~DisposableObject()
+        {
+            Dispose(false);
         }
 
         // Overrides it, to dispose managed resources.
@@ -55,15 +55,9 @@ namespace QFramework
 
         private void Dispose(bool disposing)
         {
-            if (mDisposed)
-            {
-                return;
-            }
+            if (mDisposed) return;
 
-            if (disposing)
-            {
-                DisposeGC();
-            }
+            if (disposing) DisposeGC();
 
             DisposeNGC();
 

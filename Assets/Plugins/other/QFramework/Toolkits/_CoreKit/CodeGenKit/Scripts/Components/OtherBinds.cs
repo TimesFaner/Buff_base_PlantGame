@@ -1,23 +1,24 @@
 /****************************************************************************
  * Copyright (c) 2015 ~ 2023 liangxiegame UNDER MIT LICENSE
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace QFramework
 {
-    [System.Serializable]
+    [Serializable]
     public class OtherBind
     {
         public string MemberName;
@@ -35,7 +36,7 @@ namespace QFramework
     [RequireComponent(typeof(ViewController))]
     public class OtherBinds : MonoBehaviour
     {
-        public List<OtherBind> Binds = new List<OtherBind>();
+        public List<OtherBind> Binds = new();
 
 #if UNITY_EDITOR
         public void Add(string memberName, Object obj)
@@ -70,17 +71,10 @@ namespace QFramework
             var bindsProperty = serializedObject.FindProperty("Binds");
             int i;
             for (i = 0; i < Binds.Count; i++)
-            {
                 if (Binds[i].MemberName == memberName)
-                {
                     break;
-                }
-            }
 
-            if (i != Binds.Count)
-            {
-                bindsProperty.DeleteArrayElementAtIndex(i);
-            }
+            if (i != Binds.Count) bindsProperty.DeleteArrayElementAtIndex(i);
 
             EditorUtility.SetDirty(this);
             serializedObject.ApplyModifiedProperties();
@@ -113,13 +107,17 @@ namespace QFramework
     [CustomEditor(typeof(OtherBinds))]
     public class ReferenceBindsEditor : Editor
     {
-
         private OtherBinds mOtherBinds;
+
+        private void OnEnable()
+        {
+            mOtherBinds = (OtherBinds)target;
+        }
 
         private void DelNullReference()
         {
             var dataProperty = serializedObject.FindProperty("Binds");
-            for (int i = dataProperty.arraySize - 1; i >= 0; i--)
+            for (var i = dataProperty.arraySize - 1; i >= 0; i--)
             {
                 var gameObjectProperty = dataProperty.GetArrayElementAtIndex(i).FindPropertyRelative("Object");
                 if (gameObjectProperty.objectReferenceValue == null)
@@ -130,11 +128,6 @@ namespace QFramework
                     serializedObject.UpdateIfRequiredOrScript();
                 }
             }
-        }
-
-        private void OnEnable()
-        {
-            mOtherBinds = (OtherBinds)target;
         }
 
         public override void OnInspectorGUI()
@@ -148,7 +141,7 @@ namespace QFramework
 
             var delList = new List<int>();
             SerializedProperty property;
-            for (int i = mOtherBinds.Binds.Count - 1; i >= 0; i--)
+            for (var i = mOtherBinds.Binds.Count - 1; i >= 0; i--)
             {
                 GUILayout.BeginHorizontal();
                 property = dataProperty.GetArrayElementAtIndex(i).FindPropertyRelative("MemberName");
@@ -165,11 +158,9 @@ namespace QFramework
 
                     var index = objects.FindIndex(c => c.GetType() == property.objectReferenceValue.GetType());
                     var newIndex = EditorGUILayout.Popup(index, objects.Select(c => c.GetType().FullName).ToArray());
-                    if (index != newIndex)
-                    {
-                        property.objectReferenceValue = objects[newIndex];
-                    }
-                } else if (property.objectReferenceValue is GameObject gameObject)
+                    if (index != newIndex) property.objectReferenceValue = objects[newIndex];
+                }
+                else if (property.objectReferenceValue is GameObject gameObject)
                 {
                     var objects = new List<Object>();
                     objects.AddRange(gameObject.GetComponents<Component>());
@@ -177,22 +168,19 @@ namespace QFramework
 
                     var index = objects.FindIndex(c => c.GetType() == property.objectReferenceValue.GetType());
                     var newIndex = EditorGUILayout.Popup(index, objects.Select(c => c.GetType().FullName).ToArray());
-                    if (index != newIndex)
-                    {
-                        property.objectReferenceValue = objects[newIndex];
-                    }
+                    if (index != newIndex) property.objectReferenceValue = objects[newIndex];
                 }
-                
+
                 if (GUILayout.Button("X"))
-                {
                     //将元素添加进删除list
                     delList.Add(i);
-                }
 
                 GUILayout.EndHorizontal();
             }
 
-            GUILayout.Label(LocaleKitEditor.IsCN.Value ? "将其他需要生成变量的 Object 拖拽至此" : " Drag other Object bellow to generate member variables");
+            GUILayout.Label(LocaleKitEditor.IsCN.Value
+                ? "将其他需要生成变量的 Object 拖拽至此"
+                : " Drag other Object bellow to generate member variables");
             var sfxPathRect = EditorGUILayout.GetControlRect();
             sfxPathRect.height = 50;
             GUI.Box(sfxPathRect, string.Empty);
@@ -208,16 +196,14 @@ namespace QFramework
                 {
                     DragAndDrop.AcceptDrag();
                     foreach (var o in DragAndDrop.objectReferences)
-                    {
-                        AddReference(dataProperty, o.name.RemoveString(" ","-","@"), o);
-                    }
+                        AddReference(dataProperty, o.name.RemoveString(" ", "-", "@"), o);
                 }
 
                 Event.current.Use();
             }
 
             GUILayout.BeginHorizontal();
-            
+
             // if (GUILayout.Button(  LocaleKitEditor.IsCN.Value ? "添加引用" : "Add Ref"))
             // {
             //     AddReference(dataProperty, Guid.NewGuid().GetHashCode().ToString(), null);
@@ -240,10 +226,7 @@ namespace QFramework
 
             EditorGUILayout.EndHorizontal();
 
-            foreach (var i in delList)
-            {
-                dataProperty.DeleteArrayElementAtIndex(i);
-            }
+            foreach (var i in delList) dataProperty.DeleteArrayElementAtIndex(i);
 
             serializedObject.ApplyModifiedProperties();
             serializedObject.UpdateIfRequiredOrScript();
@@ -251,7 +234,7 @@ namespace QFramework
 
         private void AddReference(SerializedProperty dataProperty, string key, Object obj)
         {
-            int index = dataProperty.arraySize;
+            var index = dataProperty.arraySize;
             dataProperty.InsertArrayElementAtIndex(index);
             var element = dataProperty.GetArrayElementAtIndex(index);
             element.FindPropertyRelative("MemberName").stringValue = key;

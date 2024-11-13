@@ -1,6 +1,6 @@
 /****************************************************************************
  * Copyright (c) 2015 - 2022 liangxiegame UNDER MIT License
- * 
+ *
  * http://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
@@ -8,6 +8,7 @@
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -21,7 +22,7 @@ namespace QFramework
         protected void Save()
         {
             EditorUtility.SetDirty(target);
-            UnityEditor.SceneManagement.EditorSceneManager
+            EditorSceneManager
                 .MarkSceneDirty(SceneManager.GetActiveScene());
             GUIUtility.ExitGUI();
         }

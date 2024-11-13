@@ -3,132 +3,128 @@
  * Copyright (c) 2017 liangxie
  * Copyright (c) 2017 imagicbell
  * Copyright (c) 2018 ~ 2022 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
  ****************************************************************************/
 
+using System;
+using UnityEngine;
+
 namespace QFramework
 {
-	using UnityEngine;
+    /// <summary>
+    ///     每个 UIPanel 对应的Data
+    /// </summary>
+    public interface IUIData
+    {
+    }
 
-	/// <summary>
-	/// 每个 UIPanel 对应的Data
-	/// </summary>
-	public interface IUIData
-	{
-	}
+    public class UIPanelData : IUIData
+    {
+    }
 
-	public class UIPanelData : IUIData
-	{
-	}
-	
-	public abstract partial class UIPanel : QMonoBehaviour, IPanel
-	{
-		public Transform Transform => transform;
+    public abstract class UIPanel : QMonoBehaviour, IPanel
+    {
+        private Action mOnClosed;
 
-		IPanelLoader IPanel.Loader { get; set; }
+        protected IUIData mUIData;
 
-		public PanelInfo Info { get; set; }
+        public override IManager Manager => UIManager.Instance;
 
-		public PanelState State { get; set; }
+        /// <summary>
+        ///     avoid override in child class
+        /// </summary>
+        protected sealed override void OnDestroy()
+        {
+            base.OnDestroy();
+        }
 
-		protected IUIData mUIData;
+        public Transform Transform => transform;
 
-		public override IManager Manager => UIManager.Instance;
+        IPanelLoader IPanel.Loader { get; set; }
 
-		protected override void OnBeforeDestroy()
-		{
-			ClearUIComponents();
-		}
+        public PanelInfo Info { get; set; }
 
-		protected virtual void ClearUIComponents()
-		{
-		}
+        public PanelState State { get; set; }
 
-		public void Init(IUIData uiData = null)
-		{
-			mUIData = uiData;
-			OnInit(uiData);
-		}
+        public void Init(IUIData uiData = null)
+        {
+            mUIData = uiData;
+            OnInit(uiData);
+        }
 
-		public void Open(IUIData uiData = null)
-		{
-			State = PanelState.Opening;
-			OnOpen(uiData);
-		}
+        public void Open(IUIData uiData = null)
+        {
+            State = PanelState.Opening;
+            OnOpen(uiData);
+        }
 
-		public override void Hide()
-		{
-			State = PanelState.Hide;
-			base.Hide();
-		}
+        public override void Hide()
+        {
+            State = PanelState.Hide;
+            base.Hide();
+        }
+
+        /// <summary>
+        ///     关闭,不允许子类调用
+        /// </summary>
+        void IPanel.Close(bool destroyed)
+        {
+            Info.UIData = mUIData;
+            mOnClosed?.Invoke();
+            mOnClosed = null;
+            Hide();
+            State = PanelState.Closed;
+            OnClose();
+
+            if (destroyed) Destroy(gameObject);
+
+            var panelInterface = this as IPanel;
+            panelInterface.Loader.Unload();
+            UIKit.Config.PanelLoaderPool.RecycleLoader(panelInterface.Loader);
+            panelInterface.Loader = null;
+
+            mUIData = null;
+        }
+
+        protected override void OnBeforeDestroy()
+        {
+            ClearUIComponents();
+        }
+
+        protected virtual void ClearUIComponents()
+        {
+        }
 
 
-		protected virtual void OnInit(IUIData uiData = null)
-		{
+        protected virtual void OnInit(IUIData uiData = null)
+        {
+        }
 
-		}
+        protected virtual void OnOpen(IUIData uiData = null)
+        {
+        }
 
-		protected virtual void OnOpen(IUIData uiData = null)
-		{
+        protected void CloseSelf()
+        {
+            UIKit.ClosePanel(this);
+        }
 
-		}
+        protected void Back()
+        {
+            UIKit.Back(name);
+        }
 
-		/// <summary>
-		/// avoid override in child class
-		/// </summary>
-		protected sealed override void OnDestroy()
-		{
-			base.OnDestroy();
-		}
+        /// <summary>
+        ///     必须使用这个
+        /// </summary>
+        protected abstract void OnClose();
 
-		/// <summary>
-		/// 关闭,不允许子类调用
-		/// </summary>
-		void IPanel.Close(bool destroyed)
-		{
-			Info.UIData = mUIData;
-			mOnClosed?.Invoke();
-			mOnClosed = null;
-			Hide();
-			State = PanelState.Closed;
-			OnClose();
-
-			if (destroyed)
-			{
-				Destroy(gameObject);
-			}
-
-			var panelInterface = this as IPanel;
-			panelInterface.Loader.Unload();
-			UIKit.Config.PanelLoaderPool.RecycleLoader(panelInterface.Loader);
-			panelInterface.Loader = null;
-
-			mUIData = null;
-		}
-
-		protected void CloseSelf()
-		{
-			UIKit.ClosePanel(this);
-		}
-
-		protected void Back()
-		{
-			UIKit.Back(name);
-		}
-
-		/// <summary>
-		/// 必须使用这个
-		/// </summary>
-		protected abstract void OnClose();
-
-		private System.Action mOnClosed;
-
-		public void OnClosed(System.Action onPanelClosed)
-		{
-			mOnClosed = onPanelClosed;
-		}
-	}
+        public void OnClosed(Action onPanelClosed)
+        {
+            mOnClosed = onPanelClosed;
+        }
+    }
 }

@@ -1,10 +1,10 @@
 ﻿/****************************************************************************
  * Copyright (c) 2018 ~ 2020.10 liangxie
- * 
+ *
  * https://qframework.cn
  * https://github.com/liangxiegame/QFramework
  * https://gitee.com/liangxiegame/QFramework
- * 
+ *
  ****************************************************************************/
 
 #if UNITY_EDITOR
@@ -83,10 +83,7 @@ namespace QFramework
 
         public static bool IsVersionValid(string version)
         {
-            if (version == null)
-            {
-                return false;
-            }
+            if (version == null) return false;
 
             var t = version.Split('.');
             return t.Length == 3 && version.StartsWith("v");

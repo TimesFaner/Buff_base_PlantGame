@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace QFramework
 {
-    public class AudioKitWithResKitInit 
+    public class AudioKitWithResKitInit
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Init()
@@ -14,35 +14,33 @@ namespace QFramework
 
     public class ResKitAudioLoaderPool : AbstractAudioLoaderPool
     {
+        protected override IAudioLoader CreateLoader()
+        {
+            return new ResKitAudioLoader();
+        }
+
         public class ResKitAudioLoader : IAudioLoader
         {
-            private ResLoader mResLoader = null;
+            private ResLoader mResLoader;
 
-            public AudioClip Clip => mClip;
-            private AudioClip mClip;
+            public AudioClip Clip { get; private set; }
 
             public AudioClip LoadClip(AudioSearchKeys audioSearchKeys)
             {
-                if (mResLoader == null)
-                {
-                    mResLoader = ResLoader.Allocate();
-                }
+                if (mResLoader == null) mResLoader = ResLoader.Allocate();
 
-                mClip = mResLoader.LoadSync<AudioClip>(audioSearchKeys.AssetName);
+                Clip = mResLoader.LoadSync<AudioClip>(audioSearchKeys.AssetName);
 
-                return mClip;
+                return Clip;
             }
 
             public void LoadClipAsync(AudioSearchKeys audioSearchKeys, Action<bool, AudioClip> onLoad)
             {
-                if (mResLoader == null)
-                {
-                    mResLoader = ResLoader.Allocate();
-                }
+                if (mResLoader == null) mResLoader = ResLoader.Allocate();
 
                 mResLoader.Add2Load<AudioClip>(audioSearchKeys.AssetName, (b, res) =>
                 {
-                    mClip = res.Asset as AudioClip;
+                    Clip = res.Asset as AudioClip;
                     onLoad(b, res.Asset as AudioClip);
                 });
 
@@ -51,15 +49,10 @@ namespace QFramework
 
             public void Unload()
             {
-                mClip = null;
+                Clip = null;
                 mResLoader?.Recycle2Cache();
                 mResLoader = null;
             }
-        }
-
-        protected override IAudioLoader CreateLoader()
-        {
-            return new ResKitAudioLoader();
         }
     }
 }

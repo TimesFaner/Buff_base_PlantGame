@@ -9,22 +9,7 @@ namespace Mirror
         // snapshot interpolation settings /////////////////////////////////////
         // TODO expose the settings to the user later.
         // via NetMan or NetworkClientConfig or NetworkClient as component etc.
-        public static SnapshotInterpolationSettings snapshotSettings = new SnapshotInterpolationSettings();
-
-        // obsolete snapshot settings access
-        // DEPRECATED 2023-03-11
-        // [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
-        // public static double bufferTimeMultiplier => currentBufferTimeMultiplier;
-        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
-        public static float catchupNegativeThreshold => snapshotSettings.catchupNegativeThreshold;
-        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
-        public static float catchupPositiveThreshold => snapshotSettings.catchupPositiveThreshold;
-        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
-        public static double catchupSpeed => snapshotSettings.catchupSpeed;
-        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
-        public static double slowdownSpeed => snapshotSettings.slowdownSpeed;
-        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
-        public static int driftEmaDuration => snapshotSettings.driftEmaDuration;
+        public static SnapshotInterpolationSettings snapshotSettings = new();
 
         // snapshot interpolation runtime data /////////////////////////////////
         // buffer time is dynamically adjusted.
@@ -32,13 +17,8 @@ namespace Mirror
         // this way we can easily reset to or compare with original where needed.
         public static double bufferTimeMultiplier;
 
-        // original buffer time based on the settings
-        // dynamically adjusted buffer time based on dynamically adjusted multiplier
-        public static double initialBufferTime => NetworkServer.sendInterval * snapshotSettings.bufferTimeMultiplier;
-        public static double bufferTime        => NetworkServer.sendInterval * bufferTimeMultiplier;
-
         // <servertime, snaps>
-        public static SortedList<double, TimeSnapshot> snapshots = new SortedList<double, TimeSnapshot>();
+        public static SortedList<double, TimeSnapshot> snapshots = new();
 
         // for smooth interpolation, we need to interpolate along server time.
         // any other time (arrival on client, client local time, etc.) is not
@@ -60,7 +40,7 @@ namespace Mirror
         // manually averaging the last second worth of values with a for loop
         // would be the same, but a moving average is faster because we only
         // ever add one value.
-        static ExponentialMovingAverage driftEma;
+        private static ExponentialMovingAverage driftEma;
 
         // dynamic buffer time adjustment //////////////////////////////////////
         // dynamically adjusts bufferTimeMultiplier for smooth results.
@@ -80,21 +60,50 @@ namespace Mirror
         // for this to be perfectly smooth, set the safety tolerance to '2'.
         // but realistically this is not necessary, and '1' is enough.
         [Header("Snapshot Interpolation: Dynamic Adjustment")]
-        [Tooltip("Automatically adjust bufferTimeMultiplier for smooth results.\nSets a low multiplier on stable connections, and a high multiplier on jittery connections.")]
+        [Tooltip(
+            "Automatically adjust bufferTimeMultiplier for smooth results.\nSets a low multiplier on stable connections, and a high multiplier on jittery connections.")]
         public static bool dynamicAdjustment = true;
 
         [Tooltip("Safety buffer that is always added to the dynamic bufferTimeMultiplier adjustment.")]
-        public static float dynamicAdjustmentTolerance = 1; // 1 is realistically just fine, 2 is very very safe even for 20% jitter. can be half a frame too. (see above comments)
+        public static float
+            dynamicAdjustmentTolerance =
+                1; // 1 is realistically just fine, 2 is very very safe even for 20% jitter. can be half a frame too. (see above comments)
 
         [Tooltip("Dynamic adjustment is computed over n-second exponential moving average standard deviation.")]
-        public static int deliveryTimeEmaDuration = 2;   // 1-2s recommended to capture average delivery time
-        static ExponentialMovingAverage deliveryTimeEma; // average delivery time (standard deviation gives average jitter)
+        public static int deliveryTimeEmaDuration = 2; // 1-2s recommended to capture average delivery time
+
+        private static ExponentialMovingAverage
+            deliveryTimeEma; // average delivery time (standard deviation gives average jitter)
+
+        // obsolete snapshot settings access
+        // DEPRECATED 2023-03-11
+        // [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
+        // public static double bufferTimeMultiplier => currentBufferTimeMultiplier;
+        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
+        public static float catchupNegativeThreshold => snapshotSettings.catchupNegativeThreshold;
+
+        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
+        public static float catchupPositiveThreshold => snapshotSettings.catchupPositiveThreshold;
+
+        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
+        public static double catchupSpeed => snapshotSettings.catchupSpeed;
+
+        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
+        public static double slowdownSpeed => snapshotSettings.slowdownSpeed;
+
+        [Obsolete("NetworkClient snapshot interpolation settings were moved to NetworkClient.snapshotSettings.*")]
+        public static int driftEmaDuration => snapshotSettings.driftEmaDuration;
+
+        // original buffer time based on the settings
+        // dynamically adjusted buffer time based on dynamically adjusted multiplier
+        public static double initialBufferTime => NetworkServer.sendInterval * snapshotSettings.bufferTimeMultiplier;
+        public static double bufferTime => NetworkServer.sendInterval * bufferTimeMultiplier;
 
         // OnValidate: see NetworkClient.cs
         // add snapshot & initialize client interpolation time if needed
 
         // initialization called from Awake
-        static void InitTimeInterpolation()
+        private static void InitTimeInterpolation()
         {
             // reset timeline, localTimescale & snapshots from last session (if any)
             bufferTimeMultiplier = snapshotSettings.bufferTimeMultiplier;
@@ -106,14 +115,15 @@ namespace Mirror
             // 1 second holds 'sendRate' worth of values.
             // multiplied by emaDuration gives n-seconds.
             driftEma = new ExponentialMovingAverage(NetworkServer.sendRate * snapshotSettings.driftEmaDuration);
-            deliveryTimeEma = new ExponentialMovingAverage(NetworkServer.sendRate * snapshotSettings.deliveryTimeEmaDuration);
+            deliveryTimeEma =
+                new ExponentialMovingAverage(NetworkServer.sendRate * snapshotSettings.deliveryTimeEmaDuration);
         }
 
         // server sends TimeSnapshotMessage every sendInterval.
         // batching already includes the remoteTimestamp.
         // we simply insert it on-message here.
         // => only for reliable channel. unreliable would always arrive earlier.
-        static void OnTimeSnapshotMessage(TimeSnapshotMessage _)
+        private static void OnTimeSnapshotMessage(TimeSnapshotMessage _)
         {
             // insert another snapshot for snapshot interpolation.
             // before calling OnDeserialize so components can use
@@ -130,7 +140,6 @@ namespace Mirror
 
             // (optional) dynamic adjustment
             if (snapshotSettings.dynamicAdjustment)
-            {
                 // set bufferTime on the fly.
                 // shows in inspector for easier debugging :)
                 bufferTimeMultiplier = SnapshotInterpolation.DynamicAdjustment(
@@ -138,7 +147,6 @@ namespace Mirror
                     deliveryTimeEma.StandardDeviation,
                     snapshotSettings.dynamicAdjustmentTolerance
                 );
-            }
 
             // insert into the buffer & initialize / adjust / catchup
             SnapshotInterpolation.InsertAndAdjust(
@@ -160,7 +168,7 @@ namespace Mirror
         }
 
         // call this from early update, so the timeline is safe to use in update
-        static void UpdateTimeInterpolation()
+        private static void UpdateTimeInterpolation()
         {
             // only while we have snapshots.
             // timeline starts when the first snapshot arrives.
@@ -175,7 +183,7 @@ namespace Mirror
                 // progress local interpolation.
                 // TimeSnapshot doesn't interpolate anything.
                 // this is merely to keep removing older snapshots.
-                SnapshotInterpolation.StepInterpolation(snapshots, localTimeline, out _, out _, out double t);
+                SnapshotInterpolation.StepInterpolation(snapshots, localTimeline, out _, out _, out var t);
                 // Debug.Log($"NetworkClient SnapshotInterpolation @ {localTimeline:F2} t={t:F2}");
             }
         }

@@ -16,9 +16,24 @@ namespace QFramework
 {
     public static class AutoSaveDump
     {
+        public static void PushSaveCommand<T>(this T self, Action action)
+        {
+            SaveCommandQueue.PushSaveCommand(typeof(T), action);
+        }
+
+        public static void Save<T>(this T self) where T : Object
+        {
+            EditorUtility.SetDirty(self);
+            AssetDatabase.SaveAssets();
+        }
+
         public class SaveCommandQueue
         {
             private static SaveCommandQueue mDefault;
+
+            private readonly Dictionary<Type, SaveCommand> mCommandQueues = new();
+
+            public List<Type> mType2Remove = new();
 
             public bool Started;
 
@@ -29,13 +44,9 @@ namespace QFramework
                 Started = true;
             }
 
-            private Dictionary<Type, SaveCommand> mCommandQueues = new Dictionary<Type, SaveCommand>();
-
-            public List<Type> mType2Remove = new List<Type>();
             private void Update()
             {
                 foreach (var kv in mCommandQueues)
-                {
                     if (!kv.Value.Started)
                     {
                         kv.Value.Started = true;
@@ -54,29 +65,13 @@ namespace QFramework
                             mType2Remove.Add(kv.Key);
                         }
                     }
-                }
-                
-                foreach (var type in mType2Remove)
-                {
-                    mCommandQueues.Remove(type);
-                }
-                    
+
+                foreach (var type in mType2Remove) mCommandQueues.Remove(type);
+
                 mType2Remove.Clear();
-                
-                
             }
 
-            private class SaveCommand
-            {
-                public DateTime StartTime;
-                public float DelayTime;
-                public Action Action;
-                public Type Type;
-                public bool Started;
-                public bool finished;
-            }
-
-            public static void PushSaveCommand(Type t,Action action)
+            public static void PushSaveCommand(Type t, Action action)
             {
                 if (mDefault == null)
                 {
@@ -89,37 +84,31 @@ namespace QFramework
                 }
 
                 if (mDefault.mCommandQueues.ContainsKey(t))
-                {
-                    mDefault.mCommandQueues[t] = new SaveCommand()
+                    mDefault.mCommandQueues[t] = new SaveCommand
                     {
                         Type = t,
                         Action = action,
-                        DelayTime = 2,
+                        DelayTime = 2
                     };
-                }
                 else
-                {
-                    mDefault.mCommandQueues.Add(t,new SaveCommand()
+                    mDefault.mCommandQueues.Add(t, new SaveCommand
                     {
                         Type = t,
                         Action = action,
-                        DelayTime = 0.5f,
+                        DelayTime = 0.5f
                     });
-                }
+            }
+
+            private class SaveCommand
+            {
+                public Action Action;
+                public float DelayTime;
+                public bool finished;
+                public bool Started;
+                public DateTime StartTime;
+                public Type Type;
             }
         }
-        
-        public static void PushSaveCommand<T>(this T self, Action action)
-        {
-            SaveCommandQueue.PushSaveCommand(typeof(T), action);
-        }
-
-        public static void Save<T>(this T self) where T : Object
-        {
-            EditorUtility.SetDirty(self);
-            AssetDatabase.SaveAssets();
-        }
-        
     }
 }
 #endif

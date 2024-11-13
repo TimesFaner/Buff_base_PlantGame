@@ -16,17 +16,17 @@ using UnityEngine;
 namespace QFramework
 {
     /// <summary>
-    /// 切分方式
+    ///     切分方式
     /// </summary>
     public enum SplitType
     {
         /// <summary>
-        /// 纵向
+        ///     纵向
         /// </summary>
         Vertical,
 
         /// <summary>
-        /// 横向
+        ///     横向
         /// </summary>
         Horizontal
     }
@@ -47,21 +47,18 @@ namespace QFramework
     [Serializable]
     public class VerticalSplitView
     {
-        public void DrawExpandButtonLeft()
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-            GUILayout.Space(20);
-            GUILayout.EndVertical();
-            GUILayout.FlexibleSpace();
-                    
-            if (Expand.Value && GUILayout.Button("<"))
-            {
-                Expand.Value = false;
-            }
+        private bool _resizing;
 
-            GUILayout.EndHorizontal();
-        }
+        public BindableProperty<bool> Expand = new(true);
+
+        public Action<Rect> FirstPan, SecondPan;
+
+        private IMGUIRectBox mIMGUIRectBox;
+
+        private float mSplit = 200;
+
+        private SplitType mSplitType = SplitType.Vertical;
+
         public VerticalSplitView(int splitLeftSize = 200)
         {
             mIMGUIRectBox = EasyIMGUI.BoxWithRect();
@@ -84,21 +81,9 @@ namespace QFramework
             });
         }
 
-        private SplitType mSplitType = SplitType.Vertical;
-
-        private float mSplit = 200;
-
-        public BindableProperty<bool> Expand = new BindableProperty<bool>(true);
-
-        public Action<Rect> FirstPan, SecondPan;
-        public event System.Action OnBeginResize;
-        public event System.Action OnEndResize;
-
-        private IMGUIRectBox mIMGUIRectBox;
-
         public bool Dragging
         {
-            get { return _resizing; }
+            get => _resizing;
             private set
             {
                 if (_resizing != value)
@@ -106,23 +91,31 @@ namespace QFramework
                     _resizing = value;
                     if (value)
                     {
-                        if (OnBeginResize != null)
-                        {
-                            OnBeginResize();
-                        }
+                        if (OnBeginResize != null) OnBeginResize();
                     }
                     else
                     {
-                        if (OnEndResize != null)
-                        {
-                            OnEndResize();
-                        }
+                        if (OnEndResize != null) OnEndResize();
                     }
                 }
             }
         }
 
-        private bool _resizing;
+        public void DrawExpandButtonLeft()
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.BeginVertical();
+            GUILayout.Space(20);
+            GUILayout.EndVertical();
+            GUILayout.FlexibleSpace();
+
+            if (Expand.Value && GUILayout.Button("<")) Expand.Value = false;
+
+            GUILayout.EndHorizontal();
+        }
+
+        public event Action OnBeginResize;
+        public event Action OnEndResize;
 
         public void OnGUI(Rect position)
         {
@@ -146,10 +139,7 @@ namespace QFramework
             switch (Event.current.type)
             {
                 case EventType.MouseDown:
-                    if (mid.Contains(Event.current.mousePosition))
-                    {
-                        Dragging = true;
-                    }
+                    if (mid.Contains(Event.current.mousePosition)) Dragging = true;
 
                     break;
                 case EventType.MouseDrag:
@@ -170,10 +160,7 @@ namespace QFramework
 
                     break;
                 case EventType.MouseUp:
-                    if (Dragging)
-                    {
-                        Dragging = false;
-                    }
+                    if (Dragging) Dragging = false;
 
                     break;
             }
@@ -182,10 +169,7 @@ namespace QFramework
         public void DrawExpandButtonRight()
         {
             GUILayout.BeginHorizontal();
-            if (!Expand.Value && GUILayout.Button(">"))
-            {
-                Expand.Value = true;
-            }
+            if (!Expand.Value && GUILayout.Button(">")) Expand.Value = true;
 
             GUILayout.FlexibleSpace();
 
@@ -206,8 +190,8 @@ namespace QFramework
 
         public static Rect Zoom(this Rect rect, AnchorType type, Vector2 pixelOffset)
         {
-            float tempW = rect.width + pixelOffset.x;
-            float tempH = rect.height + pixelOffset.y;
+            var tempW = rect.width + pixelOffset.x;
+            var tempH = rect.height + pixelOffset.y;
             switch (type)
             {
                 case AnchorType.UpperLeft:
@@ -294,7 +278,7 @@ namespace QFramework
                 case SplitType.Horizontal:
                     return r.HorizontalSplit(offset, padding, justMid);
                 default:
-                    return default(Rect[]);
+                    return default;
             }
         }
 
@@ -307,7 +291,7 @@ namespace QFramework
                 case SplitType.Horizontal:
                     return r.HorizontalSplitRect(offset, padding);
                 default:
-                    return default(Rect);
+                    return default;
             }
         }
 
@@ -343,7 +327,7 @@ namespace QFramework
 
         public static Rect HorizontalSplitRect(this Rect r, float height, float padding = 0)
         {
-            Rect rect = r.CutBottom((int)(r.height - height)).Cut(padding).CutBottom(-Mathf.CeilToInt(padding / 2f));
+            var rect = r.CutBottom((int)(r.height - height)).Cut(padding).CutBottom(-Mathf.CeilToInt(padding / 2f));
             rect.y += rect.height;
             rect.height = padding;
             return rect;
@@ -351,7 +335,7 @@ namespace QFramework
 
         public static Rect VerticalSplitRect(this Rect r, float width, float padding = 0)
         {
-            Rect rect = r.CutRight((int)(r.width - width)).Cut(padding).CutRight(-Mathf.CeilToInt(padding / 2f));
+            var rect = r.CutRight((int)(r.width - width)).Cut(padding).CutRight(-Mathf.CeilToInt(padding / 2f));
             rect.x += rect.width;
             rect.width = padding;
             return rect;
